@@ -6,6 +6,7 @@ provider "registry.opentofu.org/ovh/ovh" {
   constraints = "~> 2.0"
   hashes = [
     "h1:8SrZVeAm9bai2v8L2G/3d3dCuv4/iDrk1+Ur4tIPFUo=",
+    "h1:zbnPL6Y4k/dY1X2u2JVyTid5hXwcCIfz65VC9UbkDrE=",
     "zh:026d6590900388d8845af9d99a438e3cd90fcf50ef5f95a24b9dc646f391aa5c",
     "zh:1375f3947bbdfe19c05abf0dbc0cb6f319d79976909282a269f4eb934a67fb18",
     "zh:13cc7536d366935cb31b89f2b714c5ac8eac7e825e6897477fe56caebb04992e",
