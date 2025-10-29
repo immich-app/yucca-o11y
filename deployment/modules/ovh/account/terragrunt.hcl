@@ -19,7 +19,7 @@ terraform {
   backend "s3" {
     bucket = "${get_env("TF_VAR_tf_state_s3_bucket")}"
     key    = "yucca/o11y/ovh/account/${local.env}${local.stage != "" ? "/${local.stage}" : ""}"
-    region = "auto"
+    region = "${get_env("TF_VAR_tf_state_s3_region")}"
     access_key = "${get_env("TF_VAR_tf_state_s3_access_key")}"
     secret_key = "${get_env("TF_VAR_tf_state_s3_secret_key")}"
 
