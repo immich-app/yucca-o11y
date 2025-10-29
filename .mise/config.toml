@@ -20,7 +20,7 @@ description = "Wrapper for terragrunt run-all"
 dir = "{{cwd}}"
 
 [tasks."tf:fmt"]
-run = "tofu fmt -recursive tf/"
+run = "tofu fmt -recursive {{config_root}}/deployment"
 description = "Format terraform files"
 
 [tasks."tf:init"]
