@@ -6,7 +6,7 @@ terragrunt = "0.87.0"
 TF_VAR_dist_dir="{{config_root}}/dist"
 
 [tasks.tg]
-run = "op run '--env-file={{config_root}}/deployment/.env' -- terragrunt"
+run = "op run --account 'team-futo.1password.com' '--env-file={{config_root}}/deployment/.env' -- terragrunt"
 description = "Wrapper for terragrunt"
 dir = "{{cwd}}"
 
