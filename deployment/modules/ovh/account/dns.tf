@@ -16,20 +16,20 @@ resource "ovh_domain_zone" "zone" {
   }
 }
 
-resource "ovh_domain_zone_record" "instances" {
-  for_each = { for combination in flatten([
-    for instance in ovh_cloud_project_instance.instances: [
-      for address in instance.addresses: {
-        key = "${instance.name}-${address.ip}"
-        instance = instance
-        address = address
-      }
-    ]
-  ]) : combination.key => combination }
-
-  zone      = ovh_domain_zone.zone.name
-  subdomain = "${each.value.instance.name}.srv"
-  fieldtype = each.value.address.version == 4 ? "A" : "AAAA"
-  ttl       = 3600
-  target    = each.value.address.ip
-}
+# resource "ovh_domain_zone_record" "instances" {
+#   for_each = { for combination in flatten([
+#     for instance in ovh_cloud_project_instance.instances: [
+#       for address in instance.addresses: {
+#         key = "${instance.name}-${address.ip}"
+#         instance = instance
+#         address = address
+#       }
+#     ]
+#   ]) : combination.key => combination }
+#
+#   zone      = ovh_domain_zone.zone.name
+#   subdomain = "${each.value.instance.name}.srv"
+#   fieldtype = each.value.address.version == 4 ? "A" : "AAAA"
+#   ttl       = 3600
+#   target    = each.value.address.ip
+# }
