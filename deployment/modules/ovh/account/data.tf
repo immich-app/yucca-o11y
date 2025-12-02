@@ -1,7 +1,9 @@
-data "ovh_me" "myaccount" {}
+data "ovh_me" "account" {
+
+}
 
 data "ovh_order_cart" "mycart" {
-  ovh_subsidiary = data.ovh_me.myaccount.ovh_subsidiary
+  ovh_subsidiary = data.ovh_me.account.ovh_subsidiary
 }
 
 data "ovh_order_cart_product_plan" "zone" {
