@@ -3,25 +3,38 @@ resource "talos_machine_secrets" "this" {}
 data "talos_machine_configuration" "this" {
   cluster_name     = "example-cluster"
   machine_type     = "controlplane"
-  cluster_endpoint = "https://tf-test:6443"
+  cluster_endpoint = "https://o11y:6443"
   machine_secrets  = talos_machine_secrets.this.machine_secrets
 }
 
 data "talos_client_configuration" "this" {
   cluster_name         = "example-cluster"
   client_configuration = talos_machine_secrets.this.client_configuration
-  nodes                = ["51.89.228.250"]
+  nodes                = [ovh_dedicated_server.kimsufi2.ip]
+}
+
+data "talos_machine_disks" "this" {
+  client_configuration = talos_machine_secrets.this.client_configuration
+  node                 = ovh_dedicated_server.kimsufi2.ip
+  selector             = "disk.transport == 'nvme'"
+}
+
+output "test" {
+  value = data.talos_machine_disks.this.disks[0].dev_path
 }
 
 resource "talos_machine_configuration_apply" "this" {
   client_configuration        = talos_machine_secrets.this.client_configuration
   machine_configuration_input = data.talos_machine_configuration.this.machine_configuration
-  node                        = "51.89.228.250"
+  node                        = ovh_dedicated_server.kimsufi2.ip
   config_patches = [
     yamlencode({
       machine = {
+        network = {
+          hostname = "o11y"
+        }
         install = {
-          disk = "/dev/vda"
+          disk = "/dev/nvme0n1"
         }
       }
       cluster = {
@@ -43,21 +56,21 @@ resource "talos_machine_configuration_apply" "this" {
       provisioning:
         diskSelector:
           match: system_disk
-        minSize: 10GB
-        maxSize: 10GB
+        minSize: 50GB
+        maxSize: 50GB
         grow: false
     EOT
-    # ,
-    # <<EOT
-    #   apiVersion: v1alpha1
-    #   kind: RawVolumeConfig
-    #   name: openebs
-    #   provisioning:
-    #     diskSelector:
-    #       match: system_disk
-    #     minSize: 20GB
-    #     grow: true
-    # EOT
+    ,
+    <<EOT
+      apiVersion: v1alpha1
+      kind: UserVolumeConfig
+      name: hostpath
+      provisioning:
+        diskSelector:
+          match: system_disk
+        minSize: 20GB
+        grow: true
+    EOT
   ]
 }
 
@@ -65,7 +78,7 @@ resource "talos_machine_bootstrap" "this" {
   depends_on = [
     talos_machine_configuration_apply.this
   ]
-  node                 = "51.89.228.250"
+  node                 = ovh_dedicated_server.kimsufi2.ip
   client_configuration = talos_machine_secrets.this.client_configuration
 }
 
