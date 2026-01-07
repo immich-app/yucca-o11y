@@ -1,49 +1,26 @@
 # This file is maintained automatically by "tofu init".
 # Manual edits may be lost in future updates.
 
-provider "registry.opentofu.org/ovh/ovh" {
-  version     = "2.8.0"
-  constraints = "~> 2.0"
-  hashes = [
-    "h1:8SrZVeAm9bai2v8L2G/3d3dCuv4/iDrk1+Ur4tIPFUo=",
-    "h1:zbnPL6Y4k/dY1X2u2JVyTid5hXwcCIfz65VC9UbkDrE=",
-    "zh:026d6590900388d8845af9d99a438e3cd90fcf50ef5f95a24b9dc646f391aa5c",
-    "zh:1375f3947bbdfe19c05abf0dbc0cb6f319d79976909282a269f4eb934a67fb18",
-    "zh:13cc7536d366935cb31b89f2b714c5ac8eac7e825e6897477fe56caebb04992e",
-    "zh:388696109f5f03c95775407df10dca822d0651237872a579fe7e953312a75ff6",
-    "zh:3ca9fd5e6756fe9f448066f74e7d6d7de5e7c0f34f923032d3a976ab6772a86a",
-    "zh:43ab0d8e362e2b22cac53747f609798de9e267a3eceaa66146b36e8ed6b16a98",
-    "zh:456d80cf53e21258d4df1a239ba3f7b1482631e558497cd797fafd25f8eea3ca",
-    "zh:54d46a83305120a9331b1dc12e6039b895b5285434bb96904d30f1fe277bbde7",
-    "zh:5b6b2628ef1a00579e769d7f67482fb8b59534f8761b399e7baf683e716e5d88",
-    "zh:68e6df5c16b92601d4545739855ec309b1ce7fce6597d8d6e4776357a5da7a7c",
-    "zh:80745afe134180fc441cc1c34c3a9ea20756f01ae793ba625255ce92817f5f5d",
-    "zh:a81a6896e60526588f8d16168d06018842c083ff5a1d73193cf7e9b26c3a4076",
-    "zh:ce68d4e6ca846f5e97de06fce5a4d6aca16154ddd8cf43580fd89b581e1ee471",
-    "zh:e498f560263abebf96a2cc698492b603c5a78851f77235d141c1ee7336ab866c",
-  ]
-}
-
 provider "registry.opentofu.org/siderolabs/talos" {
-  version     = "0.8.1"
-  constraints = "0.8.1"
+  version     = "0.9.0"
+  constraints = "0.9.0"
   hashes = [
-    "h1:rhNnAJ4MLaKZ5hNbdFzUJYxEFg0Es5+jg+WlzQ1D/g4=",
-    "zh:02aeea4001ea216d37fd948e0760971f2525d31609d75dd1a7871f483e43260d",
-    "zh:0bd6d2f9b6daf9cec0e20d1e22cad635983b5c071c106a3bec51be283c9fa254",
+    "h1:srV7rO0fGWWGUzYH0W7oIr2XHWCqL+LX83fOt3nQPa0=",
     "zh:0fa82a384b25a58b65523e0ea4768fa1212b1f5cfc0c9379d31162454fedcc9d",
-    "zh:290ced18cfa372681d53522b5ea6c392206e90181ef0884719768b3ef627d077",
-    "zh:3270a27a483d2be332915e339b910a4810fb16505e060fc4a988b0d653f06d90",
-    "zh:34f91c967ae25219abc81d21a477d3fc514c62a73084bfb9d3d2d1490e98070b",
-    "zh:46a0eb4397e97d9dc354087ce1b16ccdca3876b0e339d7ec1919002a43aa0a6d",
-    "zh:4d382770c97675c6b4355a91f50b38f9b6bd088707834c9efb308e608bbdae48",
-    "zh:6ec2828c419615cce850ba1eafffee2797cae62876999f3b0a163c17f579c97a",
-    "zh:9405b011c631d9fb001d8b96a1657e071181434960543e857fb14ec2230618b0",
-    "zh:a9a6f6824793e811ec52c0b1c4b8d19855c851120a91f7617ffa7e36aa65710a",
-    "zh:aa472818c7880c7cf19f5bd584dcf513a3daa2fe636d4af730b0bcf495eadebf",
-    "zh:cd6037f6267987fb606f98b1a425d71a1826289ac39e62973a45b60f0f37de06",
-    "zh:ddea6372fef17de6648018c4c64b87acecaba9f5443fcf46ff3d92c048605b30",
-    "zh:e367b0359c8b413f705ded1d0d7b4a3c09cee1bd0028337faa80a150b08b945a",
+    "zh:249ab08b810bb96ef7c35354a12622907df7cbda59c83ff314ee85e8b851128d",
+    "zh:4f284c21f0cb4b7012fdb231ebba4803e5c389f7ea380fb5958ebfa6b822d055",
+    "zh:6049f8d06bc92ab1a46d56c2b37799e6a1b7ce3c61905acf8f0c2009942be8ac",
+    "zh:7de5f0a6429c6856ade3c7e59d5041a7fe8e0010aea14a2074e91f8a526283ce",
+    "zh:9760420cf5feec0550556664962bc6f1af45115b9ea5bcbf47aa9bffd3dd4ac2",
+    "zh:9860272a9fbcea65393c478dc579ad2677a44338de24677702ce699a027801aa",
+    "zh:a60311a8bf267b18dcf1c8250f45e371b51c6aef086e037a3f9496602f190187",
+    "zh:b74c119b2a964cae8d17b5b5f14c8eecf44708e3817c1f65ac89b813856aed98",
+    "zh:bc33e14650052c246ac2e6492a0a24755d4e8d27cb7259e3996f07b0537f2c77",
+    "zh:c4bc2c65b3dcef2508c14dbbfc18937c5ede11670c02a644cbc28c83a57de92b",
+    "zh:c98bf4809220568d76ea2db232a88a60c29fd90d4c9e2f8c8a68cf91ceed066a",
+    "zh:de0179ee9c55bf36d3474049ceac3a105ed7bc1fb9c4787d4076c4b15d268b66",
+    "zh:e99e019d950131c2c4259c1cbca1d072cb813bdfdbbbf9359f5901d6b7542a0d",
+    "zh:feb941cc673692c6858f96590f3ca082683a62aa2d2842b9bfffcd327eb840d3",
   ]
 }
 
@@ -66,5 +43,13 @@ provider "registry.opentofu.org/tailscale/tailscale" {
     "zh:f020c98a6e14e14e5a3a98648c0718be8bf890f05c2e823014a01ebc01e1ffc8",
     "zh:f0a5580e48d462fa6834f3d38c47a055ce798f564116615cd2703c518be5199d",
     "zh:f2b82d084c84b4547a2fa8d358b70eea1fecf383c595361c546ce86eaec316d4",
+  ]
+}
+
+provider "terraform.local/local/ovh" {
+  version     = "0.0.1"
+  constraints = "0.0.1"
+  hashes = [
+    "h1:uGcZ6LEyvXvAaQH7qGdieXw4u92rf2Dxqb7C/aMN6+I=",
   ]
 }
