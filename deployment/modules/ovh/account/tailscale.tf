@@ -1,9 +1,10 @@
 resource "tailscale_tailnet_key" "test" {
-  reusable = false
+  reusable = true
   ephemeral = false
   preauthorized = true
+  recreate_if_invalid = "always"
   expiry = 7776000
-  description = "Test key"
+  description = "Talos Tailscale Key Env ${var.env} Stage ${var.stage}"
 }
 
 resource "tailscale_tailnet_settings" "org" {

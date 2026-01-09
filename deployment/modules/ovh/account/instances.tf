@@ -59,7 +59,7 @@
 
 resource "ovh_dedicated_server" "kimsufi" {
   ovh_subsidiary = data.ovh_me.account.ovh_subsidiary
-  range = "eco"
+  # range = "eco"
   display_name = "Kimsufi Test Server"
   service_name = "ns3047483.ip-164-132-171.eu"
   plan = [
@@ -115,14 +115,14 @@ resource "ovh_dedicated_server" "kimsufi" {
   os = "byoi_64"
   customizations = {
     efi_bootloader_path = "\\EFI\\BOOT\\BOOTX64.EFI"
-    image_url = "https://factory.talos.dev/image/4dd8e3a8b6203d3c14f049da8db4d3bb0d6d3e70c5e89dfcc1e709e81914f63c/v1.11.5/metal-amd64.qcow2"
+    image_url = "https://factory.talos.dev/image/4a0d65c669d46663f377e7161e50cfd570c401f26fd9e7bda34a0216b6f1922b/v1.12.1/metal-amd64.qcow2"
     image_type = "qcow2"
   }
 }
 
 resource "ovh_dedicated_server" "kimsufi2" {
   ovh_subsidiary = data.ovh_me.account.ovh_subsidiary
-  range = "eco"
+  # range = "eco"
   display_name = "Kimsufi Test Server 2"
   plan = [
     {
@@ -178,7 +178,7 @@ resource "ovh_dedicated_server" "kimsufi2" {
 
   customizations = {
     efi_bootloader_path = "\\EFI\\BOOT\\BOOTX64.EFI"
-    image_url = "https://factory.talos.dev/image/4dd8e3a8b6203d3c14f049da8db4d3bb0d6d3e70c5e89dfcc1e709e81914f63c/v1.11.5/metal-amd64.qcow2"
+    image_url = "https://factory.talos.dev/image/4a0d65c669d46663f377e7161e50cfd570c401f26fd9e7bda34a0216b6f1922b/v1.12.1/metal-amd64.qcow2"
     image_type = "qcow2"
   }
 }

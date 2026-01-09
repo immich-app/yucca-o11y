@@ -3,12 +3,12 @@ terraform {
 
   required_providers {
     ovh = {
-      source  = "ovh/ovh"
-      version = "~> 2"
+      source  = "terraform.local/local/ovh"
+      version = "0.0.1"
     }
     talos = {
       source  = "siderolabs/talos"
-      version = "0.8.1"
+      version = "0.10.0"
     }
     tailscale = {
       source = "tailscale/tailscale"
