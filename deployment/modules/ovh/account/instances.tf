@@ -59,7 +59,7 @@
 
 resource "ovh_dedicated_server" "kimsufi" {
   ovh_subsidiary = data.ovh_me.account.ovh_subsidiary
-  # range = "eco"
+  range = "eco"
   display_name = "Kimsufi Test Server"
   service_name = "ns3047483.ip-164-132-171.eu"
   plan = [
@@ -122,7 +122,7 @@ resource "ovh_dedicated_server" "kimsufi" {
 
 resource "ovh_dedicated_server" "kimsufi2" {
   ovh_subsidiary = data.ovh_me.account.ovh_subsidiary
-  # range = "eco"
+  range = "eco"
   display_name = "Kimsufi Test Server 2"
   plan = [
     {
