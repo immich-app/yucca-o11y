@@ -7,12 +7,16 @@ terraform {
 }
 
 locals {
-  env = get_env("TF_VAR_env")
+  env   = get_env("TF_VAR_env")
   stage = get_env("TF_VAR_stage")
 }
 
-dependencies {
-  paths = ["../../ovh/account"]
+dependency "ovh" {
+  config_path = "../../ovh/account"
+}
+
+inputs = {
+  clusters = dependency.ovh.outputs.clusters
 }
 
 generate "backend" {

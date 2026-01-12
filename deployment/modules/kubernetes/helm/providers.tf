@@ -1,10 +1,11 @@
 provider "helm" {
-  debug = true
-  kubernetes = {
-    host     = "https://o11y:6443"
+  alias    = "cluster"
+  for_each = var.clusters
 
-    client_certificate     = base64decode(data.terraform_remote_state.talos_state.outputs.kubernetes_client_configuration.client_certificate)
-    client_key             = base64decode(data.terraform_remote_state.talos_state.outputs.kubernetes_client_configuration.client_key)
-    cluster_ca_certificate = base64decode(data.terraform_remote_state.talos_state.outputs.kubernetes_client_configuration.ca_certificate)
+  kubernetes = {
+    host                   = each.value.endpoint
+    client_certificate     = base64decode(each.value.client_certificate)
+    client_key             = base64decode(each.value.client_key)
+    cluster_ca_certificate = base64decode(each.value.ca_certificate)
   }
 }
