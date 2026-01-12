@@ -1,52 +1,22 @@
-output "test" {
-  value = data.terraform_remote_state.talos_state.outputs.installer_image
+module "cluster" {
+  source   = "./modules/cluster"
+  for_each = var.clusters
+
+  providers = {
+    helm = helm.cluster[each.key]
+  }
+
+  cluster_name              = each.value.name
+  flux_operator_version     = var.flux_operator_version
+  flux_instance_values_file = "${path.module}/values.yml"
 }
 
-//data.terraform_remote_state.api_keys_state.outputs.terraform_key_cloudflare_account
-
-
-resource "helm_release" "flux_operator" {
-  name  = "flux-operator"
-  namespace = "flux-system"
-  repository = "oci://ghcr.io/controlplaneio-fluxcd/charts"
-  chart = "flux-operator"
-  version = "0.37.1"
-  create_namespace = true
-  cleanup_on_fail = true
-  wait_for_jobs = true
+output "cluster_deployments" {
+  value = {
+    for k, v in module.cluster : k => {
+      cluster_name         = v.cluster_name
+      flux_operator_status = v.flux_operator_status
+      flux_instance_status = v.flux_instance_status
+    }
+  }
 }
-
-resource "helm_release" "flux_instance" {
-  name  = "flux-instance"
-  namespace = "flux-system"
-  repository = "oci://ghcr.io/controlplaneio-fluxcd/charts"
-  chart = "flux-instance"
-  version = "0.37.1"
-  values = [file("${path.module}/values.yml")]
-  cleanup_on_fail = true
-  wait_for_jobs = true
-  depends_on = [helm_release.flux_operator]
-}
-
-/*
----
-
-helmDefaults:
-  cleanupOnFail: true
-  wait: true
-  waitForJobs: true
-
-releases:
-  - name: flux-operator
-    namespace: flux-system
-    chart: oci://ghcr.io/controlplaneio-fluxcd/charts/flux-operator
-    version: 0.37.1
-    values: ['../kubernetes/apps/flux-system/flux-operator/app/values.yaml']
-
-  - name: flux-instance
-    namespace: flux-system
-    chart: oci://ghcr.io/controlplaneio-fluxcd/charts/flux-instance
-    version: 0.37.1
-    values: ['../kubernetes/apps/flux-system/flux-instance/app/values.yaml']
-    needs: ['flux-system/flux-operator']
- */

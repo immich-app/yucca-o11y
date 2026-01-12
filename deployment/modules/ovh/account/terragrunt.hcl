@@ -7,8 +7,59 @@ terraform {
 }
 
 locals {
-  env = get_env("TF_VAR_env")
+  env   = get_env("TF_VAR_env")
   stage = get_env("TF_VAR_stage")
+
+  # Node configurations per environment
+  # Override via TF_VAR_nodes or environment-specific terragrunt
+  nodes_by_env = {
+    staging = {
+      lon = {
+        datacenter     = "lon"
+        plan_code      = "24sys012"
+        storage_option = "softraid-2x512nvme-24sys"
+        ram_option     = "ram-32g-ecc-2666-24sys"
+        vlan_ip        = "10.150.200.10"
+      }
+      rbx = {
+        datacenter     = "rbx"
+        plan_code      = "24sys012"
+        storage_option = "softraid-2x512nvme-24sys"
+        ram_option     = "ram-32g-ecc-2666-24sys"
+        vlan_ip        = "10.150.200.11"
+        has_vrack      = false
+      }
+      fra = {
+        datacenter     = "fra"
+        plan_code      = "24sys012"
+        storage_option = "softraid-2x512nvme-24sys"
+        ram_option     = "ram-32g-ecc-2666-24sys"
+        vlan_ip        = "10.150.200.12"
+      }
+    }
+    prod = {
+      lon = {
+        datacenter     = "lon"
+        plan_code      = "24sys012"
+        storage_option = "softraid-2x512nvme-24sys"
+        ram_option     = "ram-32g-ecc-2666-24sys"
+        vlan_ip        = "10.150.100.10"
+      }
+    }
+    dev = {
+      lon = {
+        datacenter     = "lon"
+        plan_code      = "24sys012"
+        storage_option = "softraid-2x512nvme-24sys"
+        ram_option     = "ram-32g-ecc-2666-24sys"
+        vlan_ip        = "10.150.50.10"
+      }
+    }
+  }
+}
+
+inputs = {
+  nodes = lookup(local.nodes_by_env, local.env, {})
 }
 
 generate "backend" {

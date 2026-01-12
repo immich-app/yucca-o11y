@@ -1,32 +1,32 @@
-resource "talos_machine_secrets" "this" {}
+resource "talos_machine_secrets" "nodes" {
+  for_each = var.nodes
+}
 
-data "talos_machine_configuration" "this" {
-  cluster_name     = "example-cluster"
+data "talos_machine_configuration" "nodes" {
+  for_each         = var.nodes
+  cluster_name     = "o11y-${var.env}-${each.key}"
   machine_type     = "controlplane"
-  cluster_endpoint = "https://o11y:6443"
-  machine_secrets  = talos_machine_secrets.this.machine_secrets
+  cluster_endpoint = "https://o11y-${var.env}-${each.key}:6443"
+  machine_secrets  = talos_machine_secrets.nodes[each.key].machine_secrets
 }
 
-data "talos_client_configuration" "this" {
-  cluster_name         = "example-cluster"
-  client_configuration = talos_machine_secrets.this.client_configuration
-  nodes                = [ovh_dedicated_server.kimsufi2.ip]
+data "talos_client_configuration" "nodes" {
+  for_each             = var.nodes
+  cluster_name         = "o11y-${var.env}-${each.key}"
+  client_configuration = talos_machine_secrets.nodes[each.key].client_configuration
+  nodes                = [ovh_dedicated_server.node[each.key].ip]
 }
 
-data "talos_machine_disks" "this" {
-  client_configuration = talos_machine_secrets.this.client_configuration
-  node                 = ovh_dedicated_server.kimsufi2.ip
-  selector             = "disk.transport == 'nvme'"
-}
-
-output "test" {
-  value = data.talos_machine_disks.this.disks[0].dev_path
-}
-
-resource "talos_machine_configuration_apply" "this" {
-  client_configuration        = talos_machine_secrets.this.client_configuration
-  machine_configuration_input = data.talos_machine_configuration.this.machine_configuration
-  node                        = ovh_dedicated_server.kimsufi2.ip
+resource "talos_machine_configuration_apply" "nodes" {
+  for_each                    = var.nodes
+  client_configuration        = talos_machine_secrets.nodes[each.key].client_configuration
+  machine_configuration_input = data.talos_machine_configuration.nodes[each.key].machine_configuration
+  node                        = ovh_dedicated_server.node[each.key].ip
+  on_destroy = {
+    reboot   = true
+    reset    = true
+    graceful = false
+  }
   config_patches = [
     yamlencode({
       machine = {
@@ -38,22 +38,22 @@ resource "talos_machine_configuration_apply" "this" {
         allowSchedulingOnControlPlanes = true
       }
     }),
-    <<EOT
+    <<-EOT
       apiVersion: v1alpha1
       kind: HostnameConfig
-      hostname: o11y
+      hostname: o11y-${var.env}-${each.key}
       auto: off
     EOT
-    ,
-    <<EOT
+  ,
+    <<-EOT
       name: tailscale
       apiVersion: v1alpha1
       kind: ExtensionServiceConfig
       environment:
-      - TS_AUTHKEY=${tailscale_tailnet_key.test.key}
+      - TS_AUTHKEY=${tailscale_tailnet_key.nodes[each.key].key}
     EOT
-    ,
-    <<EOT
+  ,
+    <<-EOT
       apiVersion: v1alpha1
       kind: VolumeConfig
       name: EPHEMERAL
@@ -64,8 +64,8 @@ resource "talos_machine_configuration_apply" "this" {
         maxSize: 50GB
         grow: false
     EOT
-    ,
-    <<EOT
+  ,
+    <<-EOT
       apiVersion: v1alpha1
       kind: UserVolumeConfig
       name: hostpath
@@ -75,22 +75,28 @@ resource "talos_machine_configuration_apply" "this" {
         minSize: 20GB
         grow: true
     EOT
-    ,
-    <<EOT
+  ,
+    <<-EOT
       apiVersion: v1alpha1
       kind: LinkConfig
       name: eno1
       up: true
     EOT
-    ,
-    <<EOT
+  ,
+    <<-EOT
+      apiVersion: v1alpha1
+      kind: DHCPv4Config
+      name: eno1
+    EOT
+  ,
+    <<-EOT
       apiVersion: v1alpha1
       kind: LinkConfig
       name: eno2
       up: true
     EOT
-    ,
-    <<EOT
+  ,
+    <<-EOT
       apiVersion: v1alpha1
       kind: VLANConfig
       name: eno2.2600
@@ -99,36 +105,35 @@ resource "talos_machine_configuration_apply" "this" {
       parent: eno2
       up: true
       addresses:
-        - address: 10.150.200.10/16
+        - address: ${each.value.vlan_ip}/16
     EOT
   ]
 }
 
-resource "talos_machine_bootstrap" "this" {
+resource "talos_machine_bootstrap" "nodes" {
+  for_each = var.nodes
   depends_on = [
-    talos_machine_configuration_apply.this
+    talos_machine_configuration_apply.nodes
   ]
-  node                 = ovh_dedicated_server.kimsufi2.ip
-  client_configuration = talos_machine_secrets.this.client_configuration
+  node                 = ovh_dedicated_server.node[each.key].ip
+  client_configuration = talos_machine_secrets.nodes[each.key].client_configuration
+  timeouts = {
+    create = "1m"
+  }
 }
 
 data "talos_image_factory_urls" "this" {
-  talos_version = "v1.12.1"
-  schematic_id  = "4a0d65c669d46663f377e7161e50cfd570c401f26fd9e7bda34a0216b6f1922b"
+  talos_version = var.talos_version
+  schematic_id  = var.talos_schematic_id
   platform      = "metal"
 }
 
-resource "talos_cluster_kubeconfig" "this" {
-  client_configuration = talos_machine_secrets.this.client_configuration
-  node = ovh_dedicated_server.kimsufi2.ip
+resource "talos_cluster_kubeconfig" "nodes" {
+  for_each             = var.nodes
+  client_configuration = talos_machine_secrets.nodes[each.key].client_configuration
+  node                 = ovh_dedicated_server.node[each.key].ip
 }
 
 output "installer_image" {
   value = data.talos_image_factory_urls.this.urls.installer
 }
-
-output "kubernetes_client_configuration" {
-  value = talos_cluster_kubeconfig.this.kubernetes_client_configuration
-  sensitive = true
-}
-
