@@ -1,0 +1,35 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: victoria-metrics
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: victoria-metrics-k8s-stack
+  interval: 1h
+  values:
+    defaultDashboards:
+      grafanaOperator:
+        enabled: true
+    defaultDataSources:
+      grafanaOperator:
+        enabled: true
+    vmsingle:
+      spec:
+        storage:
+          resources:
+            requests:
+              storage: 100Gi
+    grafana:
+      plugins:
+        - victoriametrics-metrics-datasource
+        - victoriametrics-logs-datasource
+      ingress:
+        enabled: true
+        ingressClassName: nginx
+        # TODO: inject tailscale hostname
+        hosts:
+          - localhost
+        path: /grafana/
+      persistence:
+        enabled: true
