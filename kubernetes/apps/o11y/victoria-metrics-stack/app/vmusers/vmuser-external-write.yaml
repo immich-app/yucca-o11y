@@ -1,0 +1,26 @@
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMUser
+metadata:
+  name: vmuser-external-write
+  namespace: o11y
+  labels:
+    type: external
+spec:
+  username: "writer"
+  passwordRef:
+    name: vmauth-external-credentials
+    key: writer-password
+
+  targetRefs:
+    - crd:
+        kind: VMAgent
+        name: vmagent
+        namespace: o11y
+      target_path_suffix: "/api/v1/write"
+      paths:
+        - "/api/v1/write"
+        - "/prometheus/api/v1/write"
+
+  retry_status_codes: [429, 500, 502, 503, 504]
+  max_concurrent_requests: 1000

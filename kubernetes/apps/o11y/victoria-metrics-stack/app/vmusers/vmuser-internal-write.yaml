@@ -1,0 +1,24 @@
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMUser
+metadata:
+  name: vmuser-internal-write
+  namespace: o11y
+  labels:
+    type: internal
+spec:
+  username: "vmagent"
+  passwordRef:
+    name: vmauth-internal-credentials
+    key: vmagent-password
+
+  targetRefs:
+    - crd:
+        kind: VMSingle
+        name: vmsingle
+        namespace: o11y
+      target_path_suffix: "/api/v1/write"
+      paths:
+        - "/api/v1/write"
+
+  retry_status_codes: [429, 500, 502, 503, 504]

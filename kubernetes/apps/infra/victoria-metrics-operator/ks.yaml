@@ -1,0 +1,18 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: victoria-metrics-operator
+  namespace: flux-system
+spec:
+  targetNamespace: operators
+  dependsOn:
+    - name: cert-manager
+    - name: victoria-metrics-operator-crds
+  interval: 1h
+  path: ./kubernetes/apps/infra/victoria-metrics-operator/app
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  wait: true

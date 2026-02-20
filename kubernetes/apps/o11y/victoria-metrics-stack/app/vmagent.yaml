@@ -1,0 +1,65 @@
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMAgent
+metadata:
+  name: vmagent
+  namespace: o11y
+spec:
+  replicaCount: 2
+
+  remoteWrite:
+    - url: "http://vmauth-internal:8427/api/v1/write" # TODO: Check the actual svc address lol
+      basicAuth:
+        username:
+          name: vmagent-credentials
+          key: username
+        password:
+          name: vmagent-credentials
+          key: password
+
+    - url: "http://${ZONE_2_NODE_IP}:30426/api/v1/write"
+      basicAuth:
+        username:
+          name: vmagent-credentials
+          key: username
+        password:
+          name: vmagent-credentials
+          key: password
+
+    - url: "http://${ZONE_3_NODE_IP}:30426/api/v1/write"
+      basicAuth:
+        username:
+          name: vmagent-credentials
+          key: username
+        password:
+          name: vmagent-credentials
+          key: password
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+
+  serviceSpec:
+    type: ClusterIP
+    spec:
+      ports:
+        - name: http
+          port: 8429
+          targetPort: 8429
+
+  persistentVolume:
+    storageClassName: openebs-hostpath
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 50Gi
+
+  extraArgs:
+    remoteWrite.maxDiskUsagePerURL: "10GB"
+    remoteWrite.queues: "3"
+    memory.allowedPercent: "80"

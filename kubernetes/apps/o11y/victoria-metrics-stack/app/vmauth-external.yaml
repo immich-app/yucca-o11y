@@ -1,0 +1,32 @@
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMAuth
+metadata:
+  name: vmauth-external
+  namespace: o11y
+spec:
+  replicaCount: 2
+
+  userSelector:
+    matchLabels:
+      type: external
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  serviceSpec:
+    type: NodePort
+    spec:
+      ports:
+        - name: http
+          port: 8427
+          targetPort: 8427
+          nodePort: 30427
+
+  extraArgs:
+    maxIdleConnsPerBackend: "100"
