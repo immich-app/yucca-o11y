@@ -1,0 +1,15 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: cert-manager
+  namespace: storage
+spec:
+  interval: 15m
+  url: oci://ghcr.io/home-operations/charts-mirror/openebs
+  ref:
+    tag: 4.4.0
+
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy

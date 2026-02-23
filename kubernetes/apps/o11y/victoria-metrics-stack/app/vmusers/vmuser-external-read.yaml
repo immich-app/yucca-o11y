@@ -1,0 +1,47 @@
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMUser
+metadata:
+  name: vmuser-external-read
+  namespace: o11y
+  labels:
+    type: external
+spec:
+  username: "reader"
+  passwordRef:
+    name: vmauth-external-credentials
+    key: reader-password
+
+  targetRefs:
+    - static:
+        url: "http://${ZONE_1_NODE_IP}:30426"
+      paths:
+        - "/api/v1/query"
+        - "/api/v1/query_range"
+        - "/api/v1/series"
+        - "/api/v1/labels"
+        - "/api/v1/label/.*/values"
+        - "/prometheus/api/v1/.*"
+
+    - static:
+        url: "http://${ZONE_2_NODE_IP}:30426"
+      paths:
+        - "/api/v1/query"
+        - "/api/v1/query_range"
+        - "/api/v1/series"
+        - "/api/v1/labels"
+        - "/api/v1/label/.*/values"
+        - "/prometheus/api/v1/.*"
+
+    - static:
+        url: "http://${ZONE_3_NODE_IP}:30426"
+      paths:
+        - "/api/v1/query"
+        - "/api/v1/query_range"
+        - "/api/v1/series"
+        - "/api/v1/labels"
+        - "/api/v1/label/.*/values"
+        - "/prometheus/api/v1/.*"
+
+  load_balancing_policy: "first_available"
+  retry_status_codes: [429, 500, 502, 503, 504]
