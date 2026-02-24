@@ -11,28 +11,28 @@ spec:
     - url: "http://vmauth-internal:8427/api/v1/write" # TODO: Check the actual svc address lol
       basicAuth:
         username:
-          name: vmagent-credentials
+          name: vmuser-internal-write
           key: username
         password:
-          name: vmagent-credentials
+          name: vmuser-internal-write
           key: password
 
     - url: "http://${ZONE_2_NODE_IP}:30426/api/v1/write"
       basicAuth:
         username:
-          name: vmagent-credentials
+          name: vmuser-internal-write
           key: username
         password:
-          name: vmagent-credentials
+          name: vmuser-internal-write
           key: password
 
     - url: "http://${ZONE_3_NODE_IP}:30426/api/v1/write"
       basicAuth:
         username:
-          name: vmagent-credentials
+          name: vmuser-internal-write
           key: username
         password:
-          name: vmagent-credentials
+          name: vmuser-internal-write
           key: password
 
   resources:

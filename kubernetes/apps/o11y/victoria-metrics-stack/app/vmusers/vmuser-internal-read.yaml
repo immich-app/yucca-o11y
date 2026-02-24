@@ -2,15 +2,15 @@
 apiVersion: operator.victoriametrics.com/v1beta1
 kind: VMUser
 metadata:
-  name: vmuser-internal-read
+  name: internal-read
   namespace: o11y
   labels:
     type: internal
 spec:
-  username: "vmauth-reader"
+  username: "reader"
   passwordRef:
     name: vmauth-internal-credentials
-    key: vmauth-reader-password
+    key: reader-password
 
   targetRefs:
     - crd:
