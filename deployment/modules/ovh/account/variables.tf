@@ -11,13 +11,6 @@ variable "ovh_consumer_key" {
   sensitive = true
 }
 
-variable "tailscale_api_key" {
-  sensitive = true
-}
-variable "tailscale_tailnet_id" {
-  sensitive = true
-}
-
 variable "nodes" {
   type = map(object({
     datacenter     = string
