@@ -1,9 +1,9 @@
-resource "random_password" "vmauth_reader" {
+resource "random_password" "vmauth_external_reader" {
   length  = 32
   special = false
 }
 
-resource "random_password" "vmauth_writer" {
+resource "random_password" "vmauth_external_writer" {
   length  = 32
   special = false
 }
@@ -13,7 +13,7 @@ resource "random_password" "vmauth_internal_reader" {
   special = false
 }
 
-resource "random_password" "vmagent" {
+resource "random_password" "vmauth_internal_writer" {
   length  = 32
   special = false
 }

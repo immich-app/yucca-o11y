@@ -21,8 +21,8 @@ resource "kubernetes_secret_v1" "vmauth_external_credentials" {
   }
 
   data = {
-    "reader-password" = var.vmauth_reader_password
-    "writer-password" = var.vmauth_writer_password
+    "reader-password" = var.vmauth_external_reader_password
+    "writer-password" = var.vmauth_external_writer_password
   }
 }
 
@@ -35,7 +35,7 @@ resource "kubernetes_secret_v1" "vmauth_internal_credentials" {
   }
 
   data = {
-    "vmauth-reader-password" = var.vmauth_internal_reader_password
-    "vmagent-password"       = var.vmagent_password
+    "reader-password" = var.vmauth_internal_reader_password
+    "writer-password" = var.vmauth_internal_writer_password
   }
 }

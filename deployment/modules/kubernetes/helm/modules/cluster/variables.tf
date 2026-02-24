@@ -19,12 +19,12 @@ variable "other_node_ips" {
   description = "Tailscale IPs of the other nodes in the environment (sorted by key)"
 }
 
-variable "vmauth_reader_password" {
+variable "vmauth_external_reader_password" {
   type      = string
   sensitive = true
 }
 
-variable "vmauth_writer_password" {
+variable "vmauth_external_writer_password" {
   type      = string
   sensitive = true
 }
@@ -34,7 +34,7 @@ variable "vmauth_internal_reader_password" {
   sensitive = true
 }
 
-variable "vmagent_password" {
+variable "vmauth_internal_writer_password" {
   type      = string
   sensitive = true
 }

@@ -11,11 +11,11 @@ module "cluster" {
   flux_operator_version     = var.flux_operator_version
   flux_instance_values_file = "${path.module}/values.yml"
 
-  other_node_ips                 = local.other_node_ips[each.key]
-  vmauth_reader_password         = random_password.vmauth_reader.result
-  vmauth_writer_password         = random_password.vmauth_writer.result
+  other_node_ips                  = local.other_node_ips[each.key]
+  vmauth_external_reader_password = random_password.vmauth_external_reader.result
+  vmauth_external_writer_password = random_password.vmauth_external_writer.result
   vmauth_internal_reader_password = random_password.vmauth_internal_reader.result
-  vmagent_password               = random_password.vmagent.result
+  vmauth_internal_writer_password = random_password.vmauth_internal_writer.result
 }
 
 output "cluster_deployments" {
