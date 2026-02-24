@@ -2,15 +2,15 @@
 apiVersion: operator.victoriametrics.com/v1beta1
 kind: VMUser
 metadata:
-  name: vmuser-internal-write
+  name: internal-write
   namespace: o11y
   labels:
     type: internal
 spec:
-  username: "vmagent"
+  username: "writer"
   passwordRef:
     name: vmauth-internal-credentials
-    key: vmagent-password
+    key: writer-password
 
   targetRefs:
     - crd:
