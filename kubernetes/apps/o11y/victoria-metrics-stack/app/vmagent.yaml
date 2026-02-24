@@ -44,8 +44,8 @@ spec:
       memory: 4Gi
 
   serviceSpec:
-    type: ClusterIP
     spec:
+      type: ClusterIP
       ports:
         - name: http
           port: 8429
