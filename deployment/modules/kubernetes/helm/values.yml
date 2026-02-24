@@ -11,8 +11,8 @@ instance:
     - notification-controller
   sync:
     kind: GitRepository
-    url: "https://github.com/immich-app/pokedex.git"
-    ref: "refs/heads/development"
+    url: "https://github.com/immich-app/yucca-o11y.git"
+    ref: "refs/heads/main"
     path: kubernetes/flux/cluster
   commonMetadata:
     labels:

@@ -11,12 +11,17 @@ locals {
   stage = get_env("TF_VAR_stage")
 }
 
-dependency "ovh" {
-  config_path = "../../ovh/account"
+dependency "talos" {
+  config_path = "../../talos/cluster"
+
+  mock_outputs = {
+    clusters = {}
+  }
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
 }
 
 inputs = {
-  clusters = dependency.ovh.outputs.clusters
+  clusters = dependency.talos.outputs.clusters
 }
 
 generate "backend" {

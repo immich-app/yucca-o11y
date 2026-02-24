@@ -107,3 +107,9 @@ resource "ovh_vrack_dedicated_server_interface" "nodes" {
   service_name = ovh_vrack.this.service_name
   interface_id = data.ovh_dedicated_server.nodes[each.key].enabled_vrack_vnis[0]
 }
+
+data "talos_image_factory_urls" "this" {
+  talos_version = var.talos_version
+  schematic_id  = var.talos_schematic_id
+  platform      = "metal"
+}
