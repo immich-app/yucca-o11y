@@ -25,8 +25,8 @@ spec:
       memory: 16Gi
 
   serviceSpec:
-    type: ClusterIP
     spec:
+      type: ClusterIP
       ports:
         - name: http
           port: 8428

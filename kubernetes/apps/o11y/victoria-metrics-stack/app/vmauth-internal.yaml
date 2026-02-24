@@ -20,8 +20,8 @@ spec:
       memory: 256Mi
 
   serviceSpec:
-    type: NodePort
     spec:
+      type: NodePort
       ports:
         - name: http
           port: 8427
