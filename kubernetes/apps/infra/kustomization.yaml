@@ -7,3 +7,4 @@ resources:
   - ./victoria-metrics-operator-crds/ks.yaml
   - ./victoria-metrics-operator/ks.yaml
   - ./openebs/ks.yaml
+  - ./tailscale-operator/ks.yaml

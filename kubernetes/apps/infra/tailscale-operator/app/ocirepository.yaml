@@ -1,0 +1,14 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: tailscale-operator
+  namespace: operators
+spec:
+  interval: 15m
+  url: oci://ghcr.io/home-operations/charts-mirror/tailscale-operator
+  ref:
+    tag: 1.94.2
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
