@@ -31,6 +31,11 @@ resource "talos_machine_configuration_apply" "this" {
       }
       cluster = {
         allowSchedulingOnControlPlanes = true
+        proxy = {
+          extraArgs = {
+            "nodeport-addresses" = "0.0.0.0/0"
+          }
+        }
       }
     }),
     <<-EOT
