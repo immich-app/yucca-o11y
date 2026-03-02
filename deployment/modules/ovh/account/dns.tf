@@ -1,35 +1,49 @@
-resource "ovh_domain_zone" "zone" {
-  plan {
-    duration     = data.ovh_order_cart_product_plan.zone.selected_price.0.duration
-    plan_code    = data.ovh_order_cart_product_plan.zone.plan_code
-    pricing_mode = data.ovh_order_cart_product_plan.zone.selected_price.0.pricing_mode
-
-    configuration {
-      label = "zone"
-      value = "yucca.immich.cc"
-    }
-
-    configuration {
-      label = "template"
-      value = "minimized"
-    }
-  }
+resource "ovh_domain_name" "futostat_us" {
+  domain_name = "futostat.us"
 }
 
-# resource "ovh_domain_zone_record" "instances" {
-#   for_each = { for combination in flatten([
-#     for instance in ovh_cloud_project_instance.instances: [
-#       for address in instance.addresses: {
-#         key = "${instance.name}-${address.ip}"
-#         instance = instance
-#         address = address
-#       }
-#     ]
-#   ]) : combination.key => combination }
-#
-#   zone      = ovh_domain_zone.zone.name
-#   subdomain = "${each.value.instance.name}.srv"
-#   fieldtype = each.value.address.version == 4 ? "A" : "AAAA"
-#   ttl       = 3600
-#   target    = each.value.address.ip
-# }
+resource "ovh_domain_name" "futostatus_com" {
+  domain_name = "futostatus.com"
+}
+
+locals {
+  domains = [
+    ovh_domain_name.futostat_us.domain_name,
+    ovh_domain_name.futostatus_com.domain_name,
+  ]
+
+  dns_records = flatten([
+    for domain in local.domains : [
+      for key, node in var.nodes : [
+        {
+          key       = "${domain}-${key}-public"
+          zone      = domain
+          subdomain = "o11y-${var.env}-${key}"
+          target    = ovh_dedicated_server.node[key].ip
+        },
+        {
+          key       = "${domain}-${key}-internal"
+          zone      = domain
+          subdomain = "o11y-${var.env}-${key}.internal"
+          target    = node.vlan_ip
+        },
+        {
+          key       = "${domain}-${key}-wildcard"
+          zone      = domain
+          subdomain = "*.o11y-${var.env}-${key}"
+          target    = ovh_dedicated_server.node[key].ip
+        },
+      ]
+    ]
+  ])
+}
+
+resource "ovh_domain_zone_record" "nodes" {
+  for_each = { for record in local.dns_records : record.key => record }
+
+  zone      = each.value.zone
+  subdomain = each.value.subdomain
+  fieldtype = "A"
+  ttl       = 3600
+  target    = each.value.target
+}
