@@ -45,10 +45,3 @@ provider "registry.opentofu.org/siderolabs/talos" {
     "zh:f04f8a103f5136bdd6910d531192ad0cb10c8734b519b9e9dff4185d5cc7113e",
   ]
 }
-
-provider "terraform.local/local/ovh" {
-  version = "0.0.1"
-  hashes = [
-    "h1:uGcZ6LEyvXvAaQH7qGdieXw4u92rf2Dxqb7C/aMN6+I=",
-  ]
-}
