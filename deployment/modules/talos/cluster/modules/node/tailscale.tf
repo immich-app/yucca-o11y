@@ -5,6 +5,10 @@ resource "tailscale_tailnet_key" "this" {
   recreate_if_invalid = "always"
   expiry              = 7776000
   description         = "Talos key o11y-${var.env}-${var.node_key}"
+  tags = [
+    "tag:project:yucca",
+    "tag:env:${var.env}"
+  ]
 }
 
 data "tailscale_device" "this" {

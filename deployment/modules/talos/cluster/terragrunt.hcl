@@ -22,6 +22,10 @@ dependency "ovh" {
   mock_outputs_merge_strategy_with_state          = "shallow"
 }
 
+dependency "tailscale" {
+  config_path = "../../tailscale/account"
+}
+
 inputs = {
   nodes    = dependency.ovh.outputs.nodes
   node_ips = dependency.ovh.outputs.node_ips
