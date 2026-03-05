@@ -4,8 +4,8 @@ resource "tailscale_acl" "this" {
   acl = jsonencode({
     tagOwners = {
       "tag:management"       = []
-      "tag:project:yucca"    = ["autogroup:admin"]
-      "tag:env:${var.env}"   = ["autogroup:admin"]
+      "tag:project-yucca"    = ["autogroup:admin"]
+      "tag:env-${var.env}"   = ["autogroup:admin"]
     }
     grants = [
       {
