@@ -24,6 +24,9 @@ dependency "ovh" {
 
 dependency "tailscale" {
   config_path = "../../tailscale/account"
+  mock_outputs = {
+    tailscale_output = "mock-tailscale-output"
+  }
 }
 
 inputs = {

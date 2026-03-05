@@ -3,9 +3,10 @@
 
 provider "registry.opentofu.org/siderolabs/talos" {
   version     = "0.10.1"
-  constraints = "0.10.1"
+  constraints = ">= 0.10.0, 0.10.1"
   hashes = [
     "h1:1/HTp6cDJWQJzRj8preKQvw3x/qffivOJhZx27OmAig=",
+    "h1:fc7ekyeFDNNvScqgHgowGjM9jnKFyUOMGfnEKJwuf1c=",
     "zh:0fa82a384b25a58b65523e0ea4768fa1212b1f5cfc0c9379d31162454fedcc9d",
     "zh:349463cdd4cdb36e03276fdb855e687242237c7cf0bd5871aea995a83838c52e",
     "zh:3885026ef7c1c7012d312fc37a35af70821650b10cef03b8ffd08d22145c117d",
@@ -26,8 +27,9 @@ provider "registry.opentofu.org/siderolabs/talos" {
 
 provider "registry.opentofu.org/tailscale/tailscale" {
   version     = "0.28.0"
-  constraints = "0.28.0"
+  constraints = ">= 0.28.0, 0.28.0"
   hashes = [
+    "h1:Cquej+BY4u2GJ90N1l7CCwP4aukIYHUvnlgQIkpLFbU=",
     "h1:ePEPKHOdFsiRunCD9IWTkFZlRBr2pKzohrNUgbCVY2Q=",
     "zh:26dc44b865b055069fbada06d8fcf0d44c32a365823219db1c122458c377a2f0",
     "zh:335d4d4e6293647ff1b9dd828aef14e8b3cdf6ffae22e63084308a0b051d5e23",

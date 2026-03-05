@@ -6,8 +6,8 @@ resource "tailscale_tailnet_key" "this" {
   expiry              = 7776000
   description         = "Talos key o11y-${var.env}-${var.node_key}"
   tags = [
-    "tag:project:yucca",
-    "tag:env:${var.env}"
+    "tag:project-yucca",
+    "tag:env-${var.env}"
   ]
 }
 
