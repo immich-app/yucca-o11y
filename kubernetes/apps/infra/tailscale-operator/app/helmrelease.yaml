@@ -1,0 +1,26 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tailscale-operator
+  namespace: operators
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: tailscale-operator
+  interval: 1h
+  values:
+    oauth:
+      existingSecret: tailscale-oauth
+
+    apiServerProxyConfig:
+      mode: "true"
+
+    operatorConfig:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
