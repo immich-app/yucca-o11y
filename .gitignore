@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Production
+dist/
+build/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terragrunt-cache/
+*.tfplan
+*.tfvars
+!*.tfvars.example
+
+# Misc
+.cache/
+tmp/
+.env.dev
+
+# Mise override
+mise.local.toml
