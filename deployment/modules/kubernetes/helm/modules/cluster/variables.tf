@@ -3,6 +3,11 @@ variable "cluster_name" {
   description = "Name of the cluster"
 }
 
+variable "env" {
+  type        = string
+  description = "Environment name (e.g. staging, production)"
+}
+
 variable "flux_operator_version" {
   type        = string
   default     = "0.37.1"

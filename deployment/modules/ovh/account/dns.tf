@@ -47,3 +47,13 @@ resource "ovh_domain_zone_record" "nodes" {
   ttl       = 3600
   target    = each.value.target
 }
+
+# resource "ovh_domain_zone_record" "lb" {
+#   for_each = toset(local.domains)
+
+#   zone      = each.value
+#   subdomain = "o11y-${var.env}"
+#   fieldtype = "A"
+#   ttl       = 3600
+#   target    = ovh_iploadbalancing.this.ipv4
+# }

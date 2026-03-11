@@ -22,6 +22,7 @@ variable "clusters" {
 
 variable "flux_operator_version" {
   type        = string
-  default     = "0.37.1"
+  default     = "0.43.0"
   description = "Flux operator chart version"
 }
+
