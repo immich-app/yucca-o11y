@@ -1,0 +1,13 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cert-manager-webhook
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: cert-manager-webhook
+  interval: 1h
+  values:
+    groupName: acme.futostat.us
+    # TODO: Handle ClusterIssuer

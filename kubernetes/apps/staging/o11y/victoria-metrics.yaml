@@ -6,9 +6,10 @@ metadata:
   namespace: flux-system
 spec:
   dependsOn:
+    - name: openebs
     - name: victoria-metrics-operator
   interval: 1h
-  path: ./kubernetes/inventory/o11y/victoria-metrics
+  path: ./kubernetes/apps/base/victoria-metrics
   prune: true
   sourceRef:
     kind: GitRepository
