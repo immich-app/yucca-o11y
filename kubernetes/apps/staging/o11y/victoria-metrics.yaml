@@ -1,0 +1,24 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: victoria-metrics
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: openebs
+    - name: victoria-metrics-operator
+  interval: 1h
+  path: ./kubernetes/apps/base/victoria-metrics
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: o11y
+  wait: true
+  postBuild:
+    substituteFrom:
+      - kind: ConfigMap
+        name: vm-zone-endpoints
+        optional: false

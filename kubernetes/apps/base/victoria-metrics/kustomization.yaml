@@ -1,0 +1,12 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./vmagent.yaml
+  - ./vmauth-external.yaml
+  - ./vmauth-internal.yaml
+  - ./vmsingle.yaml
+  - ./vmuser-external-read.yaml
+  - ./vmuser-external-write.yaml
+  - ./vmuser-internal-read.yaml
+  - ./vmuser-internal-write.yaml

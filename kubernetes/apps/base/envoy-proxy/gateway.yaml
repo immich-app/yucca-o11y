@@ -1,0 +1,18 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: envoy
+spec:
+  gatewayClassName: envoy
+  listeners:
+    - name: https
+      protocol: HTTPS
+      port: 42069
+      allowedRoutes:
+        namespaces:
+          from: All
+      # tls:
+      #   certificateRefs:
+      #     - kind: Secret
+      #       name: envoy-tls

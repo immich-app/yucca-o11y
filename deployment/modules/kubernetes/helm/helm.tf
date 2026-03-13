@@ -9,7 +9,8 @@ module "cluster" {
 
   cluster_name              = each.value.name
   flux_operator_version     = var.flux_operator_version
-  flux_instance_values_file = "${path.module}/values.yml"
+  flux_instance_values_file = "${path.module}/values.yaml"
+  env                       = var.env
 
   other_node_ips                  = local.other_node_ips[each.key]
   vmauth_external_reader_password = random_password.vmauth_external_reader.result

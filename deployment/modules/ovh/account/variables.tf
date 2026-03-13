@@ -40,3 +40,9 @@ variable "talos_schematic_id" {
   default     = "4a0d65c669d46663f377e7161e50cfd570c401f26fd9e7bda34a0216b6f1922b"
   description = "Talos image factory schematic ID"
 }
+
+# variable "ovh_iplb_plan_code" {
+#   type        = string
+#   default     = "iplb-lb1"
+#   description = "OVH IP Load Balancing plan code"
+# }
