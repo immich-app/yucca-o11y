@@ -12,7 +12,11 @@ locals {
     ovh_domain_name.futostatus_com.domain_name,
   ]
 
-  dns_records = flatten([
+  # Wildcard subdomain: staging → *.staging, prod → *
+  wildcard_subdomain = var.env == "staging" ? "*.staging" : "*"
+
+  # Per-node A records for direct node access
+  node_dns_records = flatten([
     for domain in local.domains : [
       for key, node in var.nodes : [
         {
@@ -27,19 +31,14 @@ locals {
           subdomain = "o11y-${var.env}-${key}.internal"
           target    = node.vlan_ip
         },
-        {
-          key       = "${domain}-${key}-wildcard"
-          zone      = domain
-          subdomain = "*.o11y-${var.env}-${key}"
-          target    = ovh_dedicated_server.node[key].ip
-        },
       ]
     ]
   ])
 }
 
+# Per-node A records (direct node access)
 resource "ovh_domain_zone_record" "nodes" {
-  for_each = { for record in local.dns_records : record.key => record }
+  for_each = { for record in local.node_dns_records : record.key => record }
 
   zone      = each.value.zone
   subdomain = each.value.subdomain
@@ -48,12 +47,24 @@ resource "ovh_domain_zone_record" "nodes" {
   target    = each.value.target
 }
 
-# resource "ovh_domain_zone_record" "lb" {
-#   for_each = toset(local.domains)
+resource "ovh_domain_zone_record" "lb" {
+  for_each = toset(local.domains)
 
-#   zone      = each.value
-#   subdomain = "o11y-${var.env}"
-#   fieldtype = "A"
-#   ttl       = 3600
-#   target    = ovh_iploadbalancing.this.ipv4
-# }
+  zone      = each.value
+  subdomain = var.env == "staging" ? "staging" : ""
+  fieldtype = "A"
+  ttl       = 3600
+  target    = ovh_iploadbalancing.this.ipv4
+}
+
+# Wildcard CNAMEs: *.staging.futostat.us → staging.futostat.us (staging)
+#                  *.futostat.us → futostat.us (production)
+resource "ovh_domain_zone_record" "wildcard" {
+  for_each = toset(local.domains)
+
+  zone      = each.value
+  subdomain = local.wildcard_subdomain
+  fieldtype = "CNAME"
+  ttl       = 3600
+  target    = var.env == "staging" ? "staging.${each.value}." : "${each.value}."
+}

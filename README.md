@@ -38,21 +38,36 @@ Multi-environment observability platform running on bare-metal OVH servers with 
 
 ```mermaid
 graph TD
-    LB["OVH Load Balancer<br/>(IP Load Balancing - Europe)"]
-    LON["Node: LON<br/>Talos K8s<br/>(single-node CP)"]
-    RBX["Node: RBX<br/>Talos K8s<br/>(single-node CP)"]
-    FRA["Node: FRA<br/>Talos K8s<br/>(single-node CP)"]
-    TS(["Tailscale Mesh VPN<br/>(cross-zone VM replication)"])
+    subgraph PROD ["Production"]
+        PLB["OVH Load Balancer<br/>(Production)"]
+        PLON["Node: LON<br/>Talos K8s<br/>(single-node CP)"]
+        PRBX["Node: RBX<br/>Talos K8s<br/>(single-node CP)"]
+        PFRA["Node: FRA<br/>Talos K8s<br/>(single-node CP)"]
+        PLB --> PLON
+        PLB --> PRBX
+        PLB --> PFRA
+    end
 
-    LB --> LON
-    LB --> RBX
-    LB --> FRA
-    LON -.- TS
-    RBX -.- TS
-    FRA -.- TS
+    subgraph STG ["Staging"]
+        SLB["OVH Load Balancer<br/>(Staging)"]
+        SLON["Node: LON<br/>Talos K8s<br/>(single-node CP)"]
+        SRBX["Node: RBX<br/>Talos K8s<br/>(single-node CP)"]
+        SFRA["Node: FRA<br/>Talos K8s<br/>(single-node CP)"]
+        SLB --> SLON
+        SLB --> SRBX
+        SLB --> SFRA
+    end
+
+    TS(["Tailscale Mesh VPN<br/>(cross-zone VM replication)"])
+    PLON -.- TS
+    PRBX -.- TS
+    PFRA -.- TS
+    SLON -.- TS
+    SRBX -.- TS
+    SFRA -.- TS
 ```
 
-Each environment (staging, production) runs **three independent single-node Talos Linux clusters** on OVH bare-metal servers in different European datacenters (London, Roubaix, Frankfurt). Each node is a full controlplane + worker. The clusters are connected via **Tailscale mesh VPN** for cross-zone Victoria Metrics replication.
+Each environment (staging, production) runs **three independent single-node Talos Linux clusters** on OVH bare-metal servers in different European datacenters (London, Roubaix, Frankfurt). Each node is a full controlplane + worker. Each environment has its own **OVH Load Balancer** for traffic isolation. The clusters are connected via **Tailscale mesh VPN** for cross-zone Victoria Metrics replication.
 
 ---
 
@@ -284,18 +299,20 @@ All DNS records are managed by **Terraform** in the `ovh/account` module using w
 
 ### Wildcard DNS Records
 
-Terraform creates A records and wildcard CNAME records pointing to the OVH Load Balancer for each environment:
+Terraform creates A records and wildcard CNAME records pointing to the appropriate OVH Load Balancer for each environment. Production and staging each have their own dedicated load balancer:
 
 ```text
-Terraform:  futostat.us              →  A      →  OVH LB IP
-Terraform:  futostatus.com           →  A      →  OVH LB IP
-Terraform:  *.futostat.us            →  CNAME  →  futostat.us      (production)
-Terraform:  *.futostatus.com         →  CNAME  →  futostatus.com   (production)
-Terraform:  *.staging.futostat.us    →  CNAME  →  futostat.us      (staging)
-Terraform:  *.staging.futostatus.com →  CNAME  →  futostatus.com   (staging)
+Terraform:  futostat.us              →  A      →  Production OVH LB IP
+Terraform:  futostatus.com           →  A      →  Production OVH LB IP
+Terraform:  *.futostat.us            →  CNAME  →  futostat.us              (production)
+Terraform:  *.futostatus.com         →  CNAME  →  futostatus.com           (production)
+Terraform:  staging.futostat.us      →  A      →  Staging OVH LB IP
+Terraform:  staging.futostatus.com   →  A      →  Staging OVH LB IP
+Terraform:  *.staging.futostat.us    →  CNAME  →  staging.futostat.us      (staging)
+Terraform:  *.staging.futostatus.com →  CNAME  →  staging.futostatus.com   (staging)
 ```
 
-This means any subdomain (e.g., `vmauth.futostat.us`, `grafana.staging.futostat.us`) automatically resolves to the load balancer without per-service DNS records. Envoy handles routing to the correct backend based on the `Host` header via HTTPRoute rules.
+This means any subdomain (e.g., `vmauth.futostat.us`, `grafana.staging.futostat.us`) automatically resolves to the correct environment's load balancer without per-service DNS records. Envoy handles routing to the correct backend based on the `Host` header via HTTPRoute rules.
 
 ---
 
@@ -318,43 +335,54 @@ DNS-01 is used over HTTP-01 because it supports wildcard certificates, works reg
 
 ## OVH Load Balancer
 
-An **OVH IP Load Balancing** instance provides a single stable public IP for each environment, distributing traffic across the three nodes.
+Each environment (staging, production) has its own dedicated **OVH IP Load Balancing** instance, providing a stable public IP per environment and distributing traffic across that environment's three nodes.
 
 ### Configuration
 
 | Setting | Value |
 | --- | --- |
+| **Instances** | 2 (one per environment: production, staging) |
 | **Region** | Europe |
 | **Mode** | TCP passthrough (for TLS passthrough to Envoy) |
-| **Backend nodes** | 3 (LON, RBX, FRA) |
+| **Backend nodes** | 3 per LB (LON, RBX, FRA) |
 | **Balance** | Round-robin |
 | **Health check** | HTTP probe on backend ports |
 
 ### Load Balancer → Node Mapping
 
-All external traffic enters through a single HTTPS frontend:
+Each environment's load balancer routes to its own set of nodes:
 
 ```mermaid
 graph LR
-    LB["OVH LB :443"] -->|"TCP passthrough"| LON["LON :NodePort<br/>(envoy proxy)"]
-    LB -->|"TCP passthrough"| RBX["RBX :NodePort<br/>(envoy proxy)"]
-    LB -->|"TCP passthrough"| FRA["FRA :NodePort<br/>(envoy proxy)"]
+    subgraph PROD ["Production"]
+        PLB["Production OVH LB :443"] -->|"TCP passthrough"| PLON["LON :NodePort<br/>(envoy proxy)"]
+        PLB -->|"TCP passthrough"| PRBX["RBX :NodePort<br/>(envoy proxy)"]
+        PLB -->|"TCP passthrough"| PFRA["FRA :NodePort<br/>(envoy proxy)"]
+    end
+
+    subgraph STG ["Staging"]
+        SLB["Staging OVH LB :443"] -->|"TCP passthrough"| SLON["LON :NodePort<br/>(envoy proxy)"]
+        SLB -->|"TCP passthrough"| SRBX["RBX :NodePort<br/>(envoy proxy)"]
+        SLB -->|"TCP passthrough"| SFRA["FRA :NodePort<br/>(envoy proxy)"]
+    end
 ```
 
-Envoy then routes to the appropriate ClusterIP service based on HTTPRoute rules (e.g., `vmauth.staging.futostat.us` → VMAuth External, `grafana.staging.futostat.us` → Grafana).
+Envoy then routes to the appropriate ClusterIP service based on HTTPRoute rules (e.g., `vmauth.futostat.us` → VMAuth External, `grafana.staging.futostat.us` → Grafana).
 
 ### DNS Resolution
 
-All DNS is managed by Terraform using wildcard records:
+All DNS is managed by Terraform using wildcard records. Production and staging domains point to their respective load balancers:
 
 | Record | Type | Target | Purpose |
 | --- | --- | --- | --- |
-| `futostat.us` | A | OVH LB IP | Base record |
-| `futostatus.com` | A | OVH LB IP | Base record |
+| `futostat.us` | A | Production OVH LB IP | Production base record |
+| `futostatus.com` | A | Production OVH LB IP | Production base record |
 | `*.futostat.us` | CNAME | `futostat.us` | Production services |
 | `*.futostatus.com` | CNAME | `futostatus.com` | Production services |
-| `*.staging.futostat.us` | CNAME | `futostat.us` | Staging services |
-| `*.staging.futostatus.com` | CNAME | `futostatus.com` | Staging services |
+| `staging.futostat.us` | A | Staging OVH LB IP | Staging base record |
+| `staging.futostatus.com` | A | Staging OVH LB IP | Staging base record |
+| `*.staging.futostat.us` | CNAME | `staging.futostat.us` | Staging services |
+| `*.staging.futostatus.com` | CNAME | `staging.futostatus.com` | Staging services |
 
 No per-service DNS records are needed — wildcard records cover all subdomains and Envoy routes traffic based on the `Host` header.
 

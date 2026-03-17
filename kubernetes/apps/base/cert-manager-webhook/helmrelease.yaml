@@ -10,4 +10,18 @@ spec:
   interval: 1h
   values:
     groupName: acme.futostat.us
-    # TODO: Handle ClusterIssuer
+    issuers:
+      - name: letsencrypt
+        create: true
+        kind: ClusterIssuer
+        acmeServerUrl: https://acme-v02.api.letsencrypt.org/directory
+        email: acme@futostat.us
+        ovhEndpointName: ovh-eu
+        ovhAuthenticationMethod: application
+        ovhAuthenticationRef:
+          applicationKeyRef:
+            name: ovh-credentials
+          applicationSecretRef:
+            name: ovh-credentials
+          applicationConsumerKeyRef:
+            name: ovh-credentials

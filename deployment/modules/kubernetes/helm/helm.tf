@@ -17,6 +17,9 @@ module "cluster" {
   vmauth_external_writer_password = random_password.vmauth_external_writer.result
   vmauth_internal_reader_password = random_password.vmauth_internal_reader.result
   vmauth_internal_writer_password = random_password.vmauth_internal_writer.result
+  ovh_application_key             = var.ovh_application_key
+  ovh_application_secret          = var.ovh_application_secret
+  ovh_consumer_key                = var.ovh_consumer_key
 }
 
 output "cluster_deployments" {

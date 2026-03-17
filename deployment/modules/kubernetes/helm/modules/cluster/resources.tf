@@ -39,3 +39,26 @@ resource "kubernetes_secret_v1" "vmauth_internal_credentials" {
     "writer-password" = var.vmauth_internal_writer_password
   }
 }
+
+resource "kubernetes_namespace_v1" "cert_manager" {
+  depends_on = [helm_release.flux_operator]
+
+  metadata {
+    name = "cert-manager"
+  }
+}
+
+resource "kubernetes_secret_v1" "ovh_credentials" {
+  depends_on = [kubernetes_namespace_v1.cert_manager]
+
+  metadata {
+    name      = "ovh-credentials"
+    namespace = "cert-manager"
+  }
+
+  data = {
+    applicationKey         = var.ovh_application_key
+    applicationSecret      = var.ovh_application_secret
+    applicationConsumerKey = var.ovh_consumer_key
+  }
+}

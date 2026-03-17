@@ -22,7 +22,21 @@ variable "clusters" {
 
 variable "flux_operator_version" {
   type        = string
-  default     = "0.43.0"
+  default     = "0.45.0"
   description = "Flux operator chart version"
 }
 
+variable "ovh_application_key" {
+  type      = string
+  sensitive = true
+}
+
+variable "ovh_application_secret" {
+  type      = string
+  sensitive = true
+}
+
+variable "ovh_consumer_key" {
+  type      = string
+  sensitive = true
+}

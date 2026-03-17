@@ -10,7 +10,7 @@ variable "env" {
 
 variable "flux_operator_version" {
   type        = string
-  default     = "0.37.1"
+  default     = "0.45.0"
   description = "Flux operator chart version"
 }
 
@@ -40,6 +40,21 @@ variable "vmauth_internal_reader_password" {
 }
 
 variable "vmauth_internal_writer_password" {
+  type      = string
+  sensitive = true
+}
+
+variable "ovh_application_key" {
+  type      = string
+  sensitive = true
+}
+
+variable "ovh_application_secret" {
+  type      = string
+  sensitive = true
+}
+
+variable "ovh_consumer_key" {
   type      = string
   sensitive = true
 }

@@ -21,6 +21,13 @@ spec:
               memory: 1Gi
       envoyService:
         type: NodePort
+        patch:
+          type: StrategicMerge
+          value:
+            spec:
+              ports:
+                - port: 30443
+                  nodePort: 30443
   telemetry:
     metrics:
       prometheus:
