@@ -5,6 +5,8 @@ metadata:
   name: envoy-gateway
   namespace: flux-system
 spec:
+  dependsOn:
+    - name: cert-manager-webhook-ovh
   healthChecks:
     - apiVersion: helm.toolkit.fluxcd.io/v2
       kind: HelmRelease

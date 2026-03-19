@@ -15,7 +15,8 @@ spec:
         namespaces:
           from: All
       tls:
-        mode: Terminate
         certificateRefs:
           - kind: Secret
-            name: wildcard-tls
+            name: staging-futostat-us-tls
+          - kind: Secret
+            name: staging-futostatus-com-tls
