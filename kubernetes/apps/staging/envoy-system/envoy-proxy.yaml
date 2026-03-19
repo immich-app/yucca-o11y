@@ -16,13 +16,3 @@ spec:
     namespace: flux-system
   targetNamespace: envoy-system
   wait: true
-  # patches:
-  #   - target:
-  #       group: gateway.networking.k8s.io
-  #       version: v1
-  #       kind: Gateway
-  #       name: envoy
-  #     patch: |
-  #       - op: add
-  #         path: /spec/listeners/0/hostname
-  #         value: "*.staging.futostat.us"

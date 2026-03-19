@@ -17,6 +17,20 @@ spec:
     namespace: flux-system
   targetNamespace: o11y
   wait: true
+  patches:
+    - patch: |-
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: HTTPRoute
+        metadata:
+          name: vmauth-external
+        spec:
+          hostnames:
+            - vmauth.staging.futostatus.com
+      target:
+        group: gateway.networking.k8s.io
+        version: v1
+        kind: HTTPRoute
+        name: vmauth-external
   postBuild:
     substituteFrom:
       - kind: ConfigMap
