@@ -11,7 +11,7 @@ spec:
   values:
     groupName: acme.futostat.us
     issuers:
-      - name: letsencrypt
+      - name: letsencrypt-production
         create: true
         kind: ClusterIssuer
         acmeServerUrl: https://acme-v02.api.letsencrypt.org/directory

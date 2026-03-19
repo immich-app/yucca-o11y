@@ -8,7 +8,7 @@ spec:
   duration: 160h
   issuerRef:
     kind: ClusterIssuer
-    name: letsencrypt
+    name: letsencrypt-production
   privateKey:
     algorithm: ECDSA
     size: 256
@@ -26,7 +26,7 @@ spec:
   duration: 160h
   issuerRef:
     kind: ClusterIssuer
-    name: letsencrypt
+    name: letsencrypt-production
   privateKey:
     algorithm: ECDSA
     size: 256
