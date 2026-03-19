@@ -7,7 +7,19 @@ spec:
   chartRef:
     kind: OCIRepository
     name: victoria-metrics-operator
+  install:
+    crds: CreateReplace
   interval: 1h
+  rollback:
+    cleanupOnFail: true
+  upgrade:
+    cleanupOnFail: true
+    crds: CreateReplace
+    strategy:
+      name: RemediateOnFailure
+    remediation:
+      remediateLastFailure: true
+      retries: 2
   values:
     admissionWebhooks:
       enabled: true
