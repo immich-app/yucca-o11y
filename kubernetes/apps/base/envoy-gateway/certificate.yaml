@@ -2,11 +2,9 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: staging-futostat-us
+  name: futostat-us
 spec:
-  dnsNames:
-    - staging.futostat.us
-    - "*.staging.futostat.us"
+  dnsNames: []
   duration: 160h
   issuerRef:
     kind: ClusterIssuer
@@ -15,18 +13,16 @@ spec:
     algorithm: ECDSA
     size: 256
     rotationPolicy: Always
-  secretName: staging-futostat-us-tls
+  secretName: futostat-us-tls
   usages:
     - digital signature
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: staging-futostatus-com
+  name: futostatus-com
 spec:
-  dnsNames:
-    - staging.futostatus.com
-    - "*.staging.futostatus.com"
+  dnsNames: []
   duration: 160h
   issuerRef:
     kind: ClusterIssuer
@@ -35,6 +31,6 @@ spec:
     algorithm: ECDSA
     size: 256
     rotationPolicy: Always
-  secretName: staging-futostatus-com-tls
+  secretName: futostatus-com-tls
   usages:
     - digital signature

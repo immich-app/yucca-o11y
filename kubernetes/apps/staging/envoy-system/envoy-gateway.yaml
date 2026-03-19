@@ -33,3 +33,27 @@ spec:
       target:
         kind: OCIRepository
         name: envoy-gateway
+    - patch: |-
+        apiVersion: cert-manager.io/v1
+        kind: Certificate
+        metadata:
+          name: futostat-us
+        spec:
+          dnsNames:
+            - staging.futostat.us
+            - "*.staging.futostat.us"
+      target:
+        kind: Certificate
+        name: futostat-us
+    - patch: |-
+        apiVersion: cert-manager.io/v1
+        kind: Certificate
+        metadata:
+          name: futostatus-com
+        spec:
+          dnsNames:
+            - staging.futostatus.com
+            - "*.staging.futostatus.com"
+      target:
+        kind: Certificate
+        name: futostatus-com

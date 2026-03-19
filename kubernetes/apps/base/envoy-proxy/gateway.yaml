@@ -3,8 +3,6 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: envoy
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt
 spec:
   gatewayClassName: envoy
   listeners:
@@ -17,6 +15,6 @@ spec:
       tls:
         certificateRefs:
           - kind: Secret
-            name: staging-futostat-us-tls
+            name: futostat-us-tls
           - kind: Secret
-            name: staging-futostatus-com-tls
+            name: futostatus-com-tls
