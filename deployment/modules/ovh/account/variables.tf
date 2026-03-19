@@ -46,3 +46,9 @@ variable "ovh_iplb_plan_code" {
   default     = "iplb-lb1"
   description = "OVH IP Load Balancing plan code"
 }
+
+variable "ovh_iplb_zone" {
+  type        = string
+  default     = "rbx"
+  description = "OVH IP Load Balancing zone (datacenter, e.g. rbx, gra, fra, lon, bhs)"
+}

@@ -5,6 +5,14 @@ data "ovh_order_cart_product_plan" "iplb" {
   plan_code      = var.ovh_iplb_plan_code
 }
 
+data "ovh_order_cart_product_options_plan" "iplb_zone" {
+  cart_id           = data.ovh_order_cart_product_plan.iplb.cart_id
+  price_capacity    = data.ovh_order_cart_product_plan.iplb.price_capacity
+  product           = data.ovh_order_cart_product_plan.iplb.product
+  plan_code         = data.ovh_order_cart_product_plan.iplb.plan_code
+  options_plan_code = "iplb-zone-lb1-${var.ovh_iplb_zone}"
+}
+
 resource "ovh_iploadbalancing" "this" {
   ovh_subsidiary = data.ovh_me.account.ovh_subsidiary
   display_name   = "o11y${local.resource_suffix}"
@@ -13,11 +21,12 @@ resource "ovh_iploadbalancing" "this" {
     duration     = data.ovh_order_cart_product_plan.iplb.selected_price.0.duration
     plan_code    = data.ovh_order_cart_product_plan.iplb.plan_code
     pricing_mode = data.ovh_order_cart_product_plan.iplb.selected_price.0.pricing_mode
+  }
 
-    configuration {
-      label = "region"
-      value = "europe"
-    }
+  plan_option {
+    duration     = data.ovh_order_cart_product_options_plan.iplb_zone.selected_price.0.duration
+    plan_code    = data.ovh_order_cart_product_options_plan.iplb_zone.plan_code
+    pricing_mode = data.ovh_order_cart_product_options_plan.iplb_zone.selected_price.0.pricing_mode
   }
 }
 
