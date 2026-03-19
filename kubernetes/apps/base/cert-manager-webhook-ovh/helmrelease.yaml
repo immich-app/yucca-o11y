@@ -29,6 +29,7 @@ spec:
         acmeServerUrl: https://acme-v02.api.letsencrypt.org/directory
         email: acme@futostat.us
         ovhEndpointName: ovh-eu
+        profile: shortlived
         ovhAuthenticationMethod: application
         ovhAuthenticationRef:
           applicationKeyRef:
