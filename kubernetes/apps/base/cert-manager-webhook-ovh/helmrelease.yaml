@@ -2,11 +2,11 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: cert-manager-webhook
+  name: cert-manager-webhook-ovh
 spec:
   chartRef:
     kind: OCIRepository
-    name: cert-manager-webhook
+    name: cert-manager-webhook-ovh
   interval: 1h
   values:
     groupName: acme.futostat.us
