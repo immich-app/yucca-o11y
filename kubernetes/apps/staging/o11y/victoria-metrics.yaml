@@ -27,8 +27,6 @@ spec:
           hostnames:
             - vmauth.staging.futostatus.com
       target:
-        group: gateway.networking.k8s.io
-        version: v1
         kind: HTTPRoute
         name: vmauth-external
   postBuild:
