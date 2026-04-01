@@ -5,3 +5,5 @@ metadata:
   name: o11y
   annotations:
     kustomize.toolkit.fluxcd.io/prune: disabled
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
