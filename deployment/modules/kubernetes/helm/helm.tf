@@ -20,6 +20,9 @@ module "cluster" {
   ovh_application_key             = var.ovh_application_key
   ovh_application_secret          = var.ovh_application_secret
   ovh_consumer_key                = var.ovh_consumer_key
+  op_credentials_file             = var.op_credentials_file
+  op_connect_token                = var.op_connect_token
+  op_connect_token_env            = var.op_connect_token_env
 }
 
 output "cluster_deployments" {

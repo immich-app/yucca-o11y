@@ -40,3 +40,18 @@ variable "ovh_consumer_key" {
   type      = string
   sensitive = true
 }
+
+variable "op_credentials_file" {
+  type      = string
+  sensitive = true
+}
+
+variable "op_connect_token" {
+  type      = string
+  sensitive = true
+}
+
+variable "op_connect_token_env" {
+  type      = string
+  sensitive = true
+}
