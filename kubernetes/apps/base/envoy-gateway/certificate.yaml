@@ -1,0 +1,22 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: futostat-us
+spec:
+  dnsNames: []
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt-production
+  secretName: futostat-us-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: futostatus-com
+spec:
+  dnsNames: []
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt-production
+  secretName: futostatus-com-tls

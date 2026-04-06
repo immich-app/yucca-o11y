@@ -6,6 +6,7 @@ provider "registry.opentofu.org/ovh/ovh" {
   constraints = "2.11.0"
   hashes = [
     "h1:XlPqU8iVvTM+TR0cgkTh93PBDeWayoBo709kewzP9II=",
+    "h1:n72jkLuNqAztr+lSggZe7k1kUqunVOmym10Uk1qVSt0=",
     "zh:1991e3d0c663e1b6a5a886f0a97cf71e9275f39e60e73e5d83bd83d945c9feee",
     "zh:1d2ed8d9ed0205677151179a8d385a9e5df656fa70b29efdc5b776eb5d6b6c9c",
     "zh:25d8fa3c70e27cac11ac69f321ebc303ed5fa7febf833736f8a96279b14644ab",
@@ -28,6 +29,7 @@ provider "registry.opentofu.org/siderolabs/talos" {
   constraints = "0.10.1"
   hashes = [
     "h1:1/HTp6cDJWQJzRj8preKQvw3x/qffivOJhZx27OmAig=",
+    "h1:fc7ekyeFDNNvScqgHgowGjM9jnKFyUOMGfnEKJwuf1c=",
     "zh:0fa82a384b25a58b65523e0ea4768fa1212b1f5cfc0c9379d31162454fedcc9d",
     "zh:349463cdd4cdb36e03276fdb855e687242237c7cf0bd5871aea995a83838c52e",
     "zh:3885026ef7c1c7012d312fc37a35af70821650b10cef03b8ffd08d22145c117d",

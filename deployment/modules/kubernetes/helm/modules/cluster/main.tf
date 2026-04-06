@@ -15,7 +15,7 @@ resource "helm_release" "flux_instance" {
   repository      = "oci://ghcr.io/controlplaneio-fluxcd/charts"
   chart           = "flux-instance"
   version         = var.flux_operator_version
-  values          = [file(var.flux_instance_values_file)]
+  values          = [templatefile(var.flux_instance_values_file, { env = var.env })]
   cleanup_on_fail = true
   wait_for_jobs   = true
   depends_on      = [helm_release.flux_operator]

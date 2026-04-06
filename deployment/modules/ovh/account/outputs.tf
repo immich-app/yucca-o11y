@@ -12,3 +12,13 @@ output "nodes" {
   description = "Node configuration map passed through for downstream modules"
   value       = var.nodes
 }
+
+output "loadbalancer_ip" {
+  description = "Public IPv4 of the OVH IP Load Balancer"
+  value       = ovh_iploadbalancing.this.ipv4
+}
+
+output "loadbalancer_service_name" {
+  description = "Service name of the OVH IP Load Balancer"
+  value       = ovh_iploadbalancing.this.service_name
+}

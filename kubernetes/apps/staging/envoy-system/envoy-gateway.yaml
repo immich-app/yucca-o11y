@@ -1,0 +1,61 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: envoy-gateway
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: cert-manager-webhook-ovh
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: envoy-gateway
+      namespace: envoy-system
+  interval: 1h
+  path: ./kubernetes/apps/base/envoy-gateway
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: envoy-system
+  patches:
+    - patch: |-
+        apiVersion: source.toolkit.fluxcd.io/v1
+        kind: OCIRepository
+        metadata:
+          name: envoy-gateway
+        spec:
+          ref:
+            # renovate: datasource=docker depName=mirror.gcr.io/envoyproxy/gateway-helm
+            tag: 1.7.0
+      target:
+        kind: OCIRepository
+        name: envoy-gateway
+    - patch: |-
+        apiVersion: cert-manager.io/v1
+        kind: Certificate
+        metadata:
+          name: futostat-us
+        spec:
+          commonName: staging.futostat.us
+          dnsNames:
+            - staging.futostat.us
+            - "*.staging.futostat.us"
+      target:
+        kind: Certificate
+        name: futostat-us
+    - patch: |-
+        apiVersion: cert-manager.io/v1
+        kind: Certificate
+        metadata:
+          name: futostatus-com
+        spec:
+          commonName: staging.futostatus.com
+          dnsNames:
+            - staging.futostatus.com
+            - "*.staging.futostatus.com"
+      target:
+        kind: Certificate
+        name: futostatus-com
