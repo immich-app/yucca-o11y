@@ -11,7 +11,7 @@ instance:
   sync:
     kind: GitRepository
     url: https://github.com/immich-app/yucca-o11y.git
-    ref: refs/heads/multi-env-flux # TODO: change back to refs/heads/main before merge
+    ref: refs/heads/main
     path: kubernetes/clusters/${env}
     interval: 1h
   kustomize:
