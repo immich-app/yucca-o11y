@@ -4,7 +4,7 @@ terraform {
   required_providers {
     ovh = {
       source  = "ovh/ovh"
-      version = "2.11.0"
+      version = "2.13.1"
     }
     talos = {
       source  = "siderolabs/talos"
