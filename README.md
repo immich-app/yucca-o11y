@@ -45,12 +45,12 @@ Rise-1 in production has 3× 1.92 TB NVMes — the install disk gets ~1.66 TB of
 - **vRack** is OVH's L2 network across all four DCs. Public Cloud private networks and bare-metal vRack interfaces share one untagged VLAN; CPs and workers see each other as a single L2 segment.
 - **Talos VIP** at `cluster.controlPlane.endpoint` floats between CPs via etcd election. Kubelets and in-cluster components use it. Operators don't — cross-DC ARP for floating IPs is unreliable when routed over Tailscale.
 - **Tailscale extension** runs on every node. CPs advertise the private CIDR as a subnet route, auto-approved via the tailnet ACL. Workers consume the routes.
-- **Talos ingress firewall** drops public-NIC inbound to apid (50000), trustd (50001), kube-apiserver (6443), etcd (2379–2380), and kubelet (10250). Allowed sources: Tailscale CGNAT (`100.64.0.0/10`) and the vRack CIDR.
-- **OVH IP Load Balancing (IPLB)** (`ovh/account/iplb.tf`) holds the public IP and attaches to the vRack. A TCP `:443` farm forwards over the vRack to the workers' Envoy NodePort (`30443`); TLS terminates at Envoy. Backends are defined by **IP**, so the bare-metal workers attach directly (the OpenStack Octavia LB can't — it only takes OpenStack-allocated backends). It replaces MetalLB: the LB owns the public IP and talks to the cluster privately, so no node sources public-IP replies out its public NIC (the return-path asymmetry that made MetalLB + an Additional IP unworkable here — see the ADR).
+- **Talos ingress firewall** drops public-NIC inbound to apid (50000), trustd (50001), kube-apiserver (6443), etcd (2379–2380), and kubelet (10250). Allowed sources: Tailscale CGNAT (`100.64.0.0/10`) and the vRack CIDR. The one exception is the Envoy ingress NodePort `30443` (workers), open to `0.0.0.0/0` — TLS-only, and OVH doesn't guarantee fixed IPLB egress IPs to whitelist.
+- **OVH IP Load Balancing (IPLB)** (`ovh/account/iplb.tf`) holds the public IP. A TCP `:443` farm forwards to the workers' Envoy NodePort (`30443`); TLS terminates at Envoy. Backends are defined by **IP**, so the bare-metal workers attach directly (the OpenStack Octavia LB can't — it only takes OpenStack-allocated backends). It replaces MetalLB. The `lb1` order is `vrackEligibility: false`, so the farm targets the workers' **public IPs** (not the vRack) — which works without MetalLB's return-path bug because each worker replies from its own public IP (OVH anti-spoofing accepts it). This pulls in three things: `kube-proxy --nodeport-addresses=0.0.0.0/0` (nftables mode otherwise binds NodePorts to the private primary IP only), one Envoy per worker (`externalTrafficPolicy: Local` + a hostname topology spread), and PROXY-protocol v2 (farm-servers prepend it, Envoy parses it into `X-Forwarded-For`) for real client IPs. See the ADR.
 
 ## Ingress + TLS
 
-Envoy Gateway is the only external ingress. The OVH LB does TCP passthrough to Envoy's NodePort; TLS terminates at Envoy (L4 passthrough, so the wildcard certs stay on Envoy).
+Envoy Gateway is the only external ingress, running one replica per worker (so every IPLB backend has a local endpoint under `externalTrafficPolicy: Local`). The OVH LB does TCP passthrough to Envoy's NodePort; TLS terminates at Envoy (L4 passthrough, so the wildcard certs stay on Envoy). The IPLB prepends a PROXY-protocol v2 header so Envoy sees the real client IP.
 
 `cert-manager` with `cert-manager-webhook-ovh` issues wildcard certificates via OVH DNS-01 challenges.
 
@@ -77,8 +77,9 @@ DNS A/CNAME records pointing at the IPLB's public IP are managed by Terraform (`
 export ENVIRONMENT=staging
 export TF_VAR_env=staging
 
-# 1. OVH: cloud project, vRack, private network, CP instances, workers, Additional IP, DNS.
-#    First-time runs are slow — CP instances ~5 min each, bare-metal orders 20–45 min each.
+# 1. OVH: cloud project, vRack, private network, CP instances, workers, IPLB, DNS.
+#    First-time runs are slow — CP instances ~5 min each, bare-metal orders 20–45 min
+#    each, and the IPLB order itself takes ~10 min.
 mise run tg run --working-dir deployment/modules/ovh/account apply
 
 # 2. Tailscale: tailnet-global ACL (only needs one run across all envs).
@@ -103,8 +104,8 @@ kubectl --kubeconfig .private/$ENVIRONMENT/kubeconfig get nodes -o wide
 unset TF_VAR_use_public_endpoints
 mise run tg run --working-dir deployment/modules/talos/cluster apply
 
-# 6. Flux + Helm: install Flux Operator/Instance, create bootstrap secrets and the metallb-pool
-#    ConfigMap. After this, Flux owns cluster state from kubernetes/.
+# 6. Flux + Helm: install Flux Operator/Instance and create bootstrap secrets.
+#    After this, Flux owns cluster state from kubernetes/.
 mise run tg run --working-dir deployment/modules/kubernetes/helm apply
 ```
 
@@ -128,14 +129,14 @@ Tailscale must be running on the operator's host with subnet-route consumption e
 
 ```text
 deployment/modules/
-├── ovh/account/          # cloud project, vRack, private network, CPs, workers, Additional IP, DNS
+├── ovh/account/          # cloud project, vRack, private network, CPs, workers, IPLB, DNS
 ├── tailscale/account/    # tailnet-global ACL and tailnet settings
 ├── talos/cluster/        # machine secrets, CP + worker configs, bootstrap, ingress firewall
-└── kubernetes/helm/      # Flux Operator + Instance, metallb-pool ConfigMap, env-scoped secrets
+└── kubernetes/helm/      # Flux Operator + Instance, env-scoped secrets
 
 kubernetes/
 ├── apps/
-│   ├── base/             # chart sources + reusable manifests (envoy, metallb, openebs, cert-manager, …)
+│   ├── base/             # chart sources + reusable manifests (envoy, openebs, cert-manager, …)
 │   └── staging/          # env overlay: Flux Kustomizations with version pins, dependsOn, substituteFrom
 └── clusters/
     └── staging/apps.yaml # cluster-apps entry point, the Flux Instance points at this

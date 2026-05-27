@@ -87,8 +87,13 @@ resource "ovh_iploadbalancing_tcp_frontend" "envoy" {
 resource "ovh_iploadbalancing_refresh" "envoy" {
   service_name = ovh_iploadbalancing.envoy.service_name
 
+  # Hash the full server config (not just IDs): OVH stages farm/server changes as
+  # pending until a refresh is pushed, and edits like proxy_protocol_version are
+  # in-place (ID unchanged), so an ID-only keeper would leave them un-applied.
   keepers = [
     ovh_iploadbalancing_tcp_frontend.envoy.id,
-    join(",", [for s in ovh_iploadbalancing_tcp_farm_server.envoy : s.id]),
+    join(",", [for s in ovh_iploadbalancing_tcp_farm_server.envoy :
+      "${s.id}:${s.address}:${s.port}:${s.proxy_protocol_version}:${s.status}"
+    ]),
   ]
 }

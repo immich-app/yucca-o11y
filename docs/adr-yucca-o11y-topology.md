@@ -26,9 +26,17 @@ Everything is glued together by **one OVH vRack** providing real L2 connectivity
 
 ### Ingress
 
-A single **OVH IP Load Balancing (IPLB)** service (`ovh_iploadbalancing`, the standalone managed LB) holds the public IP and is attached to the vRack. A TCP `:443` farm forwards **L4** over the vRack to the workers' Envoy **NodePort (`30443`)**; TLS passes through and terminates at Envoy (the wildcard certs stay on Envoy). Everything behind it is ClusterIP-only.
+A single **OVH IP Load Balancing (IPLB)** service (`ovh_iploadbalancing`, the standalone managed LB) holds the public IP. A TCP `:443` farm forwards **L4** to the workers' Envoy **NodePort (`30443`)**; TLS passes through and terminates at Envoy (the wildcard certs stay on Envoy). Everything behind it is ClusterIP-only.
 
-The IPLB takes backends **by IP**, so the bare-metal workers attach directly — unlike the OpenStack **Octavia** LB (`ovh_cloud_project_loadbalancer`), which only accepts OpenStack-allocated backends and forces a gateway-enabled subnet that breaks the CPs' egress (see *Ingress LB options* under Alternatives). Because the IPLB owns the public IP and talks to the cluster privately over the vRack, no node sources public-IP replies out its public NIC — sidestepping the return-path asymmetry that made MetalLB unworkable here.
+The IPLB takes backends **by IP**, so the bare-metal workers attach directly — unlike the OpenStack **Octavia** LB (`ovh_cloud_project_loadbalancer`), which only accepts OpenStack-allocated backends and forces a gateway-enabled subnet that breaks the CPs' egress (see *Ingress LB options* under Alternatives).
+
+The farm targets the workers' **public IPs**, not their vRack IPs. We intended to attach the IPLB to the vRack and reach the private NodePort, but the `lb1` order came back **`vrackEligibility: false`** — OVH does not grant vRack on new IPLB orders here — so the LB can only reach backends over routable IPs. This is still sound: each worker replies to the LB from its **own** public IP (not a foreign Additional IP), so OVH's per-NIC anti-spoofing doesn't drop it — the return-path asymmetry that made MetalLB unworkable doesn't apply. The cost is that `30443` must be open on the workers' public NIC (see *Public NIC lockdown*).
+
+Three implementation details this forces:
+
+- **kube-proxy `--nodeport-addresses=0.0.0.0/0`** (`cluster.proxy.extraArgs`). In nftables mode kube-proxy defaults NodePorts to the node's *primary* IP — the private vRack IP here — so the public NIC never answered `30443` and every LB probe was dead until this was set.
+- **One Envoy per worker.** The Envoy Service is `externalTrafficPolicy: Local` (preserves the connection, no extra hop), so a worker without a local Envoy pod fails its LB probe. The `EnvoyProxy` runs `replicas: 3` with a hostname `topologySpreadConstraint` pinning exactly one per worker.
+- **PROXY protocol v2.** Because the LB is the TCP peer, Envoy would otherwise log the LB's outbound IP as the client. The farm-servers prepend a PROXY v2 header and Envoy's `ClientTrafficPolicy` parses it into `X-Forwarded-For` (`optional: true`, so the bare-TCP health probe isn't reset).
 
 ### Operator access
 
@@ -43,6 +51,8 @@ Operators **don't** use the VIP. Cross-DC ARP for floating IPs has proven unreli
 ### Public NIC lockdown
 
 Talos's in-host ingress firewall (`NetworkDefaultActionConfig: block` + `NetworkRuleConfig`) drops all inbound to apid (50000), trustd (50001), kube-apiserver (6443), etcd (2379–2380), and kubelet (10250) on the public NIC. Allowed source CIDRs: Tailscale CGNAT (`100.64.0.0/10`) and the vRack CIDR.
+
+The one public-NIC port left open is the Envoy ingress NodePort (`30443`, workers only), and it's open to `0.0.0.0/0` — not pinned to the LB's source IPs, because OVH doesn't guarantee fixed IPLB egress IPs (a hardcoded whitelist would silently break ingress when they rotate). Envoy serves only TLS there and the same routes are reachable through the LB anyway, so a direct hit exposes nothing extra. Everything else stays default-deny.
 
 ### Storage
 
@@ -88,7 +98,9 @@ Getting a public IP to route into a self-managed cluster with **bare-metal worke
 
 **2. OVH Public Cloud Load Balancer (Octavia, `ovh_cloud_project_loadbalancer`) — rejected.** It's OpenStack-native: backends must be **OpenStack-allocated** IPs (the bare-metal workers aren't), and it needs a gateway-enabled subnet. Enabling the subnet gateway **force-recreates the subnet and cascades to recreating the CP on it**, and a gateway-enabled subnet makes the private gateway the CP's default route — stranding its egress (no NTP → can't join). It fits all-OpenStack clusters (OVH *Managed* Kubernetes), not our mixed CP + bare-metal topology. (Learned the hard way — it stranded a CP mid-migration.)
 
-**3. OVH IP Load Balancing (IPLB, `ovh_iploadbalancing`) — chosen.** The standalone managed LB. Backends are defined **by IP**, so the bare-metal workers attach directly; it joins the vRack, owns its public IP, and handles the return path. None of the Octavia constraints — no subnet gateway, no CP impact, no OpenStack-allocation requirement. TCP `:443` farm → worker NodePort `30443`; ~€/mo (entry tier). Real client IPs are an optional follow-up via PROXY-protocol v2 + a matching Envoy `ClientTrafficPolicy`.
+**3. OVH IP Load Balancing (IPLB, `ovh_iploadbalancing`) — chosen.** The standalone managed LB. Backends are defined **by IP**, so the bare-metal workers attach directly; it owns its public IP. None of the Octavia constraints — no subnet gateway, no CP impact, no OpenStack-allocation requirement. TCP `:443` farm → worker NodePort `30443`; ~€/mo (entry tier).
+
+We planned to attach it to the vRack and reach the *private* NodePort, but the `lb1` order returned **`vrackEligibility: false`** (OVH no longer grants vRack on new IPLB orders here, and waiting doesn't change it — both install tasks complete, eligibility stays false). So the farm targets the workers' **public IPs** instead. This works without re-introducing the MetalLB return-path bug because the worker replies from its *own* public IP, which OVH's anti-spoofing accepts. The trade-offs it pulls in — `30443` open on the public NIC, `kube-proxy --nodeport-addresses=0.0.0.0/0`, one Envoy per worker, and PROXY-protocol v2 for real client IPs — are covered under *Ingress* and *Public NIC lockdown*. (A vRack-attached IPLB, if OVH ever enables eligibility, would let us drop all four and run private-only.)
 
 ### Tailscale on CPs only
 
@@ -116,7 +128,7 @@ Considered as the public-NIC lockdown layer. **Rejected** as the primary mechani
 - The vRack is a hard prerequisite. Going multi-cloud or splitting away from OVH means redesigning the L2 story.
 - Cross-DC RTT to SBG (~10 ms) puts workers further from CPs than they'd be in a single-DC cluster. Acceptable for kubelet ↔ apiserver but pod-to-pod traffic between DCs pays the same cost — worth keeping in mind for chatty workloads.
 - The vmcluster (when we deploy it) replicates over the vRack between DCs. Bandwidth and latency are fine but per-DC retention math is harder than for a single-DC cluster.
-- One floating IP for ingress = one point of MetalLB L2 leader election to think about. If the leader CP dies, ~15 s reannounce gap.
+- Ingress rides the workers' public NICs rather than the vRack (forced by `vrackEligibility: false`), so `30443` is exposed publicly (TLS-only) and the OVH-managed LB is a single ingress service. If OVH ever enables vRack eligibility on IPLB, we can move ingress back onto the private network and re-close the public NIC.
 
 ### Operational implications
 
