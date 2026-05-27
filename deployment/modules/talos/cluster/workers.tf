@@ -40,6 +40,19 @@ resource "talos_machine_configuration_apply" "worker" {
           disk  = var.worker_disk
           image = var.talos_installer_images.bare_metal
         }
+        # Spegel (kube-system DaemonSet) serves images peer-to-peer, so containerd
+        # must keep unpacked layers around to serve them. Talos merges *.part files
+        # into its CRI config; applying this reboots the node (containerd restart).
+        files = [
+          {
+            op      = "create"
+            path    = "/etc/cri/conf.d/20-customization.part"
+            content = <<-TOML
+              [plugins."io.containerd.cri.v1.images"]
+                discard_unpacked_layers = false
+            TOML
+          }
+        ]
         network = {
           # NIC names match the Broadcom NetXtreme-E predictable scheme on the
           # SYS-2 hardware currently in stock. If a re-provision lands on a
@@ -177,6 +190,23 @@ resource "talos_machine_configuration_apply" "worker" {
         protocol: tcp
       ingress:
         - subnet: 0.0.0.0/0
+    EOT
+    ,
+    # Spegel peer-to-peer registry. Peers fetch image blobs from each other on
+    # the registry host port (29999); 30021 is the node-port fallback mirror
+    # target. Intra-cluster only — the libp2p router (5001) and metrics ride the
+    # pod network. Without this the default-deny firewall silently kills sharing.
+    <<-EOT
+      apiVersion: v1alpha1
+      kind: NetworkRuleConfig
+      name: spegel-registry
+      portSelector:
+        ports:
+          - 29999
+          - 30021
+        protocol: tcp
+      ingress:
+        - subnet: ${var.private_network_cidr}
     EOT
   ]
 }

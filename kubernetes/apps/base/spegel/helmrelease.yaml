@@ -1,0 +1,34 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: spegel
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: spegel
+  interval: 1h
+  rollback:
+    cleanupOnFail: true
+  upgrade:
+    cleanupOnFail: true
+    strategy:
+      name: RemediateOnFailure
+    remediation:
+      remediateLastFailure: true
+      retries: 2
+  values:
+    grafanaDashboard:
+      enabled: true
+      mode: GrafanaOperator
+      grafanaOperator:
+        matchLabels:
+          dashboards: grafana
+    service:
+      registry:
+        hostPort: 29999
+    serviceMonitor:
+      enabled: true
+    spegel:
+      containerdSock: /run/containerd/containerd.sock
+      containerdRegistryConfigPath: /etc/cri/conf.d/hosts
