@@ -1,5 +1,5 @@
-# OVH routes Additional IP blocks on the native (untagged) vRack VLAN only,
-# so vlan_id = 0. Env isolation comes from separate vRacks, not VLAN tags.
+# Native (untagged) vRack VLAN, so vlan_id = 0. Env isolation comes from separate
+# vRacks, not VLAN tags.
 resource "ovh_cloud_project_network_private" "cluster" {
   service_name = ovh_cloud_project.this.project_id
   name         = "o11y-${var.env}"
@@ -20,6 +20,8 @@ resource "ovh_cloud_project_network_private_subnet_v2" "cluster" {
   cidr       = var.private_network_cidr
   dhcp       = true
 
+  # No subnet gateway IP: with it set, OVH makes the private gateway the instance
+  # default route, which strands the CP's egress off its public NIC.
   enable_gateway_ip               = false
   use_default_public_dns_resolver = false
   dns_nameservers                 = ["1.1.1.1", "9.9.9.9"]

@@ -46,7 +46,7 @@ Rise-1 in production has 3× 1.92 TB NVMes — the install disk gets ~1.66 TB of
 - **Talos VIP** at `cluster.controlPlane.endpoint` floats between CPs via etcd election. Kubelets and in-cluster components use it. Operators don't — cross-DC ARP for floating IPs is unreliable when routed over Tailscale.
 - **Tailscale extension** runs on every node. CPs advertise the private CIDR as a subnet route, auto-approved via the tailnet ACL. Workers consume the routes.
 - **Talos ingress firewall** drops public-NIC inbound to apid (50000), trustd (50001), kube-apiserver (6443), etcd (2379–2380), and kubelet (10250). Allowed sources: Tailscale CGNAT (`100.64.0.0/10`) and the vRack CIDR.
-- **OVH Octavia Load Balancer** (`ovh/account/loadbalancer.tf`) sits on the vRack subnet, holds the public IP (an inline-created floating IP via a gateway), and forwards L4 TCP `:443` over the vRack to Envoy's NodePort (`30443`). It replaces MetalLB: the LB owns the public IP and talks to workers privately, so workers never source public-IP replies out the public NIC (the return-path asymmetry that made MetalLB + an Additional IP unworkable here — see the ADR).
+- **OVH IP Load Balancing (IPLB)** (`ovh/account/iplb.tf`) holds the public IP and attaches to the vRack. A TCP `:443` farm forwards over the vRack to the workers' Envoy NodePort (`30443`); TLS terminates at Envoy. Backends are defined by **IP**, so the bare-metal workers attach directly (the OpenStack Octavia LB can't — it only takes OpenStack-allocated backends). It replaces MetalLB: the LB owns the public IP and talks to the cluster privately, so no node sources public-IP replies out its public NIC (the return-path asymmetry that made MetalLB + an Additional IP unworkable here — see the ADR).
 
 ## Ingress + TLS
 
@@ -59,7 +59,7 @@ Envoy Gateway is the only external ingress. The OVH LB does TCP passthrough to E
 | Staging | `*.staging.futostat.us`, `*.staging.futostatus.com` |
 | Production | `*.futostat.us`, `*.futostatus.com` |
 
-DNS A/CNAME records pointing at the OVH LB's floating IP are managed by Terraform (`ovh/account/dns.tf`).
+DNS A/CNAME records pointing at the IPLB's public IP are managed by Terraform (`ovh/account/dns.tf`).
 
 ## Bootstrap
 

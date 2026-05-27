@@ -11,7 +11,7 @@ resource "ovh_domain_zone_record" "lb" {
   subdomain = var.env == "staging" ? "staging" : ""
   fieldtype = "A"
   ttl       = 3600
-  target    = ovh_cloud_project_loadbalancer.envoy.floating_ip.ip
+  target    = ovh_iploadbalancing.envoy.ipv4
 }
 
 resource "ovh_domain_zone_record" "wildcard" {

@@ -20,8 +20,8 @@ output "worker_nodes" {
   }
 }
 
-output "loadbalancer_floating_ip" {
-  value = ovh_cloud_project_loadbalancer.envoy.floating_ip.ip
+output "loadbalancer_ip" {
+  value = ovh_iploadbalancing.envoy.ipv4
 }
 
 # bare_metal for workers, public_cloud for CPs — sharing breaks upgrade on

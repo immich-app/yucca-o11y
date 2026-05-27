@@ -66,15 +66,22 @@ variable "talos_public_cloud_image_name" {
   default = "talos-1.13.0-tailscale-qemu"
 }
 
-variable "loadbalancer_region" {
+# IPLB tier and geographic zone (public-IP location). The LB reaches the workers
+# cross-DC over the vRack regardless of zone.
+variable "loadbalancer_plan_code" {
   type    = string
-  default = "GRA9"
+  default = "iplb-lb1"
 }
 
-# Octavia LB flavor (size); resolved to an ID via the flavors data source.
-variable "loadbalancer_flavor" {
+variable "loadbalancer_zone" {
   type    = string
-  default = "small"
+  default = "gra"
+}
+
+# A small unused range in the cluster subnet for the IPLB's vRack NAT IPs.
+variable "loadbalancer_nat_cidr" {
+  type    = string
+  default = "10.150.200.192/27"
 }
 
 # NodePort the Envoy data-plane Service is pinned to; the LB members target it.
