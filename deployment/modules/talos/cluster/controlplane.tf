@@ -63,6 +63,16 @@ resource "talos_machine_configuration_apply" "controlplane" {
       }
       cluster = {
         allowSchedulingOnControlPlanes = false
+        # kube-proxy (nftables mode) defaults --nodeport-addresses to the node's
+        # primary IP — here the private vRack IP — so NodePorts only answered on
+        # the private NIC and the OVH IPLB (which hits the workers' PUBLIC IP)
+        # got dead probes. Open NodePorts on every interface so the public NIC
+        # serves 30443 too. Generated into the kube-proxy DaemonSet by Talos.
+        proxy = {
+          extraArgs = {
+            "nodeport-addresses" = "0.0.0.0/0"
+          }
+        }
         network = {
           # Flannel defaults its VXLAN endpoint to the default-route NIC (public),
           # which sends east-west pod traffic over the internet and is dropped by

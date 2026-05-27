@@ -1,7 +1,14 @@
-# OVH IP Load Balancing (IPLB) — the standalone managed LB. Unlike the Public
-# Cloud Octavia LB, it takes backends by arbitrary IP (so the bare-metal workers
-# work directly) and attaches to the vRack, owning a public IP and the return
-# path. TLS terminates at Envoy (TCP passthrough on 443 -> worker NodePort 30443).
+# OVH IP Load Balancing (IPLB) — the standalone managed LB. It owns a public IP
+# and balances TCP :443 to the workers' Envoy NodePort (30443); TLS passes
+# through and terminates at Envoy.
+#
+# Backends are reached over the workers' PUBLIC IPs, not the vRack: this lb1
+# order came back vrackEligibility=false (OVH does not grant vRack on new IPLB
+# orders here), so the vRack attach is structurally unavailable. The public-IP
+# path is sound — each worker replies from its OWN public IP (not a foreign
+# Additional IP), so OVH per-NIC anti-spoofing doesn't drop it (the bug that
+# made MetalLB unworkable). The only cost is that 30443 must be open on the
+# workers' public NIC (Envoy is TLS-only; see talos/cluster/workers.tf).
 data "ovh_order_cart_product_plan" "iplb" {
   cart_id        = data.ovh_order_cart.mycart.id
   price_capacity = "renew"
@@ -34,28 +41,12 @@ resource "ovh_iploadbalancing" "envoy" {
   }
 }
 
-# Attach the LB to the vRack and give it a NAT range in the cluster subnet so it
-# can reach the worker vRack IPs.
-resource "ovh_vrack_iploadbalancing" "envoy" {
-  service_name     = ovh_vrack.this.service_name
-  ip_loadbalancing = ovh_iploadbalancing.envoy.service_name
-}
-
-resource "ovh_iploadbalancing_vrack_network" "envoy" {
-  service_name = ovh_vrack_iploadbalancing.envoy.ip_loadbalancing
-  subnet       = var.private_network_cidr
-  vlan         = 0
-  nat_ip       = var.loadbalancer_nat_cidr
-  display_name = "o11y-${var.env}"
-}
-
 resource "ovh_iploadbalancing_tcp_farm" "envoy" {
-  service_name     = ovh_iploadbalancing.envoy.service_name
-  display_name     = "o11y-${var.env}-envoy"
-  port             = 443
-  zone             = tolist(ovh_iploadbalancing.envoy.zone)[0]
-  vrack_network_id = ovh_iploadbalancing_vrack_network.envoy.vrack_network_id
-  balance          = "roundrobin"
+  service_name = ovh_iploadbalancing.envoy.service_name
+  display_name = "o11y-${var.env}-envoy"
+  port         = 443
+  zone         = tolist(ovh_iploadbalancing.envoy.zone)[0]
+  balance      = "roundrobin"
 
   probe {
     type     = "tcp"
@@ -70,9 +61,12 @@ resource "ovh_iploadbalancing_tcp_farm_server" "envoy" {
   service_name = ovh_iploadbalancing.envoy.service_name
   farm_id      = ovh_iploadbalancing_tcp_farm.envoy.id
   display_name = "o11y-${var.env}-worker-${each.key}"
-  address      = each.value.private_ip
-  port         = var.envoy_node_port
-  status       = "active"
+  # Worker public IP — the LB can't ride the vRack (see header), so it reaches
+  # the NodePort over the public NIC. The reply is sourced from this same IP,
+  # which is legitimate, so anti-spoofing passes.
+  address = ovh_dedicated_server.worker[each.key].ip
+  port    = var.envoy_node_port
+  status  = "active"
   # PROXY protocol (for real client IPs) is a follow-up — it needs a matching
   # Envoy ClientTrafficPolicy, or connections break.
   probe = true

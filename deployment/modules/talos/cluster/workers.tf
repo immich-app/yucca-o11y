@@ -159,8 +159,14 @@ resource "talos_machine_configuration_apply" "worker" {
         - subnet: ${var.private_network_cidr}
     EOT
     ,
-    # Envoy data-plane NodePort, reached by the OVH IPLB over the vRack (its NAT
-    # range is in the private CIDR). 30443 must match the Envoy Service nodePort.
+    # Envoy data-plane NodePort, reached by the OVH IPLB on the worker's PUBLIC
+    # IP (the lb1 order is vrackEligibility=false, so the LB can't ride the vRack
+    # — see ovh/account/iplb.tf). Source is 0.0.0.0/0 because: (a) Envoy is
+    # TLS-only here, and the same routes are already reachable through the LB, so
+    # direct hits expose nothing extra; (b) OVH does not guarantee fixed IPLB
+    # outbound IPs (roadmap #209), so a hardcoded whitelist would break ingress
+    # silently when they rotate. Everything else stays default-deny. 30443 must
+    # match the Envoy Service nodePort.
     <<-EOT
       apiVersion: v1alpha1
       kind: NetworkRuleConfig
@@ -170,7 +176,7 @@ resource "talos_machine_configuration_apply" "worker" {
           - 30443
         protocol: tcp
       ingress:
-        - subnet: ${var.private_network_cidr}
+        - subnet: 0.0.0.0/0
     EOT
   ]
 }

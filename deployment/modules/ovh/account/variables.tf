@@ -78,12 +78,6 @@ variable "loadbalancer_zone" {
   default = "gra"
 }
 
-# A small unused range in the cluster subnet for the IPLB's vRack NAT IPs.
-variable "loadbalancer_nat_cidr" {
-  type    = string
-  default = "10.150.200.192/27"
-}
-
 # NodePort the Envoy data-plane Service is pinned to; the LB members target it.
 # Must match the nodePort in kubernetes/apps/base/envoy-proxy.
 variable "envoy_node_port" {
