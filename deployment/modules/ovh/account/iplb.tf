@@ -67,9 +67,12 @@ resource "ovh_iploadbalancing_tcp_farm_server" "envoy" {
   address = ovh_dedicated_server.worker[each.key].ip
   port    = var.envoy_node_port
   status  = "active"
-  # PROXY protocol (for real client IPs) is a follow-up — it needs a matching
-  # Envoy ClientTrafficPolicy, or connections break.
-  probe = true
+  # Prepend a PROXY protocol v2 header so Envoy sees the real client IP instead
+  # of the LB's outbound IP. Envoy's ClientTrafficPolicy enables proxyProtocol
+  # with optional=true (kubernetes/apps/base/envoy-proxy/clienttrafficpolicy.yaml)
+  # so the bare-TCP health probe still passes.
+  proxy_protocol_version = "v2"
+  probe                  = true
 }
 
 resource "ovh_iploadbalancing_tcp_frontend" "envoy" {

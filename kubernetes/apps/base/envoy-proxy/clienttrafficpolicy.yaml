@@ -9,8 +9,8 @@ spec:
   #       - 10.42.0.0/16
   http2:
     onInvalidMessage: TerminateStream
-  # No HTTP/3: the OVH Octavia LB is L4 TCP, so QUIC/UDP can't traverse it. Keeping
-  # it off also leaves the Envoy Service with a single TCP port to pin a NodePort on.
+  proxyProtocol:
+    optional: true
   targetSelectors:
     - group: gateway.networking.k8s.io
       kind: Gateway
