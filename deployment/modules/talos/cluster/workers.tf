@@ -52,12 +52,6 @@ resource "talos_machine_configuration_apply" "worker" {
             {
               interface = "eno2np1"
               addresses = ["${each.value.private_ip}/${split("/", var.private_network_cidr)[1]}"]
-              routes = [
-                {
-                  network = var.envoy_ip_block
-                  gateway = var.envoy_ip_gateway
-                }
-              ]
             }
           ]
         }
@@ -146,6 +140,21 @@ resource "talos_machine_configuration_apply" "worker" {
         ports:
           - 10250
         protocol: tcp
+      ingress:
+        - subnet: ${var.private_network_cidr}
+    EOT
+    ,
+    # Flannel VXLAN overlay (kube-flannel runs with backend port 4789). Pinned to
+    # the vRack via the cluster CNI config, so the only trusted source is the
+    # private CIDR.
+    <<-EOT
+      apiVersion: v1alpha1
+      kind: NetworkRuleConfig
+      name: flannel-vxlan
+      portSelector:
+        ports:
+          - 4789
+        protocol: udp
       ingress:
         - subnet: ${var.private_network_cidr}
     EOT

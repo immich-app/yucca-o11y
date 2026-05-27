@@ -30,14 +30,6 @@ variable "private_network_cidr" {
   type = string
 }
 
-variable "envoy_ip_block" {
-  type = string
-}
-
-variable "envoy_ip_gateway" {
-  type = string
-}
-
 # Talos ships per-platform installers; sharing one breaks upgrade on the other.
 variable "talos_installer_images" {
   type = object({
@@ -49,11 +41,6 @@ variable "talos_installer_images" {
 variable "talos_version" {
   type    = string
   default = "v1.13.0"
-}
-
-variable "talos_schematic_id" {
-  type    = string
-  default = "7d4c31cbd96db9f90c874990697c523482b2bae27fb4631d5583dcd9c281b1ff"
 }
 
 variable "controlplane_vip_offset" {

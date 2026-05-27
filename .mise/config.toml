@@ -22,20 +22,27 @@ TF_VAR_dist_dir="{{config_root}}/dist"
 # used by 1Password vault paths (dev/staging/prod).
 ENVIRONMENT_SHORT = "{% set e = get_env(name='ENVIRONMENT', default='development') %}{% if e == 'development' or e == '' %}dev{% elif e == 'production' %}prod{% else %}{{ e }}{% endif %}"
 
-[tasks."talos:dl"]
+# Control plane and workers boot from different Talos Factory schematics:
+#   control plane (Public Cloud / KVM): tailscale + qemu-guest-agent
+#   worker (bare metal):                tailscale only — qemu-guest-agent wedges
+#                                       bare-metal boot and reboot-loops the node
+# Control planes need the image uploaded to OVH glance (talos:{dl,ul}:cp); workers
+# are OVH BYOI, so OVH fetches their raw from the Factory at order time (no upload).
+
+[tasks."talos:dl:cp"]
 run = """
 mkdir -p {{config_root}}/.private/dist
 wget https://factory.talos.dev/image/7d4c31cbd96db9f90c874990697c523482b2bae27fb4631d5583dcd9c281b1ff/v1.13.0/openstack-amd64.raw.xz -O {{config_root}}/.private/dist/talos.1.13.0-tailscale-qemu.raw.xz
 unxz {{config_root}}/.private/dist/talos.1.13.0-tailscale-qemu.raw.xz --force
 """
-description = "Download Talos image for OVH with Tailscale and QEMU support"
+description = "Download the control-plane Talos image (OpenStack, tailscale + qemu-guest-agent schematic)"
 dir = "{{cwd}}"
 
-[tasks."talos:ul"]
+[tasks."talos:ul:cp"]
 run = """
 for region in "GRA9" "GRA11" "EU-WEST-PAR" "RBX-A" "SBG5" "SBG7"; do
   echo "Uploading to region ${region}..."
-  source {{config_root}}/.private/openstack/staging/openrc.sh
+  source {{config_root}}/.private/openstack/${ENVIRONMENT}/openrc.sh
   openstack image create "talos-1.13.0-tailscale-qemu" \
       --os-region "${region}" \
       --file {{config_root}}/.private/dist/talos.1.13.0-tailscale-qemu.raw \
@@ -47,7 +54,7 @@ for region in "GRA9" "GRA11" "EU-WEST-PAR" "RBX-A" "SBG5" "SBG7"; do
       --progress
 done
 """
-description = "Upload Talos image to OVH regions"
+description = "Upload the control-plane Talos image to the env's OVH OpenStack regions (control planes only)"
 dir = "{{cwd}}"
 
 [tasks.tg]

@@ -27,8 +27,6 @@ dependency "ovh" {
     }
     worker_nodes         = {}
     private_network_cidr = "10.150.200.0/24"
-    envoy_ip_block       = "192.0.2.0/30"
-    envoy_ip_gateway     = "192.0.2.254"
     talos_installer_images = {
       bare_metal   = "factory.talos.dev/metal-installer/mock:v1.13.0"
       public_cloud = "factory.talos.dev/openstack-installer/mock:v1.13.0"
@@ -49,8 +47,6 @@ inputs = {
   controlplane_nodes     = dependency.ovh.outputs.controlplane_nodes
   worker_nodes           = dependency.ovh.outputs.worker_nodes
   private_network_cidr   = dependency.ovh.outputs.private_network_cidr
-  envoy_ip_block         = dependency.ovh.outputs.envoy_ip_block
-  envoy_ip_gateway       = dependency.ovh.outputs.envoy_ip_gateway
   talos_installer_images = dependency.ovh.outputs.talos_installer_images
 }
 

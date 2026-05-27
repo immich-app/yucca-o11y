@@ -52,6 +52,8 @@ Rise-1 in production has 3× 1.92 TB NVMes — the install disk gets ~1.66 TB of
 
 Envoy Gateway is the only external ingress. Its LoadBalancer Service claims the MetalLB-advertised IP; TLS terminates at Envoy.
 
+> **External ingress is currently blocked** by a MetalLB + OVH Additional-IP return-path asymmetry (replies egress the public NIC sourced from the Additional IP and OVH drops them). In-cluster everything works — certs issue, the Gateway programs, MetalLB assigns the IP, and the LB is reachable over the vRack. See the [topology ADR](./docs/adr-yucca-o11y-topology.md#ingress-return-path-asymmetry-metallb--ovh-additional-ip) for the proven root cause and the two fixes under consideration (connmark routing vs OVH managed LB).
+
 `cert-manager` with `cert-manager-webhook-ovh` issues wildcard certificates via OVH DNS-01 challenges.
 
 | Env | Wildcards |
@@ -67,8 +69,9 @@ DNS A/CNAME records pointing at each env's Additional IP are managed by Terrafor
 
 1. Create the env's 1Password vault (`o11y_tf_staging` or `o11y_tf_prod`).
 2. Set up `.private/openstack/<env>/openrc.sh` for the env's OVH Public Cloud project.
-3. Upload the Talos OpenStack image to the env's regions: `mise run talos:ul`.
-4. For production: delete v1 apex DNS records via the OVH dashboard before applying.
+3. Upload the Talos **OpenStack** image (control planes only) to the env's regions: `mise run talos:dl:cp && mise run talos:ul:cp`. This image carries the `qemu-guest-agent` + `tailscale` schematic.
+4. Workers need **no download or upload** — they're OVH BYOI and pull the bare-metal raw straight from the Talos Factory at order time (`ovh/account/workers.tf` sets `image_url` to the Factory URL). The worker schematic (`talos_worker_schematic_id`) MUST stay **Tailscale-only**: `qemu-guest-agent` on bare metal blocks on a virtio port that never appears, wedging the Talos boot sequence and reboot-looping the node.
+5. For production: delete v1 apex DNS records via the OVH dashboard before applying.
 
 **Apply order** (set `ENVIRONMENT=staging` or `production` in the shell first):
 

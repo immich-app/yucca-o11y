@@ -52,23 +52,29 @@ resource "talos_machine_configuration_apply" "controlplane" {
         network = {
           interfaces = [
             {
-              # eth1's IP arrives via OpenStack metadata; vip + routes layer on top.
+              # eth1's IP arrives via OpenStack metadata; the VIP layers on top.
               interface = "eth1"
               vip = {
                 ip = local.controlplane_vip
               }
-              routes = [
-                {
-                  network = var.envoy_ip_block
-                  gateway = var.envoy_ip_gateway
-                }
-              ]
             }
           ]
         }
       }
       cluster = {
         allowSchedulingOnControlPlanes = false
+        network = {
+          # Flannel defaults its VXLAN endpoint to the default-route NIC (public),
+          # which sends east-west pod traffic over the internet and is dropped by
+          # the ingress firewall. Pin the VTEP to the vRack interface so VXLAN runs
+          # on the private network the firewall trusts.
+          cni = {
+            name = "flannel"
+            flannel = {
+              extraArgs = ["--iface-can-reach=${cidrhost(var.private_network_cidr, 1)}"]
+            }
+          }
+        }
         apiServer = {
           # VIP for in-cluster traffic; CP private IPs for operators reaching the
           # apiserver over Tailscale (the floating VIP doesn't ARP reliably across DCs).
@@ -167,6 +173,21 @@ resource "talos_machine_configuration_apply" "controlplane" {
         ports:
           - 10250
         protocol: tcp
+      ingress:
+        - subnet: ${var.private_network_cidr}
+    EOT
+    ,
+    # Flannel VXLAN overlay (kube-flannel runs with backend port 4789). Pinned to
+    # the vRack via --iface-can-reach above, so the only trusted source is the
+    # private CIDR.
+    <<-EOT
+      apiVersion: v1alpha1
+      kind: NetworkRuleConfig
+      name: flannel-vxlan
+      portSelector:
+        ports:
+          - 4789
+        protocol: udp
       ingress:
         - subnet: ${var.private_network_cidr}
     EOT

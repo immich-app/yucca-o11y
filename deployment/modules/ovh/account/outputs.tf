@@ -28,10 +28,6 @@ output "envoy_ip_block" {
   value = ovh_ip_service.envoy.ip
 }
 
-output "envoy_ip_gateway" {
-  value = local.envoy_ip_gateway
-}
-
 # bare_metal for workers, public_cloud for CPs — sharing breaks upgrade on
 # the other. Openstack URL is hand-built because the talos provider's
 # data source returns null for platform = "openstack".
