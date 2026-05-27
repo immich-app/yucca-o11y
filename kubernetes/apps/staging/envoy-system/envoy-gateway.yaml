@@ -39,9 +39,8 @@ spec:
         metadata:
           name: futostat-us
         spec:
-          commonName: staging.futostat.us
+          commonName: "*.staging.futostat.us"
           dnsNames:
-            - staging.futostat.us
             - "*.staging.futostat.us"
       target:
         kind: Certificate
@@ -52,9 +51,8 @@ spec:
         metadata:
           name: futostatus-com
         spec:
-          commonName: staging.futostatus.com
+          commonName: "*.staging.futostatus.com"
           dnsNames:
-            - staging.futostatus.com
             - "*.staging.futostatus.com"
       target:
         kind: Certificate
