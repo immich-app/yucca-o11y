@@ -20,14 +20,6 @@ variable "cluster" {
   sensitive = true
 }
 
-variable "envoy_ip" {
-  type = string
-}
-
-variable "envoy_ip_block" {
-  type = string
-}
-
 variable "flux_operator_version" {
   type    = string
   default = "0.50.0"

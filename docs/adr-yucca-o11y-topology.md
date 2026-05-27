@@ -26,11 +26,9 @@ Everything is glued together by **one OVH vRack** providing real L2 connectivity
 
 ### Ingress
 
-A single **OVH Additional IP** (a `/30` block routed into the vRack) is announced by **MetalLB in L2 mode** from inside the cluster. Whichever speaker is elected leader sends gratuitous ARP for the public IP on the vRack; OVH's edge router learns the MAC and forwards external traffic.
+A single **OVH Public Cloud Load Balancer** (Octavia, `ovh_cloud_project_loadbalancer`) sits on the vRack subnet. It holds the public IP — an inline-created floating IP via an inline-created gateway — and forwards **L4 TCP `:443`** over the vRack to Envoy's **NodePort (`30443`)**. TLS passes through and terminates at Envoy (the wildcard certs stay on Envoy); everything behind it is ClusterIP-only.
 
-Envoy Gateway is the only thing claiming that LoadBalancer service. TLS terminates at Envoy; everything behind it is ClusterIP-only.
-
-> **Known blocker — external ingress is not working with MetalLB on this topology.** Inbound packets reach the Envoy node over the vRack fine, but the reply is routed by destination while its source is still the pod IP (MetalLB DNAT). OVH's per-NIC anti-spoofing then drops the reply, which egresses the public NIC sourced from the Additional IP. See [Ingress return-path asymmetry](#ingress-return-path-asymmetry-metallb--ovh-additional-ip) under Alternatives for the full analysis and the two paths forward. The current leaning is the OVH managed LB.
+Because the LB owns the public IP and talks to the workers privately over the vRack, the workers never source public-IP replies out their public NIC. That sidesteps the return-path asymmetry that made MetalLB unworkable on this topology (see *MetalLB return-path asymmetry* under Alternatives).
 
 ### Operator access
 
@@ -82,23 +80,16 @@ Three workers and CPs on public-IP-only WireGuard/Tailscale, no L2. **Rejected**
 - MetalLB L2 doesn't work without an L2 backbone — would force BGP mode + an upstream BGP-speaking router, or a NodePort/`hostNetwork` hack.
 - Tailscale subnet routing for *every* intra-cluster packet would put all east-west traffic through the tailnet — fine in small clusters but a real performance hit for vmcluster-style replication.
 
-### OVH Load Balancer instead of MetalLB
+### MetalLB L2 + an OVH Additional IP (rejected)
 
-OVH's managed LB (Pack 2) can be attached to a vRack. Originally **rejected for now** (adds €/month; MetalLB L2 with a routed Additional IP looked functionally identical), kept as the fallback "if MetalLB proves problematic." It has — see below — so this is now the leading option. The LB terminates the connection and forwards to the cluster over the vRack, so the node never sources replies from the public IP and the asymmetry disappears. Swap cost is roughly one HelmRelease delete + an OVH LB resource in `ovh/account`.
+Originally the public IP was a routed OVH Additional `/30` announced by **MetalLB in L2 mode**, with Envoy as the LoadBalancer. **Rejected** after proving (packet capture) that external ingress can't work on this topology:
 
-### Ingress return-path asymmetry (MetalLB + OVH Additional IP)
-
-**This blocks external ingress today.** Proven by packet capture on a worker:
-
-- Inbound to the LB IP (`37.59.205.21:30443`) arrives correctly on the vRack NIC (`eno2np1`), is DNAT'd by MetalLB to a local Envoy pod, which replies.
+- Inbound to the LB IP arrives correctly on the vRack NIC and is DNAT'd to a local Envoy pod, which replies.
 - The reply is routed by **destination** (the external client) → the node's **default route = the public NIC** → it egresses sourced from the Additional IP. OVH's per-NIC anti-spoofing drops it (that IP isn't valid on the public NIC). The client never sees the SYN-ACK.
 
-**Source-based routing does not fix this.** A rule like `from 37.59.205.20/30 lookup <table>` (Talos `RoutingRuleConfig`, supported since the routing-tables work in [#7184](https://github.com/siderolabs/talos/issues/7184)) never matches the reply: with DNAT the reply's source is still the *pod IP* at routing-decision time — conntrack restores it to the Additional IP in POSTROUTING, *after* routing. Verified live: the table-100 route + rule install cleanly, but the SYN-ACK still leaves the public NIC. (The Talos provider 0.10.1 also can't manage `RoutingRuleConfig`/`LinkConfig` — "not registered" — so they'd need a provider bump or out-of-band `talosctl`.)
+**Source-based routing doesn't fix it.** A `from <block> lookup <table>` rule (Talos `RoutingRuleConfig`) never matches the reply: with DNAT the reply's source is still the *pod IP* at routing-decision time — conntrack restores it to the Additional IP in POSTROUTING, *after* routing. Verified live (the table + rule install cleanly, the SYN-ACK still leaves the public NIC). The only routing fix is **connmark** (mark inbound-on-vRack conns, restore the mark on the reply, route by `fwMark`), which needs nftables *mangle* rules Talos doesn't expose — a privileged DaemonSet outside Talos's model, fragile across upgrades.
 
-Two paths forward, decision deferred:
-
-1. **connmark return-routing (keep MetalLB).** Mark connections arriving on the vRack destined to the block, restore the conntrack mark onto the reply, and route by `fwMark` into a table whose default is the vRack gateway. The `fwMark` rule is expressible (`RoutingRuleConfig`), but the connmark set/restore needs nftables *mangle* rules Talos doesn't expose — so a privileged DaemonSet manipulating host nftables outside Talos's model. Functional but hacky and fragile across upgrades.
-2. **OVH managed LB (above).** Clean, no node-routing hacks, costs €/month.
+We adopted the **OVH Public Cloud Load Balancer** instead (see Decision → Ingress): it owns the public IP and forwards to Envoy's NodePort privately over the vRack, so no node ever sources public-IP replies and the asymmetry disappears. Cost is ~€10/mo per env (bandwidth is free); the swap is one Terraform change plus deleting the MetalLB manifests.
 
 ### Tailscale on CPs only
 

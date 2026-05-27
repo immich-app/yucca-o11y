@@ -29,20 +29,8 @@ dependency "talos" {
   mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
 }
 
-dependency "ovh" {
-  config_path = "../../ovh/account"
-
-  mock_outputs = {
-    envoy_ip       = "1.2.3.4"
-    envoy_ip_block = "1.2.3.4/30"
-  }
-  mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
-}
-
 inputs = {
-  cluster        = dependency.talos.outputs.cluster
-  envoy_ip       = dependency.ovh.outputs.envoy_ip
-  envoy_ip_block = dependency.ovh.outputs.envoy_ip_block
+  cluster = dependency.talos.outputs.cluster
 }
 
 generate "backend" {

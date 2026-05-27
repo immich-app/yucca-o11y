@@ -1,18 +1,3 @@
-# Consumed via postBuild.substituteFrom in kubernetes/apps/base/metallb-config.
-resource "kubernetes_config_map_v1" "metallb_pool" {
-  depends_on = [helm_release.flux_operator]
-
-  metadata {
-    name      = "metallb-pool"
-    namespace = "flux-system"
-  }
-
-  data = {
-    ENVOY_IP       = var.envoy_ip
-    ENVOY_IP_BLOCK = var.envoy_ip_block
-  }
-}
-
 resource "kubernetes_namespace_v1" "cert_manager" {
   depends_on = [helm_release.flux_operator]
 

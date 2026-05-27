@@ -20,9 +20,14 @@ spec:
             limits:
               memory: 1Gi
       envoyService:
-        type: LoadBalancer
-        annotations:
-          metallb.universe.tf/address-pool: envoy
+        type: NodePort
+        patch:
+          type: StrategicMerge
+          value:
+            spec:
+              ports:
+                - port: 30443
+                  nodePort: 30443
   telemetry:
     metrics:
       prometheus:

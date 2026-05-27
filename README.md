@@ -46,13 +46,11 @@ Rise-1 in production has 3× 1.92 TB NVMes — the install disk gets ~1.66 TB of
 - **Talos VIP** at `cluster.controlPlane.endpoint` floats between CPs via etcd election. Kubelets and in-cluster components use it. Operators don't — cross-DC ARP for floating IPs is unreliable when routed over Tailscale.
 - **Tailscale extension** runs on every node. CPs advertise the private CIDR as a subnet route, auto-approved via the tailnet ACL. Workers consume the routes.
 - **Talos ingress firewall** drops public-NIC inbound to apid (50000), trustd (50001), kube-apiserver (6443), etcd (2379–2380), and kubelet (10250). Allowed sources: Tailscale CGNAT (`100.64.0.0/10`) and the vRack CIDR.
-- **MetalLB L2** advertises one OVH Additional IP (the single usable host from a routed `/30` — OVH's edge router holds the other) for Envoy ingress. ARP-announced on the vRack from whichever speaker is elected leader.
+- **OVH Octavia Load Balancer** (`ovh/account/loadbalancer.tf`) sits on the vRack subnet, holds the public IP (an inline-created floating IP via a gateway), and forwards L4 TCP `:443` over the vRack to Envoy's NodePort (`30443`). It replaces MetalLB: the LB owns the public IP and talks to workers privately, so workers never source public-IP replies out the public NIC (the return-path asymmetry that made MetalLB + an Additional IP unworkable here — see the ADR).
 
 ## Ingress + TLS
 
-Envoy Gateway is the only external ingress. Its LoadBalancer Service claims the MetalLB-advertised IP; TLS terminates at Envoy.
-
-> **External ingress is currently blocked** by a MetalLB + OVH Additional-IP return-path asymmetry (replies egress the public NIC sourced from the Additional IP and OVH drops them). In-cluster everything works — certs issue, the Gateway programs, MetalLB assigns the IP, and the LB is reachable over the vRack. See the [topology ADR](./docs/adr-yucca-o11y-topology.md#ingress-return-path-asymmetry-metallb--ovh-additional-ip) for the proven root cause and the two fixes under consideration (connmark routing vs OVH managed LB).
+Envoy Gateway is the only external ingress. The OVH LB does TCP passthrough to Envoy's NodePort; TLS terminates at Envoy (L4 passthrough, so the wildcard certs stay on Envoy).
 
 `cert-manager` with `cert-manager-webhook-ovh` issues wildcard certificates via OVH DNS-01 challenges.
 
@@ -61,7 +59,7 @@ Envoy Gateway is the only external ingress. Its LoadBalancer Service claims the 
 | Staging | `*.staging.futostat.us`, `*.staging.futostatus.com` |
 | Production | `*.futostat.us`, `*.futostatus.com` |
 
-DNS A/CNAME records pointing at each env's Additional IP are managed by Terraform (`ovh/account/dns.tf`).
+DNS A/CNAME records pointing at the OVH LB's floating IP are managed by Terraform (`ovh/account/dns.tf`).
 
 ## Bootstrap
 

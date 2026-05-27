@@ -158,5 +158,20 @@ resource "talos_machine_configuration_apply" "worker" {
       ingress:
         - subnet: ${var.private_network_cidr}
     EOT
+    ,
+    # Envoy data-plane NodePort, reached by the OVH Octavia LB over the vRack.
+    # 30443 must match the nodePort in kubernetes/apps/base/envoy-proxy and the
+    # LB member port (envoy_node_port) in ovh/account.
+    <<-EOT
+      apiVersion: v1alpha1
+      kind: NetworkRuleConfig
+      name: envoy-nodeport
+      portSelector:
+        ports:
+          - 30443
+        protocol: tcp
+      ingress:
+        - subnet: ${var.private_network_cidr}
+    EOT
   ]
 }

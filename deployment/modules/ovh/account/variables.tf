@@ -66,7 +66,20 @@ variable "talos_public_cloud_image_name" {
   default = "talos-1.13.0-tailscale-qemu"
 }
 
-variable "additional_ip_plan_code" {
+variable "loadbalancer_region" {
   type    = string
-  default = "ip-v4-s30-ripe"
+  default = "GRA9"
+}
+
+# Octavia LB flavor (size); resolved to an ID via the flavors data source.
+variable "loadbalancer_flavor" {
+  type    = string
+  default = "small"
+}
+
+# NodePort the Envoy data-plane Service is pinned to; the LB members target it.
+# Must match the nodePort in kubernetes/apps/base/envoy-proxy.
+variable "envoy_node_port" {
+  type    = number
+  default = 30443
 }
