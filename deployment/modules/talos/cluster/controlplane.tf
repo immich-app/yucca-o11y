@@ -62,11 +62,25 @@ resource "talos_machine_configuration_apply" "controlplane" {
             TOML
           }
         ]
+        # Pin the kubelet's node IP to the vRack subnet so the Kubernetes
+        # InternalIP is always the private IP and never falls back to the
+        # Tailscale CGNAT address (which happens if eth1 has no IP at kubelet
+        # start — see the static address below).
+        kubelet = {
+          nodeIP = {
+            validSubnets = [var.private_network_cidr]
+          }
+        }
         network = {
           interfaces = [
             {
-              # eth1's IP arrives via OpenStack metadata; the VIP layers on top.
-              interface = "eth1"
+              # Static private IP rather than DHCP. OVH's private-network DHCP
+              # NAKs the renew after a subnet/port rebuild ("address not
+              # available"), stranding the CP off the vRack on reboot even though
+              # the port's fixed IP is correct. The address matches that fixed IP,
+              # which port-security already permits. The VIP layers on top.
+              interface  = "eth1"
+              addresses  = ["${each.value.private_ip}/${split("/", var.private_network_cidr)[1]}"]
               vip = {
                 ip = local.controlplane_vip
               }
