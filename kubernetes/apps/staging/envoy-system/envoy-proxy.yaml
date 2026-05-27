@@ -7,6 +7,9 @@ metadata:
 spec:
   dependsOn:
     - name: envoy-gateway
+    # Envoy's Service is type: LoadBalancer; without the pool configured
+    # it would sit Pending forever waiting for an LB IP.
+    - name: metallb-config
   interval: 1h
   path: ./kubernetes/apps/base/envoy-proxy
   prune: true

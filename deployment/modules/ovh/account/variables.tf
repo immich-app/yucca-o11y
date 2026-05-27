@@ -11,44 +11,53 @@ variable "ovh_consumer_key" {
   sensitive = true
 }
 
-variable "nodes" {
+variable "controlplane_nodes" {
   type = map(object({
-    datacenter     = string
-    plan_code      = string
-    storage_option = string
-    ram_option     = string
-    vlan_ip        = string
-    has_vrack      = optional(bool, true)
+    region      = string
+    flavor_name = string
+    private_ip  = string
   }))
-  description = "Map of node configurations keyed by region/location (e.g., lon, rbx)"
+}
+
+variable "worker_nodes" {
+  type = map(object({
+    datacenter              = string
+    plan_code               = string
+    storage_option          = string
+    ram_option              = string
+    bandwidth_option        = string
+    public_bandwidth_option = string
+    private_ip              = string
+  }))
+}
+
+variable "private_network_cidr" {
+  type = string
 }
 
 variable "vrack_name" {
-  type        = string
-  default     = "o11y"
-  description = "Base name for the vRack"
+  type    = string
+  default = "o11y"
 }
 
 variable "talos_version" {
-  type        = string
-  default     = "v1.12.4"
-  description = "Talos version to deploy"
+  type    = string
+  default = "v1.13.0"
 }
 
 variable "talos_schematic_id" {
-  type        = string
-  default     = "4a0d65c669d46663f377e7161e50cfd570c401f26fd9e7bda34a0216b6f1922b"
-  description = "Talos image factory schematic ID"
+  type    = string
+  default = "7d4c31cbd96db9f90c874990697c523482b2bae27fb4631d5583dcd9c281b1ff"
 }
 
-variable "ovh_iplb_plan_code" {
-  type        = string
-  default     = "iplb-lb1"
-  description = "OVH IP Load Balancing plan code"
+# Image must be pre-uploaded out-of-band (talos:dl + talos:ul mise tasks) —
+# the OVH provider doesn't upload custom images.
+variable "talos_public_cloud_image_name" {
+  type    = string
+  default = "talos-1.13.0-tailscale-qemu"
 }
 
-variable "ovh_iplb_zone" {
-  type        = string
-  default     = "rbx"
-  description = "OVH IP Load Balancing zone (datacenter, e.g. rbx, gra, fra, lon, bhs)"
+variable "additional_ip_plan_code" {
+  type    = string
+  default = "ip-v4-s30-ripe"
 }

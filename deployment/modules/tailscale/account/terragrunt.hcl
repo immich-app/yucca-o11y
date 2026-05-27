@@ -6,11 +6,7 @@ terraform {
   }
 }
 
-locals {
-  env   = get_env("TF_VAR_env")
-  stage = get_env("TF_VAR_stage")
-}
-
+# Tailnet-global; state key intentionally not parameterised by env.
 generate "backend" {
   path      = "backend.tf"
   if_exists = "overwrite_terragrunt"
@@ -18,7 +14,7 @@ generate "backend" {
 terraform {
   backend "s3" {
     bucket = "${get_env("TF_VAR_tf_state_s3_bucket")}"
-    key    = "yucca/o11y/tailscale/account/${local.env}${local.stage != "" ? "/${local.stage}" : ""}"
+    key    = "yucca/o11y/v3/tailscale/account/global"
     region = "${get_env("TF_VAR_tf_state_s3_region")}"
     access_key = "${get_env("TF_VAR_tf_state_s3_access_key")}"
     secret_key = "${get_env("TF_VAR_tf_state_s3_secret_key")}"

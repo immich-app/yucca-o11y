@@ -28,10 +28,13 @@ spec:
       localpv:
         image:
           registry: quay.io/
-        basePath: &hostPath /var/mnt/u-hostpath
+        # Must match the Talos UserVolumeConfig `hostpath` mount in
+        # deployment/modules/talos/cluster/workers.tf; drift puts PVs on
+        # EPHEMERAL where they compete with the container image cache.
+        basePath: &hostPath /var/mnt/hostpath
       hostpathClass:
         enabled: true
-        name: openebs-hostpath
+        name: openebs-system-disk
         reclaimPolicy: Delete
         isDefaultClass: true
         basePath: *hostPath

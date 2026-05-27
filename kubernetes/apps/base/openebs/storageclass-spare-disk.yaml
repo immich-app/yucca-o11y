@@ -1,0 +1,18 @@
+---
+# Spare-NVMe StorageClass; backs the Talos UserVolumeConfig `local-hostpath`
+# at /var/mnt/local-hostpath (workers.tf). Intended for workloads that need
+# I/O isolation from the general PV pool — e.g. vmstorage tsdb.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: openebs-spare-disk
+  annotations:
+    openebs.io/cas-type: local
+    cas.openebs.io/config: |
+      - name: StorageType
+        value: hostpath
+      - name: BasePath
+        value: /var/mnt/local-hostpath
+provisioner: openebs.io/local
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer

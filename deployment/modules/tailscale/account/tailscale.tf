@@ -1,12 +1,29 @@
+# Tailnet-global. Declares all envs in one document so applying for one env
+# doesn't wipe another env's tags. autoApprovers pre-approves each env's CP
+# subnet route so kubectl/talosctl over Tailscale works without manual
+# approval.
 resource "tailscale_acl" "this" {
   overwrite_existing_content = true
 
   acl = jsonencode({
-    tagOwners = {
-      "tag:management"       = []
-      "tag:project-yucca"    = ["autogroup:admin"]
-      "tag:env-${var.env}"   = ["autogroup:admin"]
+    tagOwners = merge(
+      {
+        "tag:management"    = []
+        "tag:project-yucca" = ["autogroup:admin"]
+      },
+      {
+        for env in keys(var.subnet_routes_by_env) :
+        "tag:env-${env}" => ["autogroup:admin"]
+      },
+    )
+
+    autoApprovers = {
+      routes = {
+        for env, cidr in var.subnet_routes_by_env :
+        cidr => ["tag:env-${env}"]
+      }
     }
+
     grants = [
       {
         src = ["*"]
@@ -14,6 +31,7 @@ resource "tailscale_acl" "this" {
         ip  = ["*"]
       }
     ]
+
     ssh = [
       {
         action = "check"
@@ -32,8 +50,6 @@ resource "tailscale_acl" "this" {
 }
 
 resource "tailscale_tailnet_settings" "org" {
-  # acls_externally_managed_on                  = true
-  # acls_external_link                          = "https://github.com/octocat/Hello-World"
   devices_approval_on                         = true
   devices_auto_updates_on                     = true
   devices_key_duration_days                   = 5

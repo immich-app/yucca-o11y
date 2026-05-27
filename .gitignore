@@ -39,3 +39,5 @@ tmp/
 
 # Mise override
 mise.local.toml
+
+.claude/
