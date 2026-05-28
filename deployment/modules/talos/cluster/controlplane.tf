@@ -210,8 +210,14 @@ resource "talos_machine_configuration_apply" "controlplane" {
         ports:
           - 10250
         protocol: tcp
+      # Pod CIDR is allowed too: pod-to-node-IP on the same node skips the
+      # flannel masquerade, so a pod scraping its own kubelet (e.g. metrics-server
+      # colocated with the node it's scraping) keeps its pod-IP source and would
+      # otherwise be dropped. Cross-node pod→kubelet still works via masquerade
+      # but adding 10.244.0.0/16 makes self-hits work without depending on it.
       ingress:
         - subnet: ${var.private_network_cidr}
+        - subnet: 10.244.0.0/16
     EOT
     ,
     # Flannel VXLAN overlay (kube-flannel runs with backend port 4789). Pinned to
