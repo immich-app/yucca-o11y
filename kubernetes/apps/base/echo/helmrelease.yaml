@@ -25,6 +25,12 @@ spec:
       echo:
         replicas: 3
         strategy: RollingUpdate
+        # maxSurge=0 so the DoNotSchedule topology spread can't deadlock during
+        # rollouts: terminate one old, then schedule its replacement (which fits
+        # because that node freed up). Same shape as the Envoy deployment.
+        rollingUpdate:
+          maxSurge: 0
+          maxUnavailable: 1
         containers:
           app:
             image:
