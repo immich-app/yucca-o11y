@@ -14,6 +14,7 @@
 "gh" = "2.92.0"
 "yq" = "4.53.2"
 "kustomize" = "5.8.1"
+"markdownlint-cli2" = "0.22.1"
 
 [env]
 TF_VAR_dist_dir="{{config_root}}/dist"
@@ -90,6 +91,16 @@ dir = "{{cwd}}"
 [tasks."tf:destroy"]
 run = "mise run tf destroy"
 dir = "{{cwd}}"
+
+[tasks."md:lint"]
+run = "markdownlint-cli2 'docs/**/*.md' 'README.md'"
+description = "Lint markdown docs"
+dir = "{{config_root}}"
+
+[tasks."md:fix"]
+run = "markdownlint-cli2 --fix 'docs/**/*.md' 'README.md'"
+description = "Auto-fix markdown lint issues where possible"
+dir = "{{config_root}}"
 
 [settings]
 experimental = true
