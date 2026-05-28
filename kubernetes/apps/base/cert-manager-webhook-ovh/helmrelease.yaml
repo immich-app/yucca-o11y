@@ -40,3 +40,4 @@ spec:
           applicationConsumerKeyRef:
             name: ovh-credentials
             key: applicationConsumerKey
+        profile: shortlived
