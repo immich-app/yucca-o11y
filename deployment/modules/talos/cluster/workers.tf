@@ -174,12 +174,12 @@ resource "talos_machine_configuration_apply" "worker" {
     ,
     # Envoy data-plane NodePort, reached by the OVH IPLB on the worker's PUBLIC
     # IP (the lb1 order is vrackEligibility=false, so the LB can't ride the vRack
-    # — see ovh/account/iplb.tf). Source is 0.0.0.0/0 because: (a) Envoy is
-    # TLS-only here, and the same routes are already reachable through the LB, so
-    # direct hits expose nothing extra; (b) OVH does not guarantee fixed IPLB
-    # outbound IPs (roadmap #209), so a hardcoded whitelist would break ingress
-    # silently when they rotate. Everything else stays default-deny. 30443 must
-    # match the Envoy Service nodePort.
+    # — see ovh/account/iplb.tf). Restricted to the IPLB's NAT/source range
+    # (OVH /ipLoadbalancing/{svc}/natIp = 10.108.0.0/14; confirmed by packet
+    # capture — the LB connects from 10.110.x.x in that block). Those are
+    # OVH-internal private IPs, so the public internet can't reach 30443 directly
+    # and can't spoof RFC1918 sources past OVH's edge — the LB is the only ingress
+    # path. 30443 must match the Envoy Service nodePort.
     <<-EOT
       apiVersion: v1alpha1
       kind: NetworkRuleConfig
@@ -189,7 +189,7 @@ resource "talos_machine_configuration_apply" "worker" {
           - 30443
         protocol: tcp
       ingress:
-        - subnet: 0.0.0.0/0
+        - subnet: 10.108.0.0/14
     EOT
     ,
     # Spegel peer-to-peer registry. Peers fetch image blobs from each other on

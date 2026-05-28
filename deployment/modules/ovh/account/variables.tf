@@ -73,9 +73,14 @@ variable "loadbalancer_plan_code" {
   default = "iplb-lb1"
 }
 
-variable "loadbalancer_zone" {
-  type    = string
-  default = "gra"
+# IPLB zones (anycast — same public IP announced from each). One zone for
+# staging; several for production ingress HA (e.g. ["gra", "rbx", "sbg"]). Each
+# extra zone is a billable addon (~£16/mo at lb1). NOTE: this set is fixed at LB
+# order time (plan_option is ForceNew + ignored after create); changing it on a
+# live LB means recreating it (new IP) or ordering the zone addon out-of-band.
+variable "loadbalancer_zones" {
+  type    = list(string)
+  default = ["gra"]
 }
 
 # NodePort the Envoy data-plane Service is pinned to; the LB members target it.
