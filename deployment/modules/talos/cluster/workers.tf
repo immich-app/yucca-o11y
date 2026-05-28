@@ -213,5 +213,23 @@ resource "talos_machine_configuration_apply" "worker" {
       ingress:
         - subnet: ${var.private_network_cidr}
     EOT
+    ,
+    # Node-level metrics on workers: kube-proxy :10249 (binds 0.0.0.0 via the
+    # cluster-wide proxy config set on the CPs) and the node-exporter DaemonSet
+    # :9100. Both HTTP/unauthed. Pod CIDR is included for the VMAgent self-hit
+    # case — a worker scraping its own node skips the flannel masquerade.
+    <<-EOT
+      apiVersion: v1alpha1
+      kind: NetworkRuleConfig
+      name: metrics-node
+      portSelector:
+        ports:
+          - 10249
+          - 9100
+        protocol: tcp
+      ingress:
+        - subnet: ${var.private_network_cidr}
+        - subnet: 10.244.0.0/16
+    EOT
   ]
 }

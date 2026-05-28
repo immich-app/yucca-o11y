@@ -79,8 +79,8 @@ resource "talos_machine_configuration_apply" "controlplane" {
               # available"), stranding the CP off the vRack on reboot even though
               # the port's fixed IP is correct. The address matches that fixed IP,
               # which port-security already permits. The VIP layers on top.
-              interface  = "eth1"
-              addresses  = ["${each.value.private_ip}/${split("/", var.private_network_cidr)[1]}"]
+              interface = "eth1"
+              addresses = ["${each.value.private_ip}/${split("/", var.private_network_cidr)[1]}"]
               vip = {
                 ip = local.controlplane_vip
               }
@@ -90,14 +90,38 @@ resource "talos_machine_configuration_apply" "controlplane" {
       }
       cluster = {
         allowSchedulingOnControlPlanes = false
+        # Control-plane components bind their metrics to localhost by default, so
+        # VMAgent (on a worker) can't scrape them. Bind to all interfaces; the
+        # Talos ingress firewall below keeps the ports private (vRack + pod CIDR
+        # only) — the public NIC stays default-deny. controller-manager (:10257)
+        # and scheduler (:10259) serve authenticated HTTPS; etcd (:2381) is
+        # unauthenticated HTTP, so the firewall is its only protection.
+        controllerManager = {
+          extraArgs = {
+            "bind-address" = "0.0.0.0"
+          }
+        }
+        scheduler = {
+          extraArgs = {
+            "bind-address" = "0.0.0.0"
+          }
+        }
+        etcd = {
+          extraArgs = {
+            "listen-metrics-urls" = "http://0.0.0.0:2381"
+          }
+        }
         # kube-proxy (nftables mode) defaults --nodeport-addresses to the node's
         # primary IP — here the private vRack IP — so NodePorts only answered on
         # the private NIC and the OVH IPLB (which hits the workers' PUBLIC IP)
         # got dead probes. Open NodePorts on every interface so the public NIC
-        # serves 30443 too. Generated into the kube-proxy DaemonSet by Talos.
+        # serves 30443 too. metrics-bind-address likewise defaults to localhost;
+        # bind :10249 to all interfaces for scraping (firewall-scoped below).
+        # Generated into the kube-proxy DaemonSet by Talos (applies cluster-wide).
         proxy = {
           extraArgs = {
-            "nodeport-addresses" = "0.0.0.0/0"
+            "nodeport-addresses"   = "0.0.0.0/0"
+            "metrics-bind-address" = "0.0.0.0"
           }
         }
         network = {
@@ -250,6 +274,41 @@ resource "talos_machine_configuration_apply" "controlplane" {
         protocol: tcp
       ingress:
         - subnet: ${var.private_network_cidr}
+    EOT
+    ,
+    # Control-plane component metrics (scraped by VMAgent on a worker, masqueraded
+    # to its vRack IP). controller-manager :10257 + scheduler :10259 (HTTPS, authed),
+    # etcd :2381 (HTTP, unauthed — vRack/pod-only is its only protection).
+    <<-EOT
+      apiVersion: v1alpha1
+      kind: NetworkRuleConfig
+      name: metrics-controlplane
+      portSelector:
+        ports:
+          - 10257
+          - 10259
+          - 2381
+        protocol: tcp
+      ingress:
+        - subnet: ${var.private_network_cidr}
+        - subnet: 10.244.0.0/16
+    EOT
+    ,
+    # Node-level metrics that also run on CPs: kube-proxy :10249 and the
+    # node-exporter DaemonSet :9100 (both HTTP, unauthed). Pod CIDR is included
+    # for the VMAgent self-hit case (same-node scrape skips flannel masquerade).
+    <<-EOT
+      apiVersion: v1alpha1
+      kind: NetworkRuleConfig
+      name: metrics-node
+      portSelector:
+        ports:
+          - 10249
+          - 9100
+        protocol: tcp
+      ingress:
+        - subnet: ${var.private_network_cidr}
+        - subnet: 10.244.0.0/16
     EOT
   ]
 }
