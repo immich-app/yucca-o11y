@@ -1,10 +1,19 @@
 ---
+# Short-lived ECDSA certs (~6.6 day duration; cert-manager renews ahead of expiry
+# on its default schedule). dnsNames are filled in by the env overlay.
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: futostat-us
 spec:
   dnsNames: []
+  duration: 160h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  usages:
+    - digital signature
   issuerRef:
     kind: ClusterIssuer
     name: letsencrypt-production
@@ -16,6 +25,13 @@ metadata:
   name: futostatus-com
 spec:
   dnsNames: []
+  duration: 160h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  usages:
+    - digital signature
   issuerRef:
     kind: ClusterIssuer
     name: letsencrypt-production
