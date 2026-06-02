@@ -3,13 +3,13 @@
 apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
-  name: remote-clusters-token
+  name: vmuser-remote-cluster-token
 spec:
   secretStoreRef:
     kind: ClusterSecretStore
-    name: onepassword
+    name: onepassword-environment
   target:
-    name: remote-clusters-token
+    name: vmuser-remote-cluster-token
     template:
       data:
         token: "{{ .password }}"
@@ -24,7 +24,7 @@ metadata:
   name: remote-clusters
 spec:
   tokenRef:
-    name: remote-clusters-token
+    name: vmuser-remote-cluster-token
     key: token
   targetRefs:
     - static:

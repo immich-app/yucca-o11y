@@ -24,15 +24,15 @@ spec:
 
   enableSuperuserAccess: true
   superuserSecret:
-    name: postgres-superuser
+    name: grafana-postgres-superuser-password
 
-  # Create the grafana database + owner role from the postgres-grafana secret.
+  # Create the grafana database + owner role from the grafana-postgres-password secret.
   bootstrap:
     initdb:
       database: grafana
       owner: grafana
       secret:
-        name: postgres-grafana
+        name: grafana-postgres-password
 
   postgresql:
     parameters:

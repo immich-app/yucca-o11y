@@ -63,7 +63,7 @@ spec:
                 - name: GF_DATABASE_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: postgres-grafana
+                      name: grafana-postgres-password
                       key: password
                 - name: GF_SECURITY_SECRET_KEY
                   valueFrom:
