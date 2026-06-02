@@ -11,6 +11,7 @@ spec:
   imageName: ghcr.io/cloudnative-pg/postgresql:18.4@sha256:8ff3abd13383e619797f974b4fcdda6de0c2cfdad90eb47e1cd95d41fe26bf80
   instances: 3
   primaryUpdateStrategy: unsupervised
+  primaryUpdateMethod: switchover
 
   storage:
     size: 20Gi
@@ -38,6 +39,21 @@ spec:
     parameters:
       max_connections: "200"
       shared_buffers: 256MB
+    # Synchronous commit to one standby for durability, but degrade to async if no
+    # standby is available (preferred, not required) so writes don't freeze during
+    # node churn. failoverQuorum blocks promoting a standby missing synced data.
+    synchronous:
+      method: any
+      number: 1
+      dataDurability: preferred
+      failoverQuorum: true
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
 
   # PodMonitor is converted to a VMPodScrape by the VM operator and scraped.
   monitoring:

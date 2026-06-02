@@ -36,6 +36,9 @@ spec:
       user: grafana
       ssl_mode: require
   deployment:
+    metadata:
+      annotations:
+        reloader.stakater.com/auto: "true"
     spec:
       replicas: 3
       strategy:
