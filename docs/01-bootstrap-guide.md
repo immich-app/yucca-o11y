@@ -43,18 +43,12 @@ export TF_VAR_env=staging
    TF_VAR_use_public_endpoints=true mise run tg run --working-dir deployment/modules/talos/cluster apply
    ```
 
-4. **Verify** the cluster is up and operator-side Tailscale routing works.
+4. **Verify** the cluster is up and operator-side Tailscale routing works. Pull the configs (see [Cluster access](#cluster-access)) and hit the APIs over the tailnet:
 
    ```bash
-   mkdir -p .private/$ENVIRONMENT
-   mise run tg run --working-dir deployment/modules/talos/cluster output -- -raw talos_client_configuration > .private/$ENVIRONMENT/talosconfig
-   mise run tg run --working-dir deployment/modules/talos/cluster output -- -raw kubeconfig > .private/$ENVIRONMENT/kubeconfig
-   chmod 600 .private/$ENVIRONMENT/{talosconfig,kubeconfig}
-   # Pick any CP private IP — they're all valid cert SANs.
-   CP_IP=10.150.200.10
-   talosctl --talosconfig .private/$ENVIRONMENT/talosconfig --endpoints $CP_IP --nodes $CP_IP get members
-   sd -F "server: https://10.150.200.5:6443" "server: https://$CP_IP:6443" .private/$ENVIRONMENT/kubeconfig
+   mise run talos:kubeconfig && mise run talos:talosconfig
    kubectl --kubeconfig .private/$ENVIRONMENT/kubeconfig get nodes -o wide
+   talosctl --talosconfig .private/$ENVIRONMENT/talosconfig -n 10.150.200.10 get members
    ```
 
 5. **Talos (steady state)** — drop the public-endpoints override now that Tailscale routes work; the host firewall closes the public NIC (everything except `:30443` on workers).
@@ -72,17 +66,37 @@ export TF_VAR_env=staging
 
 Flux then reconciles from `kubernetes/clusters/<env>/apps.yaml`, fanning out to the per-app Kustomizations in dependency order.
 
-## Operator access
+## Cluster access
 
-Tailscale must be running on the operator's host with subnet-route consumption enabled (`tailscale set --accept-routes` on Linux; the macOS GUI "Use Tailscale subnets" toggle). Then:
+How to get `kubectl` / `talosctl` access to an **existing** cluster (no bootstrap required).
 
-* **kubectl** — the kubeconfig's default `server:` is the cluster VIP, which works in-cluster but is unreliable from outside. Rewrite it to a CP private IP (every CP IP is in the apiserver cert SANs, so TLS validates):
+**Prerequisites:**
 
-  ```bash
-  sd -F 'https://10.150.200.5:6443' 'https://10.150.200.10:6443' .private/staging/kubeconfig
-  ```
+* **Tailscale** — the cluster APIs are reachable only over the tailnet, so your host needs Tailscale running with subnet-route consumption enabled: `tailscale set --accept-routes` on Linux, or the "Use Tailscale subnets" toggle in the macOS app.
+* **1Password CLI (`op`)** — installed and signed in to the `team-futo.1password.com` account. `mise run talos:config` fetches the configs through `mise run tg`, which wraps `op run` to inject the Terraform state credentials; without an authenticated `op` it can't read state.
 
-* **talosctl** — endpoints are already CP private IPs after the steady-state step; the talosconfig also includes worker private IPs for direct node access.
+**Fetch the configs.** Two tasks pull `kubeconfig` and `talosconfig` for the environment (run whichever you need):
+
+```bash
+export ENVIRONMENT=staging        # or production
+export TF_VAR_env=$ENVIRONMENT
+mise run talos:kubeconfig         # for kubectl
+mise run talos:talosconfig        # for talosctl
+```
+
+Each writes to `.private/$ENVIRONMENT/` (mode 600) from the Talos module's Terraform outputs. `talos:kubeconfig` also repoints the kubeconfig `server:` from the floating VIP (`10.150.200.5`) to a control-plane private IP (`10.150.200.10`) — the VIP doesn't ARP reliably across DCs over Tailscale, and every CP IP is in the apiserver cert SANs so TLS still validates.
+
+> **A highly-available operator API endpoint is TBD.** `kubectl` is pinned to a single control-plane IP, so if that CP is down you currently repoint to another by hand (any CP IP works — they're all cert SANs). The floating VIP is HA *inside* the cluster (kubelet and in-cluster clients use it) but doesn't ARP across DCs over Tailscale, so there's no HA endpoint for operators yet.
+
+**Point your tools at them:**
+
+```bash
+export KUBECONFIG=$PWD/.private/$ENVIRONMENT/kubeconfig
+export TALOSCONFIG=$PWD/.private/$ENVIRONMENT/talosconfig
+
+kubectl get nodes
+talosctl -n 10.150.200.10 health   # any CP private IP; the talosconfig also lists the workers
+```
 
 ## Common operations
 
@@ -93,7 +107,7 @@ Tailscale must be running on the operator's host with subnet-route consumption e
 | Re-init backends | `mise run tf:init` |
 | Format HCL / Terraform | `mise run tg:fmt` / `mise run tf:fmt` |
 | Lint docs | `mise run md:lint` |
-| Pull current kubeconfig | `mise run tg run --working-dir deployment/modules/talos/cluster output -- -raw kubeconfig > .private/$ENVIRONMENT/kubeconfig` |
+| Fetch kubeconfig / talosconfig | `mise run talos:kubeconfig` / `mise run talos:talosconfig` (see [Cluster access](#cluster-access)) |
 
 ## Tooling
 
