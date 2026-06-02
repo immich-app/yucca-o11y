@@ -9,7 +9,7 @@ instance:
   sync:
     kind: GitRepository
     url: https://github.com/immich-app/yucca-o11y.git
-    ref: refs/heads/infra-refactor
+    ref: refs/heads/main
     path: kubernetes/clusters/${env}
     interval: 1h
   kustomize:
