@@ -1,12 +1,15 @@
 ---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/cert-manager.io/certificate_v1.json
 # Short-lived ECDSA certs (~6.6 day duration; cert-manager renews ahead of expiry
-# on its default schedule). dnsNames are filled in by the env overlay.
+# on its default schedule). dnsNames use ${APP_DOMAIN}/${ALT_DOMAIN}, substituted per-env.
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: futostat-us
 spec:
-  dnsNames: []
+  dnsNames:
+    - "*.${APP_DOMAIN}"
+    - "${APP_DOMAIN}"
   duration: 160h
   privateKey:
     algorithm: ECDSA
@@ -19,12 +22,15 @@ spec:
     name: letsencrypt-production
   secretName: futostat-us-tls
 ---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/cert-manager.io/certificate_v1.json
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: futostatus-com
 spec:
-  dnsNames: []
+  dnsNames:
+    - "*.${ALT_DOMAIN}"
+    - "${ALT_DOMAIN}"
   duration: 160h
   privateKey:
     algorithm: ECDSA

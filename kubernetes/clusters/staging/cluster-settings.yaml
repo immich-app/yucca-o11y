@@ -1,0 +1,10 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-settings
+  namespace: flux-system
+data:
+  APP_DOMAIN: staging.futostat.us
+  ALT_DOMAIN: staging.futostatus.com
+  CLUSTER_NAME: o11y-staging

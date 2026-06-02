@@ -1,0 +1,33 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/external-secrets.io/externalsecret_v1.json
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: remote-clusters-token
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: onepassword
+  target:
+    name: remote-clusters-token
+    template:
+      data:
+        token: "{{ .password }}"
+  dataFrom:
+    - extract:
+        key: VICTORIAMETRICS_VMAUTH_PASSWORD
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/operator.victoriametrics.com/vmuser_v1beta1.json
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMUser
+metadata:
+  name: remote-clusters
+spec:
+  tokenRef:
+    name: remote-clusters-token
+    key: token
+  targetRefs:
+    - static:
+        url: http://vminsert-victoria-metrics.o11y.svc.cluster.local:8480
+      paths:
+        - /insert/0/.*

@@ -1,12 +1,9 @@
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.envoyproxy.io/clienttrafficpolicy_v1alpha1.json
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: ClientTrafficPolicy
 metadata:
   name: envoy
 spec:
-  # clientIPDetection:
-  #   xForwardedFor:
-  #     trustedCIDRs:
-  #       - 10.42.0.0/16
   http2:
     onInvalidMessage: TerminateStream
   proxyProtocol:

@@ -1,4 +1,5 @@
 ---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -25,13 +26,6 @@ spec:
       echo:
         replicas: 3
         strategy: RollingUpdate
-        # maxSurge=0 so the DoNotSchedule topology spread can't deadlock during
-        # rollouts: terminate one old, then schedule its replacement (which fits
-        # because that node freed up). Same shape as the Envoy deployment.
-        # app-template renames the rolling-update knobs: surge/unavailable →
-        # spec.strategy.rollingUpdate.{maxSurge,maxUnavailable}. surge must be a
-        # *string* because the chart's `{{- with .surge }}` treats integer 0 as
-        # falsy and drops the field; "0%" renders correctly as maxSurge: 0%.
         rollingUpdate:
           surge: "0%"
           unavailable: 1
@@ -91,7 +85,9 @@ spec:
           - port: http
     route:
       app:
-        hostnames: []
+        hostnames:
+          - echo.${APP_DOMAIN}
+          - echo.${ALT_DOMAIN}
         parentRefs:
           - name: envoy
             namespace: envoy-system

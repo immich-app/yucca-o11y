@@ -1,4 +1,5 @@
 ---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -25,11 +26,10 @@ spec:
       enabled: true
     dns01RecursiveNameservers: https://1.1.1.1:443/dns-query,https://1.0.0.1:443/dns-query
     dns01RecursiveNameserversOnly: true
-    # TODO: Enable prometheus monitoring once we have prom crds installed and configured
-    # prometheus:
-    #   enabled: true
-    #   servicemonitor:
-    #     enabled: true
+    prometheus:
+      enabled: true
+      servicemonitor:
+        enabled: true
     webhook:
       replicaCount: 2
       podDisruptionBudget:
