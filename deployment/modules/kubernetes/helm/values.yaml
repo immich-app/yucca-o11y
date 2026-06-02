@@ -1,6 +1,4 @@
 instance:
-  distribution:
-    artifact: oci://ghcr.io/controlplaneio-fluxcd/flux-operator-manifests:v0.45.0
   cluster:
     networkPolicy: false
   components:
@@ -11,7 +9,7 @@ instance:
   sync:
     kind: GitRepository
     url: https://github.com/immich-app/yucca-o11y.git
-    ref: refs/heads/main
+    ref: refs/heads/infra-refactor
     path: kubernetes/clusters/${env}
     interval: 1h
   kustomize:

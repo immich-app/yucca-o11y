@@ -7,23 +7,22 @@ variable "tf_state_s3_access_key" {}
 variable "tf_state_s3_secret_key" {}
 variable "tf_state_s3_endpoint" {}
 
-variable "clusters" {
-  type = map(object({
+variable "cluster" {
+  type = object({
     name               = string
     endpoint           = string
-    ip                 = string
-    tailscale_ip       = string
+    operator_endpoint  = string
+    vip                = string
     client_certificate = string
     client_key         = string
     ca_certificate     = string
-  }))
-  description = "Map of cluster configurations from ovh/account module"
+  })
+  sensitive = true
 }
 
 variable "flux_operator_version" {
-  type        = string
-  default     = "0.45.0"
-  description = "Flux operator chart version"
+  type    = string
+  default = "0.50.0"
 }
 
 variable "ovh_application_key" {

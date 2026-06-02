@@ -1,4 +1,5 @@
 ---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -6,8 +7,12 @@ metadata:
   namespace: flux-system
 spec:
   dependsOn:
-    - name: openebs
-    - name: victoria-metrics-operator
+    - name: grafana-operator
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: victoria-metrics
+      namespace: o11y
   interval: 1h
   path: ./kubernetes/apps/base/victoria-metrics
   prune: true
@@ -16,22 +21,16 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: o11y
-  wait: true
   patches:
     - patch: |-
-        apiVersion: gateway.networking.k8s.io/v1
-        kind: HTTPRoute
+        apiVersion: source.toolkit.fluxcd.io/v1
+        kind: OCIRepository
         metadata:
-          name: vmauth-external
+          name: victoria-metrics
         spec:
-          hostnames:
-            - vmauth.staging.futostat.us
-            - vmauth.staging.futostatus.com
+          ref:
+            # renovate: datasource=docker depName=ghcr.io/victoriametrics/helm-charts/victoria-metrics-k8s-stack
+            tag: 0.81.0
       target:
-        kind: HTTPRoute
-        name: vmauth-external
-  postBuild:
-    substituteFrom:
-      - kind: ConfigMap
-        name: vm-zone-endpoints
-        optional: false
+        kind: OCIRepository
+        name: victoria-metrics

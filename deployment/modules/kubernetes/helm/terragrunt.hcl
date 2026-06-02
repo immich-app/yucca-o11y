@@ -14,14 +14,23 @@ locals {
 dependency "talos" {
   config_path = "../../talos/cluster"
 
+  # Cert mocks must be valid base64 — providers.tf base64-decodes on every plan.
   mock_outputs = {
-    clusters = {}
+    cluster = {
+      name               = "mock"
+      endpoint           = "https://mock:6443"
+      operator_endpoint  = "https://mock:6443"
+      vip                = "10.0.0.5"
+      client_certificate = "bW9jaw=="
+      client_key         = "bW9jaw=="
+      ca_certificate     = "bW9jaw=="
+    }
   }
-  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+  mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
 }
 
 inputs = {
-  clusters = dependency.talos.outputs.clusters
+  cluster = dependency.talos.outputs.cluster
 }
 
 generate "backend" {
@@ -31,7 +40,7 @@ generate "backend" {
 terraform {
   backend "s3" {
     bucket = "${get_env("TF_VAR_tf_state_s3_bucket")}"
-    key    = "yucca/o11y/kubernetes/helm/${local.env}${local.stage != "" ? "/${local.stage}" : ""}"
+    key    = "yucca/o11y/v3/kubernetes/helm/${local.env}${local.stage != "" ? "/${local.stage}" : ""}"
     region = "${get_env("TF_VAR_tf_state_s3_region")}"
     access_key = "${get_env("TF_VAR_tf_state_s3_access_key")}"
     secret_key = "${get_env("TF_VAR_tf_state_s3_secret_key")}"

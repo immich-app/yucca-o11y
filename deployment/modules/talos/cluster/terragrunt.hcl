@@ -14,12 +14,26 @@ locals {
 dependency "ovh" {
   config_path = "../../ovh/account"
 
+  # Mocks need ≥1 CP entry — main.tf reads local.controlplane_keys[0] for the
+  # bootstrap node, which would fail on an empty map before ovh has applied.
   mock_outputs = {
-    nodes    = {}
-    node_ips = {}
+    controlplane_nodes = {
+      mock = {
+        name       = "o11y-mock-cp"
+        region     = "RBX"
+        public_ip  = "192.0.2.10"
+        private_ip = "10.150.200.10"
+      }
+    }
+    worker_nodes         = {}
+    private_network_cidr = "10.150.200.0/24"
+    talos_installer_images = {
+      bare_metal   = "factory.talos.dev/metal-installer/mock:v1.13.0"
+      public_cloud = "factory.talos.dev/openstack-installer/mock:v1.13.0"
+    }
   }
-  mock_outputs_allowed_terraform_commands         = ["validate", "plan"]
-  mock_outputs_merge_strategy_with_state          = "shallow"
+  mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
+  mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
 dependency "tailscale" {
@@ -30,8 +44,10 @@ dependency "tailscale" {
 }
 
 inputs = {
-  nodes    = dependency.ovh.outputs.nodes
-  node_ips = dependency.ovh.outputs.node_ips
+  controlplane_nodes     = dependency.ovh.outputs.controlplane_nodes
+  worker_nodes           = dependency.ovh.outputs.worker_nodes
+  private_network_cidr   = dependency.ovh.outputs.private_network_cidr
+  talos_installer_images = dependency.ovh.outputs.talos_installer_images
 }
 
 generate "backend" {
@@ -41,7 +57,7 @@ generate "backend" {
 terraform {
   backend "s3" {
     bucket = "${get_env("TF_VAR_tf_state_s3_bucket")}"
-    key    = "yucca/o11y/talos/cluster/${local.env}${local.stage != "" ? "/${local.stage}" : ""}"
+    key    = "yucca/o11y/v3/talos/cluster/${local.env}${local.stage != "" ? "/${local.stage}" : ""}"
     region = "${get_env("TF_VAR_tf_state_s3_region")}"
     access_key = "${get_env("TF_VAR_tf_state_s3_access_key")}"
     secret_key = "${get_env("TF_VAR_tf_state_s3_secret_key")}"

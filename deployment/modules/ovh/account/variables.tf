@@ -11,44 +11,81 @@ variable "ovh_consumer_key" {
   sensitive = true
 }
 
-variable "nodes" {
+variable "controlplane_nodes" {
   type = map(object({
-    datacenter     = string
-    plan_code      = string
-    storage_option = string
-    ram_option     = string
-    vlan_ip        = string
-    has_vrack      = optional(bool, true)
+    region      = string
+    flavor_name = string
+    private_ip  = string
   }))
-  description = "Map of node configurations keyed by region/location (e.g., lon, rbx)"
+}
+
+variable "worker_nodes" {
+  type = map(object({
+    datacenter              = string
+    plan_code               = string
+    storage_option          = string
+    ram_option              = string
+    bandwidth_option        = string
+    public_bandwidth_option = string
+    private_ip              = string
+  }))
+}
+
+variable "private_network_cidr" {
+  type = string
 }
 
 variable "vrack_name" {
-  type        = string
-  default     = "o11y"
-  description = "Base name for the vRack"
+  type    = string
+  default = "o11y"
 }
 
 variable "talos_version" {
-  type        = string
-  default     = "v1.12.4"
-  description = "Talos version to deploy"
+  type    = string
+  default = "v1.13.0"
 }
 
+# Control-plane (Public Cloud / KVM) schematic: tailscale + qemu-guest-agent.
 variable "talos_schematic_id" {
-  type        = string
-  default     = "4a0d65c669d46663f377e7161e50cfd570c401f26fd9e7bda34a0216b6f1922b"
-  description = "Talos image factory schematic ID"
+  type    = string
+  default = "7d4c31cbd96db9f90c874990697c523482b2bae27fb4631d5583dcd9c281b1ff"
 }
 
-variable "ovh_iplb_plan_code" {
-  type        = string
-  default     = "iplb-lb1"
-  description = "OVH IP Load Balancing plan code"
+# Worker (bare-metal) schematic: tailscale only. qemu-guest-agent must NOT be
+# present on bare metal — it blocks on a virtio port that never appears, which
+# wedges the Talos boot sequence and reboots the node in a loop.
+variable "talos_worker_schematic_id" {
+  type    = string
+  default = "4a0d65c669d46663f377e7161e50cfd570c401f26fd9e7bda34a0216b6f1922b"
 }
 
-variable "ovh_iplb_zone" {
-  type        = string
-  default     = "rbx"
-  description = "OVH IP Load Balancing zone (datacenter, e.g. rbx, gra, fra, lon, bhs)"
+# Image must be pre-uploaded out-of-band (talos:dl:cp + talos:ul:cp mise tasks) —
+# the OVH provider doesn't upload custom images.
+variable "talos_public_cloud_image_name" {
+  type    = string
+  default = "talos-1.13.0-tailscale-qemu"
+}
+
+# IPLB tier and geographic zone (public-IP location). The LB reaches the workers
+# cross-DC over the vRack regardless of zone.
+variable "loadbalancer_plan_code" {
+  type    = string
+  default = "iplb-lb1"
+}
+
+# IPLB zones (anycast — same public IP announced from each). One zone for
+# staging; several for production ingress HA (e.g. ["gra", "rbx", "sbg"]). Each
+# extra zone is a billable addon (~£16/mo at lb1). NOTE: this set is fixed at LB
+# order time (plan_option is ForceNew + ignored after create); changing it on a
+# live LB means recreating it (new IP) or ordering the zone addon out-of-band.
+variable "loadbalancer_zones" {
+  type    = list(string)
+  default = ["gra"]
+}
+
+# NodePort the Envoy data-plane Service is pinned to; the LB members target it.
+# Must match the nodePort in kubernetes/apps/base/envoy-proxy.
+variable "envoy_node_port" {
+  type    = number
+  default = 30443
 }

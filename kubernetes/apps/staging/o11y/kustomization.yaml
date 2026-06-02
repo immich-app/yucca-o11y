@@ -3,10 +3,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ./grafana-operator.yaml
-  - ./grafana.yaml
-  - ./namespace.yaml
   - ./prometheus-operator-crds.yaml
-  - ./victoria-metrics-operator-crds.yaml
-  - ./victoria-metrics-operator.yaml
+  - ./grafana-operator.yaml
+  - ./grafana-postgres.yaml
+  - ./grafana.yaml
   - ./victoria-metrics.yaml
+  - ./victoria-metrics-users.yaml
+  - ./namespace.yaml

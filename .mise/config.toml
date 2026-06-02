@@ -1,9 +1,63 @@
 [tools]
-opentofu = "1.11.6"
-terragrunt = "0.87.0"
+"opentofu" = "1.12.1"
+"terragrunt" = "1.0.6"
+"python" = "3.14.4"
+"uv" = "0.11.7"
+"pipx" = "1.11.1"
+"pipx:python-openstackclient" = "9.0.0"
+"kubectl" = "1.35.5"
+"flux2" = "2.8.8"
+"sd" = "1.1.0"
+"talosctl" = "1.13.3"
+"helm" = "4.2.0"
+"jq" = "1.8.1"
+"gh" = "2.92.0"
+"yq" = "4.53.2"
+"kustomize" = "5.8.1"
+"markdownlint-cli2" = "0.22.1"
+"github:home-operations/flate" = "0.1.28"
 
 [env]
 TF_VAR_dist_dir="{{config_root}}/dist"
+
+# Maps long env names (development/staging/production) to the short suffixes
+# used by 1Password vault paths (dev/staging/prod).
+ENVIRONMENT_SHORT = "{% set e = get_env(name='ENVIRONMENT', default='development') %}{% if e == 'development' or e == '' %}dev{% elif e == 'production' %}prod{% else %}{{ e }}{% endif %}"
+
+# Control plane and workers boot from different Talos Factory schematics:
+#   control plane (Public Cloud / KVM): tailscale + qemu-guest-agent
+#   worker (bare metal):                tailscale only — qemu-guest-agent wedges
+#                                       bare-metal boot and reboot-loops the node
+# Control planes need the image uploaded to OVH glance (talos:{dl,ul}:cp); workers
+# are OVH BYOI, so OVH fetches their raw from the Factory at order time (no upload).
+
+[tasks."talos:dl:cp"]
+run = """
+mkdir -p {{config_root}}/.private/dist
+wget https://factory.talos.dev/image/7d4c31cbd96db9f90c874990697c523482b2bae27fb4631d5583dcd9c281b1ff/v1.13.0/openstack-amd64.raw.xz -O {{config_root}}/.private/dist/talos.1.13.0-tailscale-qemu.raw.xz
+unxz {{config_root}}/.private/dist/talos.1.13.0-tailscale-qemu.raw.xz --force
+"""
+description = "Download the control-plane Talos image (OpenStack, tailscale + qemu-guest-agent schematic)"
+dir = "{{cwd}}"
+
+[tasks."talos:ul:cp"]
+run = """
+for region in "GRA9" "GRA11" "EU-WEST-PAR" "RBX-A" "SBG5" "SBG7"; do
+  echo "Uploading to region ${region}..."
+  source {{config_root}}/.private/openstack/${ENVIRONMENT}/openrc.sh
+  openstack image create "talos-1.13.0-tailscale-qemu" \
+      --os-region "${region}" \
+      --file {{config_root}}/.private/dist/talos.1.13.0-tailscale-qemu.raw \
+      --disk-format raw \
+      --container-format bare \
+      --property hw_qemu_guest_agent=yes \
+      --property img_config_drive=mandatory \
+      --shared \
+      --progress
+done
+"""
+description = "Upload the control-plane Talos image to the env's OVH OpenStack regions (control planes only)"
+dir = "{{cwd}}"
 
 [tasks.tg]
 run = "op run --account 'team-futo.1password.com' '--env-file={{config_root}}/deployment/.env' -- terragrunt"
@@ -11,7 +65,7 @@ description = "Wrapper for terragrunt"
 dir = "{{cwd}}"
 
 [tasks."tg:fmt"]
-run = "mise run tg hclfmt"
+run = "mise run tg hcl fmt"
 description = "Format terragrunt files"
 
 [tasks.tf]
@@ -38,6 +92,16 @@ dir = "{{cwd}}"
 [tasks."tf:destroy"]
 run = "mise run tf destroy"
 dir = "{{cwd}}"
+
+[tasks."md:lint"]
+run = "markdownlint-cli2 'docs/**/*.md' 'README.md'"
+description = "Lint markdown docs"
+dir = "{{config_root}}"
+
+[tasks."md:fix"]
+run = "markdownlint-cli2 --fix 'docs/**/*.md' 'README.md'"
+description = "Auto-fix markdown lint issues where possible"
+dir = "{{config_root}}"
 
 [settings]
 experimental = true

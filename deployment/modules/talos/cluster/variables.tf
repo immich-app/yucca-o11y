@@ -8,31 +8,61 @@ variable "tailscale_tailnet_id" {
   sensitive = true
 }
 
-variable "nodes" {
+variable "controlplane_nodes" {
   type = map(object({
-    datacenter     = string
-    plan_code      = string
-    storage_option = string
-    ram_option     = string
-    vlan_ip        = string
-    has_vrack      = optional(bool, true)
+    name       = string
+    region     = string
+    public_ip  = string
+    private_ip = string
   }))
-  description = "Map of node configurations keyed by region"
 }
 
-variable "node_ips" {
-  type        = map(string)
-  description = "Map of node public IPs keyed by region (from ovh/account)"
+variable "worker_nodes" {
+  type = map(object({
+    name       = string
+    datacenter = string
+    public_ip  = string
+    private_ip = string
+  }))
+}
+
+variable "private_network_cidr" {
+  type = string
+}
+
+# Talos ships per-platform installers; sharing one breaks upgrade on the other.
+variable "talos_installer_images" {
+  type = object({
+    bare_metal   = string
+    public_cloud = string
+  })
 }
 
 variable "talos_version" {
-  type        = string
-  default     = "v1.12.4"
-  description = "Talos version to deploy"
+  type    = string
+  default = "v1.13.0"
 }
 
-variable "talos_schematic_id" {
-  type        = string
-  default     = "4a0d65c669d46663f377e7161e50cfd570c401f26fd9e7bda34a0216b6f1922b"
-  description = "Talos image factory schematic ID"
+variable "controlplane_vip_offset" {
+  type    = number
+  default = 5
+}
+
+variable "controlplane_disk" {
+  type    = string
+  default = "/dev/vda"
+}
+
+variable "worker_disk" {
+  type    = string
+  default = "/dev/nvme0n1"
+}
+
+# True only during initial bring-up of a brand-new env, before the Tailscale
+# extension has registered any node. Drop back to false once each node is on
+# the tailnet, so future applies go via the vRack and the ingress firewall
+# can drop public-NIC traffic without locking terraform out.
+variable "use_public_endpoints" {
+  type    = bool
+  default = false
 }

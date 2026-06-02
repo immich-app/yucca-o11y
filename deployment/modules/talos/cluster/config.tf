@@ -4,11 +4,11 @@ terraform {
   required_providers {
     talos = {
       source  = "siderolabs/talos"
-      version = "0.10.1"
+      version = "0.11.0"
     }
     tailscale = {
       source  = "tailscale/tailscale"
-      version = "0.28.0"
+      version = "0.29.2"
     }
   }
 }
