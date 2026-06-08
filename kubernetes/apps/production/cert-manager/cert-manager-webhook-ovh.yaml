@@ -21,3 +21,16 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: cert-manager
+  patches:
+    - patch: |-
+        apiVersion: source.toolkit.fluxcd.io/v1
+        kind: OCIRepository
+        metadata:
+          name: cert-manager-webhook-ovh
+        spec:
+          ref:
+            # renovate: datasource=docker depName=ghcr.io/aureq/charts/cert-manager-webhook-ovh
+            tag: 0.9.10
+      target:
+        kind: OCIRepository
+        name: cert-manager-webhook-ovh

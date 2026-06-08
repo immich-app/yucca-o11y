@@ -23,3 +23,15 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: o11y
+  patches:
+    - patch: |-
+        apiVersion: postgresql.cnpg.io/v1
+        kind: Cluster
+        metadata:
+          name: grafana-postgres
+        spec:
+          # renovate: datasource=docker depName=ghcr.io/cloudnative-pg/postgresql
+          imageName: ghcr.io/cloudnative-pg/postgresql:18.4@sha256:8ff3abd13383e619797f974b4fcdda6de0c2cfdad90eb47e1cd95d41fe26bf80
+      target:
+        kind: Cluster
+        name: grafana-postgres
