@@ -42,7 +42,7 @@ dir = "{{cwd}}"
 
 [tasks."talos:ul:cp"]
 run = """
-for region in "GRA9" "GRA11" "EU-WEST-PAR" "RBX-A" "SBG5" "SBG7"; do
+for region in "RBX-A" "GRA9" "EU-WEST-PAR"; do
   echo "Uploading to region ${region}..."
   source {{config_root}}/.private/openstack/${ENVIRONMENT}/openrc.sh
   openstack image create "talos-1.13.0-tailscale-qemu" \
