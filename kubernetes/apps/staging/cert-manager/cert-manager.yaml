@@ -21,16 +21,3 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: cert-manager
-  patches:
-    - patch: |-
-        apiVersion: source.toolkit.fluxcd.io/v1
-        kind: OCIRepository
-        metadata:
-          name: cert-manager
-        spec:
-          ref:
-            # renovate: datasource=docker depName=quay.io/jetstack/charts/cert-manager
-            tag: v1.19.4
-      target:
-        kind: OCIRepository
-        name: cert-manager

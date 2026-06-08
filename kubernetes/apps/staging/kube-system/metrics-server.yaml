@@ -21,16 +21,3 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: kube-system
-  patches:
-    - patch: |-
-        apiVersion: source.toolkit.fluxcd.io/v1
-        kind: OCIRepository
-        metadata:
-          name: metrics-server
-        spec:
-          ref:
-            # renovate: datasource=docker depName=ghcr.io/home-operations/charts-mirror/metrics-server
-            tag: 3.13.0
-      target:
-        kind: OCIRepository
-        name: metrics-server

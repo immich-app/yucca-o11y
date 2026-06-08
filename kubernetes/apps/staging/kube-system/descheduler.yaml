@@ -21,16 +21,3 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: kube-system
-  patches:
-    - patch: |-
-        apiVersion: source.toolkit.fluxcd.io/v1
-        kind: OCIRepository
-        metadata:
-          name: descheduler
-        spec:
-          ref:
-            # renovate: datasource=docker depName=ghcr.io/home-operations/charts-mirror/descheduler
-            tag: 0.36.0
-      target:
-        kind: OCIRepository
-        name: descheduler

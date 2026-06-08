@@ -21,16 +21,3 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: kube-system
-  patches:
-    - patch: |-
-        apiVersion: source.toolkit.fluxcd.io/v1
-        kind: OCIRepository
-        metadata:
-          name: reloader
-        spec:
-          ref:
-            # renovate: datasource=docker depName=ghcr.io/stakater/charts/reloader
-            tag: 2.2.12
-      target:
-        kind: OCIRepository
-        name: reloader

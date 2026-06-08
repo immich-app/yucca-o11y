@@ -8,3 +8,4 @@ data:
   APP_DOMAIN: staging.futostat.us
   ALT_DOMAIN: staging.futostatus.com
   CLUSTER_NAME: o11y-staging
+  OP_VAULT: o11y_tf_staging

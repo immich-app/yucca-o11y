@@ -3,22 +3,34 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: spegel
+  name: descheduler
   namespace: flux-system
 spec:
   dependsOn:
     - name: prometheus-operator-crds
-    - name: grafana-operator
   healthChecks:
     - apiVersion: helm.toolkit.fluxcd.io/v2
       kind: HelmRelease
-      name: spegel
+      name: descheduler
       namespace: kube-system
   interval: 1h
-  path: ./kubernetes/apps/base/spegel
+  path: ./kubernetes/apps/base/descheduler
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
   targetNamespace: kube-system
+  patches:
+    - patch: |-
+        apiVersion: source.toolkit.fluxcd.io/v1
+        kind: OCIRepository
+        metadata:
+          name: descheduler
+        spec:
+          ref:
+            # renovate: datasource=docker depName=ghcr.io/home-operations/charts-mirror/descheduler
+            tag: 0.36.0
+      target:
+        kind: OCIRepository
+        name: descheduler

@@ -19,3 +19,16 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: cnpg-system
+  patches:
+    - patch: |-
+        apiVersion: source.toolkit.fluxcd.io/v1
+        kind: OCIRepository
+        metadata:
+          name: cloudnative-pg
+        spec:
+          ref:
+            # renovate: datasource=docker depName=ghcr.io/cloudnative-pg/charts/cloudnative-pg
+            tag: 0.28.2
+      target:
+        kind: OCIRepository
+        name: cloudnative-pg
