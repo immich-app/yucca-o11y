@@ -22,16 +22,3 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: kube-system
-  patches:
-    - patch: |-
-        apiVersion: source.toolkit.fluxcd.io/v1
-        kind: OCIRepository
-        metadata:
-          name: spegel
-        spec:
-          ref:
-            # renovate: datasource=docker depName=ghcr.io/spegel-org/helm-charts/spegel
-            tag: 0.7.1
-      target:
-        kind: OCIRepository
-        name: spegel

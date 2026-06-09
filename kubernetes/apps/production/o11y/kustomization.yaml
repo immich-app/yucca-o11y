@@ -1,0 +1,12 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./prometheus-operator-crds.yaml
+  - ./grafana-operator.yaml
+  - ./grafana-postgres.yaml
+  - ./grafana.yaml
+  - ./victoria-metrics.yaml
+  - ./victoria-metrics-users.yaml
+  - ./namespace.yaml

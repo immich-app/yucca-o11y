@@ -21,16 +21,3 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: o11y
-  patches:
-    - patch: |-
-        apiVersion: source.toolkit.fluxcd.io/v1
-        kind: OCIRepository
-        metadata:
-          name: victoria-metrics
-        spec:
-          ref:
-            # renovate: datasource=docker depName=ghcr.io/victoriametrics/helm-charts/victoria-metrics-k8s-stack
-            tag: 0.81.0
-      target:
-        kind: OCIRepository
-        name: victoria-metrics

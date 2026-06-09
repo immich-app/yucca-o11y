@@ -59,6 +59,27 @@ done
 description = "Upload the control-plane Talos image to the env's OVH OpenStack regions (control planes only)"
 dir = "{{cwd}}"
 
+[tasks."talos:talosconfig"]
+run = """
+: "${ENVIRONMENT:?set ENVIRONMENT=staging (or production) first}"
+mkdir -p {{config_root}}/.private/${ENVIRONMENT}
+mise run tg run --working-dir deployment/modules/talos/cluster output -- -raw talos_client_configuration > {{config_root}}/.private/${ENVIRONMENT}/talosconfig
+chmod 600 {{config_root}}/.private/${ENVIRONMENT}/talosconfig
+"""
+description = "Fetch talosconfig for $ENVIRONMENT into .private/<env>/"
+dir = "{{cwd}}"
+
+[tasks."talos:kubeconfig"]
+run = """
+: "${ENVIRONMENT:?set ENVIRONMENT=staging (or production) first}"
+mkdir -p {{config_root}}/.private/${ENVIRONMENT}
+mise run tg run --working-dir deployment/modules/talos/cluster output -- -raw kubeconfig > {{config_root}}/.private/${ENVIRONMENT}/kubeconfig
+sd -F "server: https://10.150.200.5:6443" "server: https://10.150.200.10:6443" {{config_root}}/.private/${ENVIRONMENT}/kubeconfig
+chmod 600 {{config_root}}/.private/${ENVIRONMENT}/kubeconfig
+"""
+description = "Fetch kubeconfig for $ENVIRONMENT into .private/<env>/ (server repointed to a CP private IP)"
+dir = "{{cwd}}"
+
 [tasks.tg]
 run = "op run --account 'team-futo.1password.com' '--env-file={{config_root}}/deployment/.env' -- terragrunt"
 description = "Wrapper for terragrunt"

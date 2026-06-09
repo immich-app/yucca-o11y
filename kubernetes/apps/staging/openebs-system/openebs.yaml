@@ -19,16 +19,3 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: openebs-system
-  patches:
-    - patch: |-
-        apiVersion: source.toolkit.fluxcd.io/v1
-        kind: OCIRepository
-        metadata:
-          name: openebs
-        spec:
-          ref:
-            # renovate: datasource=docker depName=ghcr.io/openebs/charts/openebs
-            tag: 4.4.0
-      target:
-        kind: OCIRepository
-        name: openebs

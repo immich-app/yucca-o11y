@@ -22,16 +22,3 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: default
-  patches:
-    - patch: |-
-        apiVersion: source.toolkit.fluxcd.io/v1
-        kind: OCIRepository
-        metadata:
-          name: echo
-        spec:
-          ref:
-            # renovate: datasource=docker depName=ghcr.io/bjw-s-labs/helm/app-template
-            tag: 4.6.2
-      target:
-        kind: OCIRepository
-        name: echo

@@ -21,16 +21,3 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: envoy-system
-  patches:
-    - patch: |-
-        apiVersion: source.toolkit.fluxcd.io/v1
-        kind: OCIRepository
-        metadata:
-          name: envoy-gateway
-        spec:
-          ref:
-            # renovate: datasource=docker depName=mirror.gcr.io/envoyproxy/gateway-helm
-            tag: 1.7.0
-      target:
-        kind: OCIRepository
-        name: envoy-gateway

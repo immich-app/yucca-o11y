@@ -1,0 +1,37 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: grafana-postgres
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: cloudnative-pg
+    - name: external-secrets
+    - name: prometheus-operator-crds
+  healthChecks:
+    - apiVersion: postgresql.cnpg.io/v1
+      kind: Cluster
+      name: grafana-postgres
+      namespace: o11y
+  interval: 1h
+  path: ./kubernetes/apps/base/grafana-postgres
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: o11y
+  patches:
+    - patch: |-
+        apiVersion: postgresql.cnpg.io/v1
+        kind: Cluster
+        metadata:
+          name: grafana-postgres
+        spec:
+          # renovate: datasource=docker depName=ghcr.io/cloudnative-pg/postgresql
+          imageName: ghcr.io/cloudnative-pg/postgresql:18.4@sha256:8ff3abd13383e619797f974b4fcdda6de0c2cfdad90eb47e1cd95d41fe26bf80
+      target:
+        kind: Cluster
+        name: grafana-postgres
