@@ -445,36 +445,36 @@ url = "https://github.com/siderolabs/talos/releases/download/v1.13.3/talosctl-wi
 provenance = "cosign"
 
 [[tools.terragrunt]]
-version = "1.0.6"
+version = "1.0.8"
 backend = "aqua:gruntwork-io/terragrunt"
 
 [tools.terragrunt."platforms.linux-arm64"]
-checksum = "sha256:47112b5f2adab14064b92b83ba9bb7b509697eb205be4911a4e6f29f245dc0be"
-url = "https://github.com/gruntwork-io/terragrunt/releases/download/v1.0.6/terragrunt_linux_arm64.tar.gz"
+checksum = "sha256:31cf316e1294a9514e9c8738f66d6ce02f868cb0ca7066ce5b460efaa1a8df1c"
+url = "https://github.com/gruntwork-io/terragrunt/releases/download/v1.0.8/terragrunt_linux_arm64.tar.gz"
 
 [tools.terragrunt."platforms.linux-arm64-musl"]
-checksum = "sha256:47112b5f2adab14064b92b83ba9bb7b509697eb205be4911a4e6f29f245dc0be"
-url = "https://github.com/gruntwork-io/terragrunt/releases/download/v1.0.6/terragrunt_linux_arm64.tar.gz"
+checksum = "sha256:31cf316e1294a9514e9c8738f66d6ce02f868cb0ca7066ce5b460efaa1a8df1c"
+url = "https://github.com/gruntwork-io/terragrunt/releases/download/v1.0.8/terragrunt_linux_arm64.tar.gz"
 
 [tools.terragrunt."platforms.linux-x64"]
-checksum = "sha256:2a30b5b4859f5b9f877453534d8c186e5c2dd6b2d02afc0841a40b1639823fab"
-url = "https://github.com/gruntwork-io/terragrunt/releases/download/v1.0.6/terragrunt_linux_amd64.tar.gz"
+checksum = "sha256:6215504eba5a0730a11bec689a70b8afff39e62f00564ef557f2b6ab58ae3449"
+url = "https://github.com/gruntwork-io/terragrunt/releases/download/v1.0.8/terragrunt_linux_amd64.tar.gz"
 
 [tools.terragrunt."platforms.linux-x64-musl"]
-checksum = "sha256:2a30b5b4859f5b9f877453534d8c186e5c2dd6b2d02afc0841a40b1639823fab"
-url = "https://github.com/gruntwork-io/terragrunt/releases/download/v1.0.6/terragrunt_linux_amd64.tar.gz"
+checksum = "sha256:6215504eba5a0730a11bec689a70b8afff39e62f00564ef557f2b6ab58ae3449"
+url = "https://github.com/gruntwork-io/terragrunt/releases/download/v1.0.8/terragrunt_linux_amd64.tar.gz"
 
 [tools.terragrunt."platforms.macos-arm64"]
-checksum = "sha256:86ae8be7ad214338135754c74b04b493d4b42b467a8d0ffc8d331255d810ddad"
-url = "https://github.com/gruntwork-io/terragrunt/releases/download/v1.0.6/terragrunt_darwin_arm64.tar.gz"
+checksum = "sha256:0e264bff760356bf5bff4868ebf428583bd19522ea0d714d2834182d121631a7"
+url = "https://github.com/gruntwork-io/terragrunt/releases/download/v1.0.8/terragrunt_darwin_arm64.tar.gz"
 
 [tools.terragrunt."platforms.macos-x64"]
-checksum = "sha256:ea15f761cd792c1aaf9ce929b79ea643164be052ff97b91d1f45a8ee04135fa6"
-url = "https://github.com/gruntwork-io/terragrunt/releases/download/v1.0.6/terragrunt_darwin_amd64.tar.gz"
+checksum = "sha256:3e9482097b912e3e3ae802b2b1ba95113dc68cde884680a640fa82d573d629d0"
+url = "https://github.com/gruntwork-io/terragrunt/releases/download/v1.0.8/terragrunt_darwin_amd64.tar.gz"
 
 [tools.terragrunt."platforms.windows-x64"]
-checksum = "sha256:a8f39635f42c4f20b16c8b9edd5899cd2cd72379f9aa956c1a985b503e7e4dcc"
-url = "https://github.com/gruntwork-io/terragrunt/releases/download/v1.0.6/terragrunt_windows_amd64.exe.tar.gz"
+checksum = "sha256:e9754e0fe6ef7ed381015efdaa898f6ae6f1a7e3e640e69940886ced66ab6544"
+url = "https://github.com/gruntwork-io/terragrunt/releases/download/v1.0.8/terragrunt_windows_amd64.exe.tar.gz"
 
 [[tools.uv]]
 version = "0.11.7"

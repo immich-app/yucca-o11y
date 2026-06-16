@@ -1,6 +1,6 @@
 [tools]
 "opentofu" = "1.12.1"
-"terragrunt" = "1.0.6"
+"terragrunt" = "1.0.8"
 "python" = "3.14.4"
 "uv" = "0.11.7"
 "pipx" = "1.11.1"
