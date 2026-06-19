@@ -35,11 +35,6 @@ spec:
     monitoring:
       serviceMonitor:
         enabled: true
-    resources:
-      requests:
-        cpu: 10m
-      limits:
-        memory: 64Mi
     topologySpreadConstraints:
       - maxSkew: 1
         topologyKey: kubernetes.io/hostname
@@ -48,3 +43,8 @@ spec:
           matchLabels:
             app.kubernetes.io/name: echo
             app.kubernetes.io/instance: echo
+    resources:
+      requests:
+        cpu: 10m
+      limits:
+        memory: 64Mi
