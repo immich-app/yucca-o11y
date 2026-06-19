@@ -5,3 +5,4 @@ kind: Kustomization
 resources:
   - ./namespace.yaml
   - ./openebs.yaml
+  - ./storageclass-spare-disk-2.yaml

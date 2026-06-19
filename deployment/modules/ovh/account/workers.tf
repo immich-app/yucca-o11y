@@ -68,8 +68,16 @@ resource "ovh_dedicated_server" "worker" {
   }
 
   lifecycle {
-    # customizations are consumed only at order time; Talos upgrades go via
-    # machine.install.image. Re-ordering would re-charge the install fee.
-    ignore_changes = [customizations]
+    # Order-time-only fields OVH can't read back. Ignoring them stops an imported
+    # worker planning as "forces replacement" (a re-order) and an apply from
+    # reinstalling a delivered node. Skipped on create, so new workers order full.
+    ignore_changes = [
+      plan,
+      plan_option,
+      ovh_subsidiary,
+      os,
+      efi_bootloader_path,
+      customizations,
+    ]
   }
 }

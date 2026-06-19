@@ -1,21 +1,21 @@
 [tools]
-"opentofu" = "1.12.1"
-"terragrunt" = "1.0.6"
-"python" = "3.14.4"
-"uv" = "0.11.7"
-"pipx" = "1.11.1"
-"pipx:python-openstackclient" = "9.0.0"
-"kubectl" = "1.35.5"
+opentofu = "1.12.2"
+terragrunt = "1.0.8"
+python = "3.14.6"
+uv = "0.11.21"
+pipx = "1.14.1"
+"pipx:python-openstackclient" = "10.1.0"
+kubectl = "1.36.2"
 "flux2" = "2.8.8"
 "sd" = "1.1.0"
-"talosctl" = "1.13.3"
-"helm" = "4.2.0"
+talosctl = "1.13.4"
+helm = "4.2.2"
 "jq" = "1.8.1"
-"gh" = "2.92.0"
-"yq" = "4.53.2"
+gh = "2.95.0"
+yq = "4.53.3"
 "kustomize" = "5.8.1"
 "markdownlint-cli2" = "0.22.1"
-"github:home-operations/flate" = "0.1.28"
+"github:home-operations/flate" = "0.4.8"
 
 [env]
 TF_VAR_dist_dir="{{config_root}}/dist"
@@ -74,7 +74,7 @@ run = """
 : "${ENVIRONMENT:?set ENVIRONMENT=staging (or production) first}"
 mkdir -p {{config_root}}/.private/${ENVIRONMENT}
 mise run tg run --working-dir deployment/modules/talos/cluster output -- -raw kubeconfig > {{config_root}}/.private/${ENVIRONMENT}/kubeconfig
-sd -F "server: https://10.150.200.5:6443" "server: https://10.150.200.10:6443" {{config_root}}/.private/${ENVIRONMENT}/kubeconfig
+sd 'server: https://10[.]150[.]([0-9]+)[.]5:6443' 'server: https://10.150.${1}.10:6443' {{config_root}}/.private/${ENVIRONMENT}/kubeconfig
 chmod 600 {{config_root}}/.private/${ENVIRONMENT}/kubeconfig
 """
 description = "Fetch kubeconfig for $ENVIRONMENT into .private/<env>/ (server repointed to a CP private IP)"

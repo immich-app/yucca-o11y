@@ -29,7 +29,6 @@ data "ovh_order_cart_product_plan" "iplb" {
   plan_code      = var.loadbalancer_plan_code
 }
 
-# One zone addon per zone.
 data "ovh_order_cart_product_options_plan" "iplb_zone" {
   for_each = toset(var.loadbalancer_zones)
 

@@ -33,9 +33,12 @@ resource "talos_machine_configuration_apply" "worker" {
     graceful = false
   }
 
-  config_patches = [
+  config_patches = concat([
     yamlencode({
       machine = {
+        # Install disk isn't pinned: OVH's BYOI provisioning picks the disk and
+        # Talos keeps that install, so pinning here has no effect on production.
+        # worker_disk is the real install target on staging (uniform hardware).
         install = {
           disk  = var.worker_disk
           image = var.talos_installer_images.bare_metal
@@ -54,16 +57,16 @@ resource "talos_machine_configuration_apply" "worker" {
           }
         ]
         network = {
-          # NIC names match the Broadcom NetXtreme-E predictable scheme on the
-          # SYS-2 hardware currently in stock. If a re-provision lands on a
-          # different chipset, switch to deviceSelector.physicalAddress (MAC).
+          # NIC names aren't uniform across OVH workers (even within a plan code),
+          # so they're per-node via var.worker_nics. Port 0 = public (DHCP),
+          # port 1 = private vRack (static).
           interfaces = [
             {
-              interface = "eno1np0"
+              interface = var.worker_nics[each.key].public
               dhcp      = true
             },
             {
-              interface = "eno2np1"
+              interface = var.worker_nics[each.key].private
               addresses = ["${each.value.private_ip}/${split("/", var.private_network_cidr)[1]}"]
             }
           ]
@@ -112,15 +115,16 @@ resource "talos_machine_configuration_apply" "worker" {
         grow: true
     EOT
     ,
-    # Disk model match (not just `!system_disk`) so a future re-provision on
-    # different hardware fails loudly instead of silently picking another disk.
+    # Primary spare-disk volume (var.worker_data_disk_match). With local-hostpath-2
+    # using the same model + !system_disk selector, Talos spreads the two across
+    # the non-system disks.
     <<-EOT
       apiVersion: v1alpha1
       kind: UserVolumeConfig
       name: local-hostpath
       provisioning:
         diskSelector:
-          match: disk.model == "WDC CL SN720 SDAQNTW-512G-2000" && !system_disk
+          match: ${var.worker_data_disk_match}
         minSize: 100GB
         grow: true
     EOT
@@ -231,5 +235,17 @@ resource "talos_machine_configuration_apply" "worker" {
         - subnet: ${var.private_network_cidr}
         - subnet: 10.244.0.0/16
     EOT
-  ]
+  ], var.worker_data_disk2_match == "" ? [] : [
+    # Second spare NVMe — production only (data2_match = "" renders nothing).
+    <<-EOT
+      apiVersion: v1alpha1
+      kind: UserVolumeConfig
+      name: local-hostpath-2
+      provisioning:
+        diskSelector:
+          match: ${var.worker_data_disk2_match}
+        minSize: 100GB
+        grow: true
+    EOT
+  ])
 }
