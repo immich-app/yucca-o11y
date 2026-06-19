@@ -3,8 +3,6 @@
 The OVH foundation under the cluster: compute, private network, and public ingress. Each environment is a fully independent build of the same shape; they differ only in worker tier and IPLB zone count.
 
 > **Status:** staging is built and running (`o11y-staging`). Production is planned (`o11y-production`) — same shape, larger workers, multi-zone ingress.
->
-> Pricing is from OVH's GB subsidiary (GBP); USD figures convert at ~£1 = $1.27.
 
 ## Shape
 
@@ -23,7 +21,7 @@ Staging specs are confirmed against the live cluster.
 |------|------|------|-----|
 | Control plane | `b3-8` (Public Cloud) | 2 vCPU, 8 GB RAM, 50 GB NVMe, 4 Gbps private | RBX-A, GRA9, EU-WEST-PAR |
 | Worker (staging) | `SYS-2` (`24sys022`, bare metal) | Intel Xeon D-2141I, 8c/16t, 32 GB ECC DDR4, 2× 512 GB NVMe (WDC CL SN720), 1 Gbps public + private | RBX, GRA, SBG |
-| Worker (production) | `25rise01` (bare metal) | 64 GB ECC DDR4, 3× 1.92 TB NVMe, 1 Gbps public + private | RBX, GRA, SBG |
+| Worker (production) | `Rise-2` (`24rise02-v1`, bare metal) | Intel Xeon-E 2388G, 8c/16t, 128 GB ECC DDR4, 3× 1.92 TB NVMe, 1 Gbps public + 2 Gbps vRack | RBX, GRA, SBG |
 
 Same control-plane tier in both environments. Production workers add RAM and a third NVMe to carry more observability storage; the exact tier is confirmed against OVH stock at order time.
 
@@ -31,7 +29,7 @@ Same control-plane tier in both environments. Production workers add RAM and a t
 
 All intra-cluster east-west traffic — etcd, apiserver, kubelet, flannel VXLAN, Spegel peering — rides OVH's **vRack**, an L2 network spanning every DC. Public Cloud private networks and bare-metal vRack interfaces share one untagged VLAN, so control planes and workers see each other as a single L2 segment. The vRack is also the trust boundary for the Talos host firewall.
 
-Each environment has its own vRack, so both can use the same private CIDR (`10.150.200.0/24`) without coordination — a misconfigured deploy in one environment cannot reach another over the private network. Every node gets a static private IP on its vRack interface. The control-plane API is reached at a Talos floating VIP (`10.150.200.5`).
+Each environment has its own vRack **and** its own private CIDR — staging `10.150.200.0/24`, production `10.150.100.0/24` — so a misconfigured deploy in one environment cannot reach another over the private network. Every node gets a static private IP on its vRack interface. The control-plane API is reached at a Talos floating VIP at the `.5` of the environment's CIDR (`10.150.200.5` in staging).
 
 ## Public ingress: IP Load Balancing (IPLB)
 
@@ -52,24 +50,24 @@ Operators point `kubectl`/`talosctl` at a specific control plane's static privat
 
 ## Cost
 
-| Component | Staging | Production |
-|-----------|---------|------------|
-| Control plane (3× b3-8) | ~£97 / ~$123 | ~£97 / ~$123 |
-| Workers | ~£192 / ~$244 | ~£366 / ~$465 |
-| IPLB | ~£16 / ~$20 (1 zone) | ~£48 / ~$61 (3 zones) |
-| **Total / mo** | **~£305 / ~$387** | **~£511 / ~$649** |
+USD, catalog-verified (OVH prices in GBP; converted at ~1.27×). Public Cloud instances bill hourly (shown × ~730 h/mo); workers and IPLB bill monthly; vRack is free.
 
-Production figures are a target (unordered); combined they sit within the ~$1,000/month budget.
+| Component | Staging | Production | Setup (one-time) |
+|-----------|---------|------------|------------------|
+| Control plane | $123 (3× b3-8) | $123 (3× b3-8) | — |
+| Workers | $163 (3× SYS-2) | $465 (3× Rise-2) | $221 |
+| IPLB | $20 (1 zone) | $61 (3 zones) | — |
+| **Total / mo** | **$306** | **$649** | **$221** |
+
+Staging + production run-rate ≈ **$955/mo** plus the one-time **$221** production install fee — within the ~$1,000/month budget.
 
 ## Environment differences
 
 | Parameter | Staging | Production |
 |-----------|---------|------------|
 | Cluster name | `o11y-staging` | `o11y-production` |
-| Workers | 3× `SYS-2` (`24sys022`) | 3× `25rise01` |
+| Workers | 3× `SYS-2` (`24sys022`) | 3× `Rise-2` (`24rise02-v1`) |
 | IPLB | 1 zone (`gra`) | 3 zones (`gra` + `rbx` + `sbg`), anycast |
-| Private CIDR | `10.150.200.0/24` | `10.150.200.0/24` (same — isolated by its own vRack) |
+| Private CIDR | `10.150.200.0/24` | `10.150.100.0/24` |
 | Tailscale tag | `tag:env-staging` | `tag:env-production` |
 | Flux source | `staging` overlay | `production` overlay |
-
-A minimal `development` environment also exists in the Terragrunt topology map (a single Public Cloud control plane, no workers, `10.150.50.0/24`) for exercising the modules cheaply. It is not a full cluster.

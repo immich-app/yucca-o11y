@@ -59,6 +59,7 @@ locals {
         }
       }
       private_network_cidr = "10.150.200.0/24"
+      loadbalancer_zones   = ["gra"]
     }
 
     production = {
@@ -82,33 +83,34 @@ locals {
       worker_nodes = {
         rbx = {
           datacenter              = "rbx"
-          plan_code               = "25rise01"
-          storage_option          = "softraid-3x1920nvme-25rise"
-          ram_option              = "ram-64g-ecc-3200-25rise"
-          bandwidth_option        = "vrack-bandwidth-1000-25rise"
-          public_bandwidth_option = "bandwidth-1000-25rise"
+          plan_code               = "24rise02-v1"
+          storage_option          = "softraid-3x1920nvme-24rise02-v1"
+          ram_option              = "ram-128g-ecc-2933-24rise02-v1"
+          bandwidth_option        = "vrack-bandwidth-2000-upto-4000-24rise02-v1"
+          public_bandwidth_option = "bandwidth-1000-rise-gen2"
           private_ip              = "10.150.100.20"
         }
         gra = {
           datacenter              = "gra"
-          plan_code               = "25rise01"
-          storage_option          = "softraid-3x1920nvme-25rise"
-          ram_option              = "ram-64g-ecc-3200-25rise"
-          bandwidth_option        = "vrack-bandwidth-1000-25rise"
-          public_bandwidth_option = "bandwidth-1000-25rise"
+          plan_code               = "24rise02-v1"
+          storage_option          = "softraid-3x1920nvme-24rise02-v1"
+          ram_option              = "ram-128g-ecc-2933-24rise02-v1"
+          bandwidth_option        = "vrack-bandwidth-2000-upto-4000-24rise02-v1"
+          public_bandwidth_option = "bandwidth-1000-rise-gen2"
           private_ip              = "10.150.100.21"
         }
         sbg = {
           datacenter              = "sbg"
-          plan_code               = "25rise01"
-          storage_option          = "softraid-3x1920nvme-25rise"
-          ram_option              = "ram-64g-ecc-3200-25rise"
-          bandwidth_option        = "vrack-bandwidth-1000-25rise"
-          public_bandwidth_option = "bandwidth-1000-25rise"
+          plan_code               = "24rise02-v1"
+          storage_option          = "softraid-3x1920nvme-24rise02-v1"
+          ram_option              = "ram-128g-ecc-2933-24rise02-v1"
+          bandwidth_option        = "vrack-bandwidth-2000-upto-4000-24rise02-v1"
+          public_bandwidth_option = "bandwidth-1000-rise-gen2"
           private_ip              = "10.150.100.22"
         }
       }
       private_network_cidr = "10.150.100.0/24"
+      loadbalancer_zones   = ["gra", "rbx", "sbg"]
     }
 
     development = {
@@ -121,6 +123,7 @@ locals {
       }
       worker_nodes         = {}
       private_network_cidr = "10.150.50.0/24"
+      loadbalancer_zones   = ["gra"]
     }
   }
 
@@ -131,6 +134,7 @@ inputs = {
   controlplane_nodes   = local.topology.controlplane_nodes
   worker_nodes         = local.topology.worker_nodes
   private_network_cidr = local.topology.private_network_cidr
+  loadbalancer_zones   = local.topology.loadbalancer_zones
 }
 
 generate "backend" {

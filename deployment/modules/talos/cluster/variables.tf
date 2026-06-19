@@ -1,7 +1,10 @@
 variable "env" {}
 variable "stage" {}
 
-variable "tailscale_api_key" {
+variable "tailscale_oauth_client_id" {
+  sensitive = true
+}
+variable "tailscale_oauth_client_secret" {
   sensitive = true
 }
 variable "tailscale_tailnet_id" {
@@ -56,6 +59,32 @@ variable "controlplane_disk" {
 variable "worker_disk" {
   type    = string
   default = "/dev/nvme0n1"
+}
+
+# Talos disk-selector match (CEL) for the worker spare-disk UserVolumes.
+# local-hostpath and local-hostpath-2 both use model + !system_disk, so Talos
+# spreads them across the non-system disks — no per-node pinning, and it survives
+# a re-provision. OVH's BYOI install picks the system disk non-deterministically
+# (it varies per node), so anything position- or serial-specific would have to be
+# maintained by hand; !system_disk sidesteps that. The install disk isn't pinned
+# at all (see workers.tf) — Talos keeps whatever disk OVH installed onto.
+variable "worker_data_disk_match" {
+  type = string
+}
+
+# Second spare-disk UserVolume (local-hostpath-2); "" on envs with one spare.
+variable "worker_data_disk2_match" {
+  type    = string
+  default = ""
+}
+
+# Per-node worker NIC names (public = DHCP, private = vRack static). OVH ships
+# heterogeneous NICs even within one plan code, so these are pinned per-node.
+variable "worker_nics" {
+  type = map(object({
+    public  = string
+    private = string
+  }))
 }
 
 # True only during initial bring-up of a brand-new env, before the Tailscale

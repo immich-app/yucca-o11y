@@ -1,4 +1,7 @@
-variable "tailscale_api_key" {
+variable "tailscale_oauth_client_id" {
+  sensitive = true
+}
+variable "tailscale_oauth_client_secret" {
   sensitive = true
 }
 variable "tailscale_tailnet_id" {
