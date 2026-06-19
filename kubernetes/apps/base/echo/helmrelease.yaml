@@ -8,86 +8,43 @@ spec:
   chartRef:
     kind: OCIRepository
     name: echo
-  install:
-    crds: CreateReplace
   interval: 1h
   rollback:
     cleanupOnFail: true
   upgrade:
     cleanupOnFail: true
-    crds: CreateReplace
     strategy:
       name: RemediateOnFailure
     remediation:
       remediateLastFailure: true
       retries: 2
   values:
-    controllers:
-      echo:
-        replicas: 3
-        strategy: RollingUpdate
-        rollingUpdate:
-          surge: "0%"
-          unavailable: 1
-        containers:
-          app:
-            image:
-              repository: ghcr.io/mendhak/http-https-echo
-              tag: 40
-            env:
-              HTTP_PORT: &port 8080
-              LOG_WITHOUT_NEWLINE: true
-              LOG_IGNORE_PATH: /healthz
-              PROMETHEUS_ENABLED: true
-            probes:
-              liveness: &probes
-                enabled: true
-                custom: true
-                spec:
-                  httpGet:
-                    path: /healthz
-                    port: *port
-                  initialDelaySeconds: 0
-                  periodSeconds: 10
-                  timeoutSeconds: 1
-                  failureThreshold: 3
-              readiness: *probes
-            securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
-              capabilities: {drop: ["ALL"]}
-            resources:
-              requests:
-                cpu: 10m
-              limits:
-                memory: 64Mi
-    defaultPodOptions:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-      topologySpreadConstraints:
-        - maxSkew: 1
-          topologyKey: kubernetes.io/hostname
-          whenUnsatisfiable: DoNotSchedule
-          labelSelector:
-            matchLabels:
-              app.kubernetes.io/name: echo
-              app.kubernetes.io/instance: echo
-    service:
-      app:
-        ports:
-          http:
-            port: *port
-    serviceMonitor:
-      app:
-        endpoints:
-          - port: http
-    route:
-      app:
-        hostnames:
-          - echo.${APP_DOMAIN}
-          - echo.${ALT_DOMAIN}
-        parentRefs:
-          - name: envoy
-            namespace: envoy-system
+    replicaCount: 3
+    config:
+      kubernetes: true
+      trustedProxies:
+        - 10.244.0.0/16
+    httpRoute:
+      enabled: true
+      hostnames:
+        - echo.${APP_DOMAIN}
+        - echo.${ALT_DOMAIN}
+      parentRefs:
+        - name: envoy
+          namespace: envoy-system
+    monitoring:
+      serviceMonitor:
+        enabled: true
+    resources:
+      requests:
+        cpu: 10m
+      limits:
+        memory: 64Mi
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: echo
+            app.kubernetes.io/instance: echo

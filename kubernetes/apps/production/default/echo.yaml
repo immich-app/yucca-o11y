@@ -30,8 +30,8 @@ spec:
           name: echo
         spec:
           ref:
-            # renovate: datasource=docker depName=ghcr.io/bjw-s-labs/helm/app-template
-            tag: 4.6.2
+            # renovate: datasource=docker depName=ghcr.io/home-operations/charts/echo
+            tag: 0.1.2
       target:
         kind: OCIRepository
         name: echo
