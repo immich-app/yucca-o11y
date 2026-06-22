@@ -19,7 +19,7 @@ resource "ovh_domain_zone_record" "wildcard" {
 
   zone      = each.value
   subdomain = local.wildcard_subdomain
-  fieldtype = "CNAME"
+  fieldtype = "A"
   ttl       = 3600
-  target    = var.env == "staging" ? "staging.${each.value}." : "${each.value}."
+  target    = ovh_iploadbalancing.envoy.ipv4
 }
