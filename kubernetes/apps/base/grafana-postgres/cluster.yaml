@@ -15,7 +15,7 @@ spec:
 
   storage:
     size: 20Gi
-    storageClass: openebs-spare-disk
+    storageClass: openebs-system-disk
 
   # One instance per worker (3 workers, 3 instances).
   affinity:

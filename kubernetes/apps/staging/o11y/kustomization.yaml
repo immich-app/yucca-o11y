@@ -9,4 +9,6 @@ resources:
   - ./grafana.yaml
   - ./victoria-metrics.yaml
   - ./victoria-metrics-users.yaml
+  - ./victoria-logs.yaml
+  - ./victoria-logs-collector.yaml
   - ./namespace.yaml

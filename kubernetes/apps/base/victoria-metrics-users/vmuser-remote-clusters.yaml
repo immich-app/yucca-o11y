@@ -31,3 +31,11 @@ spec:
         url: http://vminsert-victoria-metrics.o11y.svc.cluster.local:8480
       paths:
         - /insert/0/.*
+    - static:
+        url: http://victoria-logs-vlinsert.o11y.svc.cluster.local:9481
+      paths:
+        - /insert/jsonline
+        - /insert/native
+        - /insert/elasticsearch/.*
+        - /insert/loki/.*
+        - /insert/opentelemetry/.*
