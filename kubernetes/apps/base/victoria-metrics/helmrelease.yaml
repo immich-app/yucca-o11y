@@ -24,6 +24,11 @@ spec:
     global:
       clusterLabel: cluster
 
+    victoria-metrics-operator:
+      env:
+        - name: VM_GATEWAY_API_ENABLED
+          value: "true"
+
     vmcluster:
       enabled: true
       spec:
