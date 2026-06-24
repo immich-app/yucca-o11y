@@ -24,10 +24,15 @@ spec:
     global:
       clusterLabel: cluster
 
+    victoria-metrics-operator:
+      env:
+        - name: VM_GATEWAY_API_ENABLED
+          value: "true"
+
     vmcluster:
       enabled: true
       spec:
-        retentionPeriod: 30d
+        retentionPeriod: ${METRICS_RETENTION_PERIOD}
         replicationFactor: 2
         vmstorage:
           replicaCount: 3
@@ -137,6 +142,7 @@ spec:
         httpRoute:
           hostnames:
             - vmauth.${APP_DOMAIN}
+            - vmauth.${ALT_DOMAIN}
           parentRefs:
             - name: envoy
               namespace: envoy-system
