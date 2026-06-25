@@ -29,6 +29,7 @@ spec:
       "kubernetesCollector.decolorizeFields": _msg
 
     collector:
+      extraFields: '{"cluster":"${CLUSTER_NAME}"}'
       streamFields:
         - kubernetes.pod_name
         - kubernetes.pod_namespace
