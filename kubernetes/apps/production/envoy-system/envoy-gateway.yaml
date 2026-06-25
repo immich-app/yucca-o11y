@@ -30,7 +30,7 @@ spec:
         spec:
           ref:
             # renovate: datasource=docker depName=mirror.gcr.io/envoyproxy/gateway-helm
-            tag: 1.7.0
+            tag: v1.8.1
       target:
         kind: OCIRepository
         name: envoy-gateway
