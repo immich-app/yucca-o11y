@@ -31,7 +31,7 @@ spec:
         spec:
           ref:
             # renovate: datasource=docker depName=ghcr.io/home-operations/charts/echo
-            tag: 0.1.2
+            tag: 0.1.3
       target:
         kind: OCIRepository
         name: echo
