@@ -30,7 +30,7 @@ spec:
         spec:
           ref:
             # renovate: datasource=docker depName=ghcr.io/aureq/charts/cert-manager-webhook-ovh
-            tag: 0.9.10
+            tag: 0.9.13
       target:
         kind: OCIRepository
         name: cert-manager-webhook-ovh
