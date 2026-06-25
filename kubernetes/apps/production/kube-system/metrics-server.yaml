@@ -30,7 +30,7 @@ spec:
         spec:
           ref:
             # renovate: datasource=docker depName=ghcr.io/home-operations/charts-mirror/metrics-server
-            tag: 3.13.0
+            tag: 3.13.1
       target:
         kind: OCIRepository
         name: metrics-server
