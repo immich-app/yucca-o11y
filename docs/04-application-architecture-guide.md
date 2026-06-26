@@ -10,7 +10,7 @@ Envoy Gateway is the only external ingress. It runs one replica per worker with 
 
 ### TLS certificates
 
-cert-manager issues short-lived ECDSA P-256 wildcard certificates with always-rotate, using Let's Encrypt with the OVH DNS-01 challenge webhook. The certificate `dnsNames` are defined once in the base manifests using the `APP_DOMAIN`/`ALT_DOMAIN` placeholders and resolve per environment from `cluster-settings` — staging gets `*.staging.futostat.us` and `*.staging.futostatus.com`, production the bare-domain wildcards.
+cert-manager issues short-lived ECDSA P-256 wildcard certificates with always-rotate, using Let's Encrypt with the OVH DNS-01 challenge webhook. The certificate `dnsNames` are defined once in the base manifests using the `APP_DOMAIN` placeholders and resolve per environment from `cluster-settings` — staging gets `*.staging.futostatus.com`, production the bare-domain wildcards.
 
 ## VictoriaMetrics — the central metrics store
 

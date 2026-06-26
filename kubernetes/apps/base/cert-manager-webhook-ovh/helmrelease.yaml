@@ -22,13 +22,13 @@ spec:
       remediateLastFailure: true
       retries: 2
   values:
-    groupName: acme.futostat.us
+    groupName: acme.futostatus.com
     issuers:
       - name: letsencrypt-production
         create: true
         kind: ClusterIssuer
         acmeServerUrl: https://acme-v02.api.letsencrypt.org/directory
-        email: acme@futostat.us
+        email: acme@futostatus.com
         ovhEndpointName: ovh-eu
         ovhAuthenticationMethod: application
         ovhAuthenticationRef:

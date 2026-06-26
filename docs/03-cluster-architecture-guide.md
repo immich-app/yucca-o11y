@@ -73,8 +73,7 @@ Per-environment values are **not** hardcoded in `base/` and **not** patched into
 
 | Variable | Staging | Consumed by |
 |----------|---------|-------------|
-| `APP_DOMAIN` | `staging.futostat.us` | cert `dnsNames`; HTTPRoute hostnames (Grafana, vmauth, echo) |
-| `ALT_DOMAIN` | `staging.futostatus.com` | secondary-domain cert + routes |
+| `APP_DOMAIN` | `staging.futostatus.com` | cert `dnsNames`; HTTPRoute hostnames (Grafana, vmauth, echo) |
 | `CLUSTER_NAME` | `o11y-staging` | VictoriaMetrics `externalLabels.cluster` |
 
 Because of this, values that vary by environment (domains, cluster name) live once in `base/` with a placeholder rather than being duplicated across overlays — only versions are still patched per environment. A rendered object can be checked exactly as Flux will produce it using the `flate` CLI.

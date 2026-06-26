@@ -14,9 +14,24 @@ spec:
       feedback_links_enabled: "false"
       reporting_enabled: "false"
     auth:
-      disable_login_form: "false"
+      disable_login_form: "true"
+      oauth_allow_insecure_email_lookup: "true"
     auth.anonymous:
+      enabled: "false"
+    auth.basic:
+      enabled: "false"
+    auth.generic_oauth:
       enabled: "true"
+      name: Zitadel
+      client_secret: ""
+      use_pkce: "true"
+      scopes: openid email profile groups offline_access
+      auth_url: https://auth.internal.futo.org/oauth/v2/authorize
+      token_url: https://auth.internal.futo.org/oauth/v2/token
+      api_url: https://auth.internal.futo.org/oidc/v1/userinfo
+      role_attribute_path: role
+      allow_assign_grafana_admin: "true"
+      auto_login: "true"
     log:
       mode: console
     metrics:
@@ -29,6 +44,7 @@ spec:
       angular_support_enabled: "true"
     server:
       enable_gzip: "true"
+      root_url: https://grafana.${APP_DOMAIN}
     database:
       type: postgres
       host: grafana-postgres-rw.o11y.svc.cluster.local:5432
@@ -73,6 +89,11 @@ spec:
                     secretKeyRef:
                       name: grafana-secret-key
                       key: GF_SECURITY_SECRET_KEY
+                - name: GF_AUTH_GENERIC_OAUTH_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: grafana-oauth
+                      key: GF_AUTH_GENERIC_OAUTH_CLIENT_ID
               securityContext:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true
@@ -90,7 +111,6 @@ spec:
     spec:
       hostnames:
         - grafana.${APP_DOMAIN}
-        - grafana.${ALT_DOMAIN}
       parentRefs:
         - name: envoy
           namespace: envoy-system

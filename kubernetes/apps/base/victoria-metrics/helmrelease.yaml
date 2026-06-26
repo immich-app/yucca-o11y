@@ -142,7 +142,6 @@ spec:
         httpRoute:
           hostnames:
             - vmauth.${APP_DOMAIN}
-            - vmauth.${ALT_DOMAIN}
           parentRefs:
             - name: envoy
               namespace: envoy-system

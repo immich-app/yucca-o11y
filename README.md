@@ -31,7 +31,7 @@ kubernetes/
 └── clusters/
     └── <env>/
         ├── apps.yaml             # cluster-apps entry point (the Flux Instance points here)
-        └── cluster-settings.yaml # per-env ConfigMap: APP_DOMAIN, ALT_DOMAIN, CLUSTER_NAME
+        └── cluster-settings.yaml # per-env ConfigMap: APP_DOMAIN, CLUSTER_NAME
 ```
 
 State lives in S3 under `yucca/o11y/v3/<module>/<env>`. Secrets and OVH/Tailscale tokens come from the environment's 1Password vault via `op run` and `deployment/.env`.
