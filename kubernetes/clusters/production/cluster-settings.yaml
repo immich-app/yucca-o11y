@@ -5,8 +5,7 @@ metadata:
   name: cluster-settings
   namespace: flux-system
 data:
-  APP_DOMAIN: futostat.us
-  ALT_DOMAIN: futostatus.com
+  APP_DOMAIN: futostatus.com
   CLUSTER_NAME: o11y-production
   OP_VAULT: o11y_tf_prod
   LOGS_RETENTION_PERIOD: 120d

@@ -28,7 +28,6 @@ spec:
       enabled: true
       hostnames:
         - echo.${APP_DOMAIN}
-        - echo.${ALT_DOMAIN}
       parentRefs:
         - name: envoy
           namespace: envoy-system
