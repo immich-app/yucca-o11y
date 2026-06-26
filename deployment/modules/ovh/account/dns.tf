@@ -1,6 +1,6 @@
 # Zones are registered out-of-band; this module only manages records on them.
 locals {
-  domains            = ["futostatus.com"]
+  domains            = ["futostat.us", "futostatus.com"]
   wildcard_subdomain = var.env == "staging" ? "*.staging" : "*"
 }
 

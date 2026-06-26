@@ -16,6 +16,4 @@ spec:
       tls:
         certificateRefs:
           - kind: Secret
-            name: futostat-us-tls
-          - kind: Secret
             name: futostatus-com-tls
