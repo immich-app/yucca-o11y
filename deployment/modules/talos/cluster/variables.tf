@@ -1,18 +1,6 @@
 variable "env" {}
 variable "stage" {}
 
-# Retained only so the tailscale provider can destroy the (now config-removed)
-# tailnet keys; drop these with the provider in the follow-up once keys are gone.
-variable "tailscale_oauth_client_id" {
-  sensitive = true
-}
-variable "tailscale_oauth_client_secret" {
-  sensitive = true
-}
-variable "tailscale_tailnet_id" {
-  sensitive = true
-}
-
 # Netbird setup key from the netbird/cluster module (terragrunt dependency). Fed to
 # every node's netbird ExtensionServiceConfig (NB_SETUP_KEY). Takes effect once the
 # node runs a schematic that includes siderolabs/netbird.
