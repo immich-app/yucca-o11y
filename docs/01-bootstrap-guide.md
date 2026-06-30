@@ -12,8 +12,8 @@ How to stand up an environment from nothing. The cluster is built by Terragrunt 
    mise run talos:dl:cp && mise run talos:ul:cp
    ```
 
-   This image carries the `qemu-guest-agent` + `tailscale` schematic.
-4. Workers need **no download or upload** — they are OVH BYOI and pull the bare-metal raw straight from the Talos Factory at order time. The worker schematic must stay **tailscale-only**: `qemu-guest-agent` on bare metal blocks on a virtio port that never appears and reboot-loops the node.
+   This image carries the `qemu-guest-agent` + `netbird` schematic.
+4. Workers need **no download or upload** — they are OVH BYOI and pull the bare-metal raw straight from the Talos Factory at order time. The worker schematic must stay **netbird-only**: `qemu-guest-agent` on bare metal blocks on a virtio port that never appears and reboot-loops the node.
 5. For production: delete the apex DNS records via the OVH dashboard before applying.
 
 ## Apply order
@@ -31,19 +31,19 @@ export TF_VAR_env=staging
    mise run tg run --working-dir deployment/modules/ovh/account apply
    ```
 
-2. **Tailscale** — tailnet-global ACL (only needs one run across all environments).
+2. **NetBird** — the per-environment mesh objects: the Talos node group, a reusable setup key, the vRack network route (Talos nodes as routing peers), and the `yucca → resource` access policy. The Talos module consumes the setup key from here, so apply NetBird first.
 
    ```bash
-   mise run tg run --working-dir deployment/modules/tailscale/account apply
+   mise run tg run --working-dir deployment/modules/netbird/cluster apply
    ```
 
-3. **Talos (bootstrap)** — initial bring-up over public IPs, because the Tailscale extension isn't running yet.
+3. **Talos (bootstrap)** — initial bring-up over public IPs, because the NetBird extension isn't running yet.
 
    ```bash
    TF_VAR_use_public_endpoints=true mise run tg run --working-dir deployment/modules/talos/cluster apply
    ```
 
-4. **Verify** the cluster is up and operator-side Tailscale routing works. Pull the configs (see [Cluster access](#cluster-access)) and hit the APIs over the tailnet:
+4. **Verify** the cluster is up and operator-side NetBird routing works. Pull the configs (see [Cluster access](#cluster-access)) and hit the APIs over the NetBird network:
 
    ```bash
    mise run talos:kubeconfig && mise run talos:talosconfig
@@ -51,7 +51,7 @@ export TF_VAR_env=staging
    talosctl --talosconfig .private/$ENVIRONMENT/talosconfig -n 10.150.200.10 get members
    ```
 
-5. **Talos (steady state)** — drop the public-endpoints override now that Tailscale routes work; the host firewall closes the public NIC (everything except `:30443` on workers).
+5. **Talos (steady state)** — drop the public-endpoints override now that NetBird routes work; the host firewall closes the public NIC (everything except `:30443` on workers).
 
    ```bash
    unset TF_VAR_use_public_endpoints
@@ -72,7 +72,7 @@ How to get `kubectl` / `talosctl` access to an **existing** cluster (no bootstra
 
 **Prerequisites:**
 
-* **Tailscale** — the cluster APIs are reachable only over the tailnet, so your host needs Tailscale running with subnet-route consumption enabled: `tailscale set --accept-routes` on Linux, or the "Use Tailscale subnets" toggle in the macOS app.
+* **NetBird** — the cluster APIs are reachable only over the NetBird network, so your host must be running the NetBird client (`netbird up`) and joined to the FUTO NetBird account, which places your peer in the `yucca` group. The access policy then distributes the route to the cluster's vRack CIDR, so `kubectl`/`talosctl` can reach the nodes' private IPs.
 * **1Password CLI (`op`)** — installed and signed in to the `team-futo.1password.com` account. `mise run talos:config` fetches the configs through `mise run tg`, which wraps `op run` to inject the Terraform state credentials; without an authenticated `op` it can't read state.
 
 **Fetch the configs.** Two tasks pull `kubeconfig` and `talosconfig` for the environment (run whichever you need):
@@ -84,9 +84,9 @@ mise run talos:kubeconfig         # for kubectl
 mise run talos:talosconfig        # for talosctl
 ```
 
-Each writes to `.private/$ENVIRONMENT/` (mode 600) from the Talos module's Terraform outputs. `talos:kubeconfig` also repoints the kubeconfig `server:` from the floating VIP (`10.150.200.5`) to a control-plane private IP (`10.150.200.10`) — the VIP doesn't ARP reliably across DCs over Tailscale, and every CP IP is in the apiserver cert SANs so TLS still validates.
+Each writes to `.private/$ENVIRONMENT/` (mode 600) from the Talos module's Terraform outputs. `talos:kubeconfig` also repoints the kubeconfig `server:` from the floating VIP (`10.150.200.5`) to a control-plane private IP (`10.150.200.10`) — the VIP doesn't ARP reliably across DCs over the NetBird network, and every CP IP is in the apiserver cert SANs so TLS still validates.
 
-> **A highly-available operator API endpoint is TBD.** `kubectl` is pinned to a single control-plane IP, so if that CP is down you currently repoint to another by hand (any CP IP works — they're all cert SANs). The floating VIP is HA *inside* the cluster (kubelet and in-cluster clients use it) but doesn't ARP across DCs over Tailscale, so there's no HA endpoint for operators yet.
+> **A highly-available operator API endpoint is TBD.** `kubectl` is pinned to a single control-plane IP, so if that CP is down you currently repoint to another by hand (any CP IP works — they're all cert SANs). The floating VIP is HA *inside* the cluster (kubelet and in-cluster clients use it) but doesn't ARP across DCs over the NetBird network, so there's no HA endpoint for operators yet.
 
 **Point your tools at them:**
 

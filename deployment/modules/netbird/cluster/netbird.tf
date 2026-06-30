@@ -25,8 +25,8 @@ resource "netbird_group" "o11y_resource" {
 }
 
 # Reusable, non-ephemeral enrollment key for the Talos nodes — fed to the netbird
-# Talos extension as NB_SETUP_KEY (the TS_AUTHKEY equivalent). NOT ephemeral:
-# ephemeral peers are reaped after 10m idle, which would delete live nodes.
+# Talos extension as NB_SETUP_KEY. NOT ephemeral: ephemeral peers are reaped after
+# 10m idle, which would delete live nodes.
 resource "netbird_setup_key" "talos" {
   name           = "O11Y_${upper(var.env)}_TALOS"
   type           = "reusable"
@@ -37,9 +37,9 @@ resource "netbird_setup_key" "talos" {
 }
 
 # vRack subnet advertised to operators with the Talos nodes as routing peers — the
-# Netbird "Networks" model, replacing Tailscale's TS_ROUTES + autoApprovers. Every
-# node sits on the vRack, so any can route (HA); masquerade NATs operator traffic to
-# the routing peer's vRack IP, which the node firewall already trusts.
+# Netbird "Networks" model. Every node sits on the vRack, so any can route (HA);
+# masquerade NATs operator traffic to the routing peer's vRack IP, which the node
+# firewall already trusts.
 resource "netbird_network" "vrack" {
   name        = "O11Y_${upper(var.env)}_VRACK"
   description = "o11y ${var.env} vRack private subnet"

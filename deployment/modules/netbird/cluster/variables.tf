@@ -5,7 +5,7 @@ variable "netbird_tf_pat" {
 variable "env" {}
 
 # Matches the env's private_network_cidr from the ovh module — the vRack subnet
-# the Talos nodes route for operator access (the Tailscale subnet-route equivalent).
+# the Talos nodes advertise as a NetBird network route for operator access.
 variable "private_network_cidr" {
   type = string
 }
