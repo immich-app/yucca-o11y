@@ -1,18 +1,3 @@
-resource "tailscale_tailnet_key" "worker" {
-  for_each = var.worker_nodes
-
-  reusable            = true
-  ephemeral           = true
-  preauthorized       = true
-  recreate_if_invalid = "always"
-  expiry              = 7776000
-  description         = "Talos key ${each.value.name}"
-  tags = [
-    "tag:project-yucca",
-    "tag:env-${var.env}",
-  ]
-}
-
 data "talos_machine_configuration" "worker" {
   cluster_name     = local.cluster_name
   cluster_endpoint = local.cluster_endpoint
@@ -80,21 +65,9 @@ resource "talos_machine_configuration_apply" "worker" {
       hostname: ${each.value.name}
     EOT
     ,
-    # Tailscale extension is baked into the worker image's schematic; without
-    # this config block the service starts unauthenticated and hangs.
-    <<-EOT
-      name: tailscale
-      apiVersion: v1alpha1
-      kind: ExtensionServiceConfig
-      environment:
-      - TS_AUTHKEY=${tailscale_tailnet_key.worker[each.key].key}
-      - TS_HOSTNAME=${each.value.name}
-      - TS_EXTRA_ARGS=--accept-dns=false
-    EOT
-    ,
-    # Netbird overlay, alongside Tailscale during the migration. No-op until the
-    # node boots a schematic that includes siderolabs/netbird. NB_MANAGEMENT_URL is
-    # set explicitly to mirror yucca, even though it's the Cloud default.
+    # Netbird overlay — the node management mesh. Operators reach the vRack IPs
+    # via the Netbird route (server-side, masqueraded to a routing-peer's vRack
+    # IP). NB_MANAGEMENT_URL is set explicitly to mirror yucca (Cloud default).
     <<-EOT
       name: netbird
       apiVersion: v1alpha1
@@ -156,8 +129,6 @@ resource "talos_machine_configuration_apply" "worker" {
           - 50000
         protocol: tcp
       ingress:
-        - subnet: 100.64.0.0/10
-        - subnet: fd7a:115c:a1e0::/48
         - subnet: ${var.private_network_cidr}
     EOT
     ,

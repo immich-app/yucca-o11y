@@ -63,13 +63,6 @@ dependency "ovh" {
   mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
-dependency "tailscale" {
-  config_path = "../../tailscale/account"
-  mock_outputs = {
-    tailscale_output = "mock-tailscale-output"
-  }
-}
-
 dependency "netbird_cluster" {
   config_path = "../../netbird/cluster"
   mock_outputs = {

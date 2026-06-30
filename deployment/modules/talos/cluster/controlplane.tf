@@ -1,18 +1,3 @@
-resource "tailscale_tailnet_key" "controlplane" {
-  for_each = var.controlplane_nodes
-
-  reusable            = true
-  ephemeral           = true
-  preauthorized       = true
-  recreate_if_invalid = "always"
-  expiry              = 7776000
-  description         = "Talos key ${each.value.name}"
-  tags = [
-    "tag:project-yucca",
-    "tag:env-${var.env}",
-  ]
-}
-
 data "talos_machine_configuration" "controlplane" {
   cluster_name     = local.cluster_name
   cluster_endpoint = local.cluster_endpoint
@@ -54,8 +39,8 @@ resource "talos_machine_configuration_apply" "controlplane" {
           }
         ]
         # Pin the kubelet's node IP to the vRack subnet so the Kubernetes
-        # InternalIP is always the private IP and never falls back to the
-        # Tailscale CGNAT address (which happens if eth1 has no IP at kubelet
+        # InternalIP is always the private IP and never falls back to a mesh
+        # overlay address (which happens if eth1 has no IP at kubelet
         # start — see the static address below).
         kubelet = {
           nodeIP = {
@@ -129,7 +114,7 @@ resource "talos_machine_configuration_apply" "controlplane" {
         }
         apiServer = {
           # VIP for in-cluster traffic; CP private IPs for operators reaching the
-          # apiserver over Tailscale (the floating VIP doesn't ARP reliably across DCs).
+          # apiserver over the mesh (the floating VIP doesn't ARP reliably across DCs).
           certSANs = concat(
             [local.controlplane_vip],
             [for k in local.controlplane_keys : var.controlplane_nodes[k].private_ip],
@@ -146,20 +131,9 @@ resource "talos_machine_configuration_apply" "controlplane" {
       hostname: ${each.value.name}
     EOT
     ,
-    <<-EOT
-      name: tailscale
-      apiVersion: v1alpha1
-      kind: ExtensionServiceConfig
-      environment:
-      - TS_AUTHKEY=${tailscale_tailnet_key.controlplane[each.key].key}
-      - TS_HOSTNAME=${each.value.name}
-      - TS_ROUTES=${var.private_network_cidr}
-      - TS_EXTRA_ARGS=--accept-dns=false
-    EOT
-    ,
-    # Netbird overlay, alongside Tailscale during the migration. No-op until the
-    # node boots a schematic that includes siderolabs/netbird. NB_MANAGEMENT_URL is
-    # set explicitly to mirror yucca, even though it's the Cloud default.
+    # Netbird overlay — the node management mesh. Operators reach the vRack IPs
+    # via the Netbird route (server-side, masqueraded to a routing-peer's vRack
+    # IP). NB_MANAGEMENT_URL is set explicitly to mirror yucca (Cloud default).
     <<-EOT
       name: netbird
       apiVersion: v1alpha1
@@ -169,8 +143,9 @@ resource "talos_machine_configuration_apply" "controlplane" {
       - NB_MANAGEMENT_URL=https://api.netbird.io
     EOT
     ,
-    # Talos ingress firewall — default-deny on host-bound services. Allow
-    # rules use Tailscale CGNAT (operators) and the vRack CIDR (intra-cluster).
+    # Talos ingress firewall — default-deny on host-bound services. Operators reach
+    # apid/apiserver via the Netbird route, masqueraded to a routing-peer's vRack IP,
+    # so every allow rule is the vRack CIDR (+ pod CIDR for in-cluster metrics).
     <<-EOT
       apiVersion: v1alpha1
       kind: NetworkDefaultActionConfig
@@ -186,8 +161,6 @@ resource "talos_machine_configuration_apply" "controlplane" {
           - 50000
         protocol: tcp
       ingress:
-        - subnet: 100.64.0.0/10
-        - subnet: fd7a:115c:a1e0::/48
         - subnet: ${var.private_network_cidr}
     EOT
     ,
@@ -212,8 +185,6 @@ resource "talos_machine_configuration_apply" "controlplane" {
           - 6443
         protocol: tcp
       ingress:
-        - subnet: 100.64.0.0/10
-        - subnet: fd7a:115c:a1e0::/48
         - subnet: ${var.private_network_cidr}
     EOT
     ,

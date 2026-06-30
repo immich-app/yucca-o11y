@@ -25,8 +25,8 @@ TF_VAR_dist_dir="{{config_root}}/dist"
 ENVIRONMENT_SHORT = "{% set e = get_env(name='ENVIRONMENT', default='development') %}{% if e == 'development' or e == '' %}dev{% elif e == 'production' %}prod{% else %}{{ e }}{% endif %}"
 
 # Control plane and workers boot from different Talos Factory schematics:
-#   control plane (Public Cloud / KVM): tailscale + qemu-guest-agent
-#   worker (bare metal):                tailscale only — qemu-guest-agent wedges
+#   control plane (Public Cloud / KVM): qemu-guest-agent + netbird
+#   worker (bare metal):                netbird only — qemu-guest-agent wedges
 #                                       bare-metal boot and reboot-loops the node
 # Control planes need the image uploaded to OVH glance (talos:{dl,ul}:cp); workers
 # are OVH BYOI, so OVH fetches their raw from the Factory at order time (no upload).
@@ -34,10 +34,10 @@ ENVIRONMENT_SHORT = "{% set e = get_env(name='ENVIRONMENT', default='development
 [tasks."talos:dl:cp"]
 run = """
 mkdir -p {{config_root}}/.private/dist
-wget https://factory.talos.dev/image/44cc977f03183f21038121ea83e7a6889145af609eb75fd432ddc9a8cf1e8662/v1.13.0/openstack-amd64.raw.xz -O {{config_root}}/.private/dist/talos.1.13.0-tailscale-qemu-netbird.raw.xz
-unxz {{config_root}}/.private/dist/talos.1.13.0-tailscale-qemu-netbird.raw.xz --force
+wget https://factory.talos.dev/image/bbfcb7053b1609712a977830952455432825890922cb6bac23cea34b980970f1/v1.13.5/openstack-amd64.raw.xz -O {{config_root}}/.private/dist/talos.1.13.5-qemu-netbird.raw.xz
+unxz {{config_root}}/.private/dist/talos.1.13.5-qemu-netbird.raw.xz --force
 """
-description = "Download the control-plane Talos image (OpenStack, tailscale + qemu-guest-agent + netbird schematic)"
+description = "Download the control-plane Talos image (OpenStack, qemu-guest-agent + netbird schematic)"
 dir = "{{cwd}}"
 
 [tasks."talos:ul:cp"]
@@ -45,9 +45,9 @@ run = """
 for region in "RBX-A" "GRA9" "EU-WEST-PAR"; do
   echo "Uploading to region ${region}..."
   source {{config_root}}/.private/openstack/${ENVIRONMENT}/openrc.sh
-  openstack image create "talos-1.13.0-tailscale-qemu-netbird" \
+  openstack image create "talos-1.13.5-qemu-netbird" \
       --os-region "${region}" \
-      --file {{config_root}}/.private/dist/talos.1.13.0-tailscale-qemu-netbird.raw \
+      --file {{config_root}}/.private/dist/talos.1.13.5-qemu-netbird.raw \
       --disk-format raw \
       --container-format bare \
       --property hw_qemu_guest_agent=yes \

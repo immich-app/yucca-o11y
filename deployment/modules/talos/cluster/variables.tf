@@ -1,6 +1,8 @@
 variable "env" {}
 variable "stage" {}
 
+# Retained only so the tailscale provider can destroy the (now config-removed)
+# tailnet keys; drop these with the provider in the follow-up once keys are gone.
 variable "tailscale_oauth_client_id" {
   sensitive = true
 }
@@ -50,7 +52,7 @@ variable "talos_installer_images" {
 
 variable "talos_version" {
   type    = string
-  default = "v1.13.0"
+  default = "v1.13.5"
 }
 
 variable "controlplane_vip_offset" {
@@ -94,9 +96,9 @@ variable "worker_nics" {
   }))
 }
 
-# True only during initial bring-up of a brand-new env, before the Tailscale
+# True only during initial bring-up of a brand-new env, before the Netbird
 # extension has registered any node. Drop back to false once each node is on
-# the tailnet, so future applies go via the vRack and the ingress firewall
+# the netbird mesh, so future applies go via the vRack and the ingress firewall
 # can drop public-NIC traffic without locking terraform out.
 variable "use_public_endpoints" {
   type    = bool
