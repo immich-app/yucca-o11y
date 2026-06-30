@@ -11,6 +11,13 @@ variable "tailscale_tailnet_id" {
   sensitive = true
 }
 
+# Netbird setup key from the netbird/cluster module (terragrunt dependency). Fed to
+# every node's netbird ExtensionServiceConfig (NB_SETUP_KEY). Takes effect once the
+# node runs a schematic that includes siderolabs/netbird.
+variable "netbird_setup_key" {
+  sensitive = true
+}
+
 variable "controlplane_nodes" {
   type = map(object({
     name       = string

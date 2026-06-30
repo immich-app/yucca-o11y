@@ -34,10 +34,10 @@ ENVIRONMENT_SHORT = "{% set e = get_env(name='ENVIRONMENT', default='development
 [tasks."talos:dl:cp"]
 run = """
 mkdir -p {{config_root}}/.private/dist
-wget https://factory.talos.dev/image/7d4c31cbd96db9f90c874990697c523482b2bae27fb4631d5583dcd9c281b1ff/v1.13.0/openstack-amd64.raw.xz -O {{config_root}}/.private/dist/talos.1.13.0-tailscale-qemu.raw.xz
-unxz {{config_root}}/.private/dist/talos.1.13.0-tailscale-qemu.raw.xz --force
+wget https://factory.talos.dev/image/44cc977f03183f21038121ea83e7a6889145af609eb75fd432ddc9a8cf1e8662/v1.13.0/openstack-amd64.raw.xz -O {{config_root}}/.private/dist/talos.1.13.0-tailscale-qemu-netbird.raw.xz
+unxz {{config_root}}/.private/dist/talos.1.13.0-tailscale-qemu-netbird.raw.xz --force
 """
-description = "Download the control-plane Talos image (OpenStack, tailscale + qemu-guest-agent schematic)"
+description = "Download the control-plane Talos image (OpenStack, tailscale + qemu-guest-agent + netbird schematic)"
 dir = "{{cwd}}"
 
 [tasks."talos:ul:cp"]
@@ -45,9 +45,9 @@ run = """
 for region in "RBX-A" "GRA9" "EU-WEST-PAR"; do
   echo "Uploading to region ${region}..."
   source {{config_root}}/.private/openstack/${ENVIRONMENT}/openrc.sh
-  openstack image create "talos-1.13.0-tailscale-qemu" \
+  openstack image create "talos-1.13.0-tailscale-qemu-netbird" \
       --os-region "${region}" \
-      --file {{config_root}}/.private/dist/talos.1.13.0-tailscale-qemu.raw \
+      --file {{config_root}}/.private/dist/talos.1.13.0-tailscale-qemu-netbird.raw \
       --disk-format raw \
       --container-format bare \
       --property hw_qemu_guest_agent=yes \

@@ -70,6 +70,14 @@ dependency "tailscale" {
   }
 }
 
+dependency "netbird_cluster" {
+  config_path = "../../netbird/cluster"
+  mock_outputs = {
+    talos_setup_key = "mock-netbird-setup-key"
+  }
+  mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
+}
+
 inputs = {
   controlplane_nodes     = dependency.ovh.outputs.controlplane_nodes
   worker_nodes           = dependency.ovh.outputs.worker_nodes
@@ -78,6 +86,7 @@ inputs = {
   worker_data_disk_match  = local.worker_data_disk_match
   worker_data_disk2_match = local.worker_data_disk2_match
   worker_nics             = local.worker_nics
+  netbird_setup_key       = dependency.netbird_cluster.outputs.talos_setup_key
 }
 
 generate "backend" {

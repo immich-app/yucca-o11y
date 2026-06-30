@@ -11,13 +11,6 @@ output "cluster" {
   }
 }
 
-output "controlplane_tailscale_ips" {
-  value = {
-    for k, _ in var.controlplane_nodes :
-    k => data.tailscale_device.controlplane[k].addresses[0]
-  }
-}
-
 output "talos_client_configuration" {
   sensitive = true
   value     = data.talos_client_configuration.this.talos_config

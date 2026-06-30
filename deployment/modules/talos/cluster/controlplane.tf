@@ -13,15 +13,6 @@ resource "tailscale_tailnet_key" "controlplane" {
   ]
 }
 
-data "tailscale_device" "controlplane" {
-  for_each = var.controlplane_nodes
-
-  hostname = each.value.name
-  wait_for = "300s"
-
-  depends_on = [talos_machine_bootstrap.this]
-}
-
 data "talos_machine_configuration" "controlplane" {
   cluster_name     = local.cluster_name
   cluster_endpoint = local.cluster_endpoint
@@ -164,6 +155,18 @@ resource "talos_machine_configuration_apply" "controlplane" {
       - TS_HOSTNAME=${each.value.name}
       - TS_ROUTES=${var.private_network_cidr}
       - TS_EXTRA_ARGS=--accept-dns=false
+    EOT
+    ,
+    # Netbird overlay, alongside Tailscale during the migration. No-op until the
+    # node boots a schematic that includes siderolabs/netbird. NB_MANAGEMENT_URL is
+    # set explicitly to mirror yucca, even though it's the Cloud default.
+    <<-EOT
+      name: netbird
+      apiVersion: v1alpha1
+      kind: ExtensionServiceConfig
+      environment:
+      - NB_SETUP_KEY=${var.netbird_setup_key}
+      - NB_MANAGEMENT_URL=https://api.netbird.io
     EOT
     ,
     # Talos ingress firewall — default-deny on host-bound services. Allow

@@ -45,25 +45,25 @@ variable "talos_version" {
   default = "v1.13.0"
 }
 
-# Control-plane (Public Cloud / KVM) schematic: tailscale + qemu-guest-agent.
+# Control-plane (Public Cloud / KVM) schematic: tailscale + qemu-guest-agent + netbird.
 variable "talos_schematic_id" {
   type    = string
-  default = "7d4c31cbd96db9f90c874990697c523482b2bae27fb4631d5583dcd9c281b1ff"
+  default = "44cc977f03183f21038121ea83e7a6889145af609eb75fd432ddc9a8cf1e8662"
 }
 
-# Worker (bare-metal) schematic: tailscale only. qemu-guest-agent must NOT be
+# Worker (bare-metal) schematic: tailscale + netbird. qemu-guest-agent must NOT be
 # present on bare metal — it blocks on a virtio port that never appears, which
 # wedges the Talos boot sequence and reboots the node in a loop.
 variable "talos_worker_schematic_id" {
   type    = string
-  default = "4a0d65c669d46663f377e7161e50cfd570c401f26fd9e7bda34a0216b6f1922b"
+  default = "c4bb1aeefb5096d530424af39e88e862e578056d6d7e8f49066ff143ce11c313"
 }
 
 # Image must be pre-uploaded out-of-band (talos:dl:cp + talos:ul:cp mise tasks) —
 # the OVH provider doesn't upload custom images.
 variable "talos_public_cloud_image_name" {
   type    = string
-  default = "talos-1.13.0-tailscale-qemu"
+  default = "talos-1.13.0-tailscale-qemu-netbird"
 }
 
 # IPLB tier and geographic zone (public-IP location). The LB reaches the workers

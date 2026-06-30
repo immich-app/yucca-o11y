@@ -92,6 +92,18 @@ resource "talos_machine_configuration_apply" "worker" {
       - TS_EXTRA_ARGS=--accept-dns=false
     EOT
     ,
+    # Netbird overlay, alongside Tailscale during the migration. No-op until the
+    # node boots a schematic that includes siderolabs/netbird. NB_MANAGEMENT_URL is
+    # set explicitly to mirror yucca, even though it's the Cloud default.
+    <<-EOT
+      name: netbird
+      apiVersion: v1alpha1
+      kind: ExtensionServiceConfig
+      environment:
+      - NB_SETUP_KEY=${var.netbird_setup_key}
+      - NB_MANAGEMENT_URL=https://api.netbird.io
+    EOT
+    ,
     <<-EOT
       apiVersion: v1alpha1
       kind: VolumeConfig
@@ -235,7 +247,7 @@ resource "talos_machine_configuration_apply" "worker" {
         - subnet: ${var.private_network_cidr}
         - subnet: 10.244.0.0/16
     EOT
-  ], var.worker_data_disk2_match == "" ? [] : [
+    ], var.worker_data_disk2_match == "" ? [] : [
     # Second spare NVMe — production only (data2_match = "" renders nothing).
     <<-EOT
       apiVersion: v1alpha1
