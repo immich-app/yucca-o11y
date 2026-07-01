@@ -63,11 +63,12 @@ dependency "ovh" {
   mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
-dependency "tailscale" {
-  config_path = "../../tailscale/account"
+dependency "netbird_cluster" {
+  config_path = "../../netbird/cluster"
   mock_outputs = {
-    tailscale_output = "mock-tailscale-output"
+    talos_setup_key = "mock-netbird-setup-key"
   }
+  mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
 }
 
 inputs = {
@@ -78,6 +79,7 @@ inputs = {
   worker_data_disk_match  = local.worker_data_disk_match
   worker_data_disk2_match = local.worker_data_disk2_match
   worker_nics             = local.worker_nics
+  netbird_setup_key       = dependency.netbird_cluster.outputs.talos_setup_key
 }
 
 generate "backend" {

@@ -2,7 +2,7 @@
 
 The OVH foundation under the cluster: compute, private network, and public ingress. Each environment is a fully independent build of the same shape; they differ only in worker tier and IPLB zone count.
 
-> **Status:** staging is built and running (`o11y-staging`). Production is planned (`o11y-production`) — same shape, larger workers, multi-zone ingress.
+> **Status:** both environments are built and running — `o11y-staging` and `o11y-production`. Same shape; production has larger workers and multi-zone ingress.
 
 ## Shape
 
@@ -42,11 +42,11 @@ The worker host firewall scopes `:30443` to OVH's IPLB NAT range (`10.108.0.0/14
 
 Because the farm targets the workers' public IPs (not the vRack), three things are required and are handled in the cluster config: NodePorts must answer on the public NIC, exactly one Envoy must run per worker, and Envoy must parse PROXY protocol. See the cluster architecture guide for those details.
 
-## Operator access (Tailscale)
+## Operator access (NetBird)
 
-Tailscale runs as a Talos system extension on **every** node, so operators reach `talosctl` and `kubectl` over the tailnet without exposing those APIs publicly. Control planes advertise the private CIDR as a subnet route, auto-approved by the tailnet ACL; workers consume the routes. The ACL is environment-scoped (`tag:env-staging` vs `tag:env-production`) so staging operators can't pivot into production.
+NetBird runs as a Talos system extension on **every** node, so operators reach `talosctl` and `kubectl` over the NetBird network without exposing those APIs publicly. The vRack subnet is published as a NetBird network route with the Talos nodes as routing peers — any node can route, so it's HA — and operator traffic is masqueraded to the routing peer's vRack IP, which the host firewall already trusts. A per-environment access policy lets the shared `yucca` operator group reach this environment's routed subnet on the management ports only (apid `50000`, kube-apiserver `6443`); the groups and policy are environment-scoped (`O11Y_STAGING_*` vs `O11Y_PRODUCTION_*`), so staging operators can't pivot into production.
 
-Operators point `kubectl`/`talosctl` at a specific control plane's static private IP — not the floating VIP, since cross-DC ARP for the VIP over Tailscale subnet routes is unreliable. The VIP remains the in-cluster apiserver endpoint used by kubelet and other in-cluster components.
+Operators point `kubectl`/`talosctl` at a specific control plane's static private IP — not the floating VIP, since cross-DC ARP for the VIP over the NetBird network route is unreliable. The VIP remains the in-cluster apiserver endpoint used by kubelet and other in-cluster components.
 
 ## Cost
 
@@ -69,5 +69,5 @@ Staging + production run-rate ≈ **$955/mo** plus the one-time **$221** product
 | Workers | 3× `SYS-2` (`24sys022`) | 3× `Rise-2` (`24rise02-v1`) |
 | IPLB | 1 zone (`gra`) | 3 zones (`gra` + `rbx` + `sbg`), anycast |
 | Private CIDR | `10.150.200.0/24` | `10.150.100.0/24` |
-| Tailscale tag | `tag:env-staging` | `tag:env-production` |
+| NetBird objects | `O11Y_STAGING_*` | `O11Y_PRODUCTION_*` |
 | Flux source | `staging` overlay | `production` overlay |

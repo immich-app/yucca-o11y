@@ -4,7 +4,7 @@ The centralized observability platform for FUTO services. A single Talos Kuberne
 
 Built for geographic resilience with single-cluster operational simplicity: three control planes in low-latency DCs hold one etcd quorum, three bare-metal workers carry the observability workload, and everything talks over a private OVH vRack.
 
-**Status:** staging is built and running (`o11y-staging`); production is planned (`o11y-production`).
+**Status:** both environments are built and running — `o11y-staging` and `o11y-production`.
 
 ## Documentation
 
@@ -20,7 +20,7 @@ Built for geographic resilience with single-cluster operational simplicity: thre
 ```text
 deployment/modules/
 ├── ovh/account/          # cloud project, vRack, private network, CPs, workers, IPLB, DNS
-├── tailscale/account/    # tailnet-global ACL and tailnet settings
+├── netbird/cluster/      # per-env mesh: node group, setup key, vRack network route, access policy
 ├── talos/cluster/        # machine secrets, CP + worker configs, bootstrap, ingress firewall
 └── kubernetes/helm/      # Flux Operator + Instance, env-scoped secrets
 
@@ -34,4 +34,4 @@ kubernetes/
         └── cluster-settings.yaml # per-env ConfigMap: APP_DOMAIN, CLUSTER_NAME
 ```
 
-State lives in S3 under `yucca/o11y/v3/<module>/<env>`. Secrets and OVH/Tailscale tokens come from the environment's 1Password vault via `op run` and `deployment/.env`.
+State lives in S3 under `yucca/o11y/v3/<module>/<env>`. Secrets and OVH/NetBird tokens come from 1Password via `op run` and `deployment/.env`.

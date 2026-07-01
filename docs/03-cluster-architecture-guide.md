@@ -12,8 +12,8 @@ Control planes and workers use **different** Talos Factory schematics, on purpos
 
 | Node type | Platform | Schematic |
 |-----------|----------|-----------|
-| Control plane | OVH Public Cloud (KVM) | `tailscale` + `qemu-guest-agent` |
-| Worker | Bare metal | `tailscale` only |
+| Control plane | OVH Public Cloud (KVM) | `netbird` + `qemu-guest-agent` |
+| Worker | Bare metal | `netbird` only |
 
 `qemu-guest-agent` on bare metal wedges boot — it waits on a virtio-serial port that isn't present and reboot-loops the node. The control-plane image is an OpenStack image uploaded to OVH glance once; workers are BYOI and fetch their raw image from the Factory at order time.
 
@@ -36,9 +36,9 @@ Default-deny ingress on every node; anything not listed is dropped at the host. 
 
 | Service | Port(s) | Allowed sources |
 |---------|---------|-----------------|
-| apid | 50000/tcp | Tailscale (`100.64.0.0/10`, `fd7a:115c:a1e0::/48`), vRack |
-| trustd | 50001/tcp | Tailscale, vRack |
-| kube-apiserver (CPs) | 6443/tcp | Tailscale, vRack |
+| apid | 50000/tcp | vRack |
+| trustd | 50001/tcp | vRack |
+| kube-apiserver (CPs) | 6443/tcp | vRack |
 | etcd (CPs) | 2379–2380/tcp | vRack |
 | kubelet | 10250/tcp | vRack + pod CIDR `10.244.0.0/16` |
 | flannel VXLAN | 4789/udp | vRack |
@@ -48,6 +48,8 @@ Default-deny ingress on every node; anything not listed is dropped at the host. 
 | Node metrics (all nodes) | 10249, 9100/tcp | vRack + pod CIDR |
 
 Pod CIDR is allowed on `kubelet` and the metrics ports because pod-to-own-node-IP traffic skips flannel masquerade (a same-node scrape keeps its pod-IP source), which the vRack-only rule would otherwise drop.
+
+Operator `talosctl`/`kubectl` traffic needs no rule of its own: it arrives over the NetBird network route masqueraded to a routing peer's vRack IP, so the vRack allow on `apid` and `kube-apiserver` already covers it.
 
 ## Kubernetes
 

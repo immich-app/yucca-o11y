@@ -1,13 +1,10 @@
 variable "env" {}
 variable "stage" {}
 
-variable "tailscale_oauth_client_id" {
-  sensitive = true
-}
-variable "tailscale_oauth_client_secret" {
-  sensitive = true
-}
-variable "tailscale_tailnet_id" {
+# Netbird setup key from the netbird/cluster module (terragrunt dependency). Fed to
+# every node's netbird ExtensionServiceConfig (NB_SETUP_KEY). Takes effect once the
+# node runs a schematic that includes siderolabs/netbird.
+variable "netbird_setup_key" {
   sensitive = true
 }
 
@@ -43,7 +40,7 @@ variable "talos_installer_images" {
 
 variable "talos_version" {
   type    = string
-  default = "v1.13.0"
+  default = "v1.13.5"
 }
 
 variable "controlplane_vip_offset" {
@@ -87,9 +84,9 @@ variable "worker_nics" {
   }))
 }
 
-# True only during initial bring-up of a brand-new env, before the Tailscale
+# True only during initial bring-up of a brand-new env, before the Netbird
 # extension has registered any node. Drop back to false once each node is on
-# the tailnet, so future applies go via the vRack and the ingress firewall
+# the netbird mesh, so future applies go via the vRack and the ingress firewall
 # can drop public-NIC traffic without locking terraform out.
 variable "use_public_endpoints" {
   type    = bool
