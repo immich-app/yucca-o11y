@@ -7,7 +7,7 @@ metadata:
 spec:
   secretStoreRef:
     kind: ClusterSecretStore
-    name: onepassword-environment
+    name: onepassword-shared-environment
   target:
     name: vmuser-remote-cluster-token
     template:
@@ -15,7 +15,7 @@ spec:
         token: "{{ .password }}"
   dataFrom:
     - extract:
-        key: VICTORIAMETRICS_VMAUTH_PASSWORD
+        key: O11Y_VICTORIAMETRICS_VMAUTH_PASSWORD
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/operator.victoriametrics.com/vmuser_v1beta1.json
 apiVersion: operator.victoriametrics.com/v1beta1
@@ -39,3 +39,11 @@ spec:
         - /insert/elasticsearch/.*
         - /insert/loki/.*
         - /insert/opentelemetry/.*
+    - static:
+        url: http://vmselect-victoria-metrics.o11y.svc.cluster.local:8481
+      paths:
+        - /select/0/.*
+    - static:
+        url: http://victoria-logs-vlselect.o11y.svc.cluster.local:9471
+      paths:
+        - /select/logsql/.*
