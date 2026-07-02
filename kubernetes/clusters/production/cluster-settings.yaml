@@ -7,7 +7,8 @@ metadata:
 data:
   APP_DOMAIN: futostatus.com
   CLUSTER_NAME: o11y-production
-  OP_VAULT: o11y_tf_prod
-  LOGS_RETENTION_PERIOD: 120d
-  LOGS_STORAGE_CLASS: openebs-spare-disk-2
-  METRICS_RETENTION_PERIOD: 120d
+  OP_O11Y_VAULT: o11y_tf_prod
+  OP_SHARED_VAULT: shared_tf_prod
+  VMLOGS_RETENTION: 120d
+  VMLOGS_STORAGE_CLASS: openebs-spare-disk-2
+  VMETRICS_RETENTION: 120d

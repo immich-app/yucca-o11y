@@ -7,7 +7,8 @@ metadata:
 data:
   APP_DOMAIN: staging.futostatus.com
   CLUSTER_NAME: o11y-staging
-  OP_VAULT: o11y_tf_staging
-  LOGS_RETENTION_PERIOD: 30d
-  LOGS_STORAGE_CLASS: openebs-spare-disk
-  METRICS_RETENTION_PERIOD: 30d
+  OP_O11Y_VAULT: o11y_tf_staging
+  OP_SHARED_VAULT: shared_tf_staging
+  VMLOGS_RETENTION: 30d
+  VMLOGS_STORAGE_CLASS: openebs-spare-disk
+  VMETRICS_RETENTION: 30d

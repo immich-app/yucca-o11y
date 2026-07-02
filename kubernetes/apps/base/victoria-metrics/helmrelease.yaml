@@ -32,7 +32,7 @@ spec:
     vmcluster:
       enabled: true
       spec:
-        retentionPeriod: ${METRICS_RETENTION_PERIOD}
+        retentionPeriod: ${VMETRICS_RETENTION}
         replicationFactor: 2
         vmstorage:
           replicaCount: 3
