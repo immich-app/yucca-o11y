@@ -8,8 +8,8 @@ data:
   APP_DOMAIN: staging.futostatus.com
   MESH_DOMAIN: staging.o11y.futo.network
   # NetBox-allocated; VIP must equal netbird local.netbird_gateway_vip and be in the CIDR.
-  NETBIRD_GATEWAY_VIP: 10.252.1.10
-  NETBIRD_SERVICE_CIDR: 10.252.1.0/24
+  NETBIRD_GATEWAY_VIP: 10.69.1.10
+  NETBIRD_SERVICE_CIDR: 10.69.1.0/24
   CLUSTER_NAME: o11y-staging
   OP_O11Y_VAULT: o11y_tf_staging
   OP_SHARED_VAULT: shared_tf_staging

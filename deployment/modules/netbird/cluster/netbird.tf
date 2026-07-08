@@ -87,7 +87,7 @@ locals {
   mesh_dns_zone = var.env == "production" ? "o11y.futo.network" : "${var.env}.o11y.futo.network"
 
   # NetBox-allocated VIP; must equal the NETBIRD_GATEWAY_VIP cluster-setting.
-  netbird_gateway_vip = var.env == "production" ? "10.252.0.10" : "10.252.1.10"
+  netbird_gateway_vip = var.env == "production" ? "10.69.0.10" : "10.69.1.10"
 }
 
 resource "netbird_group" "k8s_routing_peers" {
