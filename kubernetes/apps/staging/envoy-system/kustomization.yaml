@@ -5,4 +5,5 @@ kind: Kustomization
 resources:
   - ./envoy-gateway.yaml
   - ./envoy-proxy.yaml
+  - ./mesh-gateway.yaml
   - ./namespace.yaml

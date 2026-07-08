@@ -29,8 +29,19 @@ dependency "talos" {
   mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
 }
 
+dependency "netbird" {
+  config_path = "../../netbird/cluster"
+
+  mock_outputs = {
+    k8s_routing_peer_setup_key = "mock"
+  }
+  mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
+  mock_outputs_merge_strategy_with_state  = "shallow"
+}
+
 inputs = {
-  cluster = dependency.talos.outputs.cluster
+  cluster                             = dependency.talos.outputs.cluster
+  netbird_k8s_routing_peer_setup_key  = dependency.netbird.outputs.k8s_routing_peer_setup_key
 }
 
 generate "backend" {

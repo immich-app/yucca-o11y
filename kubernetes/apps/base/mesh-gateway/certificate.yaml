@@ -1,0 +1,23 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/cert-manager.io/certificate_v1.json
+# Wildcard cert for the mesh gateway, issued via Cloudflare DNS-01 (futo.network is on
+# Cloudflare). DNS-01 needs no public reachability, so it works for a mesh-only service.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: o11y-futo-network
+spec:
+  dnsNames:
+    - "*.${MESH_DOMAIN}"
+    - "${MESH_DOMAIN}"
+  duration: 160h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  usages:
+    - digital signature
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt-cloudflare
+  secretName: o11y-futo-network-tls

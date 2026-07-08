@@ -1,0 +1,20 @@
+---
+# Pinned-VIP Service the NetBird resource advertises; *.<MESH_DOMAIN> resolves here.
+# clusterIP MUST equal NETBIRD_GATEWAY_VIP (and the netbird local) and sit in the
+# netbird-gateway ServiceCIDR. targetPort 10443 = Envoy Gateway's +10000 shift of 443.
+# Name must NOT be "envoy" (collides with the controller's own Service).
+apiVersion: v1
+kind: Service
+metadata:
+  name: mesh-gateway-vip
+spec:
+  type: ClusterIP
+  clusterIP: ${NETBIRD_GATEWAY_VIP}
+  selector:
+    gateway.envoyproxy.io/owning-gateway-name: mesh
+    gateway.envoyproxy.io/owning-gateway-namespace: envoy-system
+  ports:
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 10443

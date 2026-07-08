@@ -1,3 +1,5 @@
+# TF only bootstraps these namespaces (so their secrets exist before Flux); Flux owns their
+# labels/annotations via each overlay namespace.yaml, so ignore_changes both below.
 resource "kubernetes_namespace_v1" "cert_manager" {
   depends_on = [helm_release.flux_operator]
 
@@ -10,6 +12,10 @@ resource "kubernetes_namespace_v1" "cert_manager" {
       "kustomize.toolkit.fluxcd.io/namespace" = "flux-system"
     }
     name = "cert-manager"
+  }
+
+  lifecycle {
+    ignore_changes = [metadata[0].labels, metadata[0].annotations]
   }
 }
 
@@ -28,6 +34,38 @@ resource "kubernetes_secret_v1" "ovh_credentials" {
   }
 }
 
+resource "kubernetes_namespace_v1" "netbird" {
+  depends_on = [helm_release.flux_operator]
+
+  metadata {
+    annotations = {
+      "kustomize.toolkit.fluxcd.io/prune" = "disabled"
+    }
+    labels = {
+      "kustomize.toolkit.fluxcd.io/name"      = "cluster-apps"
+      "kustomize.toolkit.fluxcd.io/namespace" = "flux-system"
+    }
+    name = "netbird"
+  }
+
+  lifecycle {
+    ignore_changes = [metadata[0].labels, metadata[0].annotations]
+  }
+}
+
+resource "kubernetes_secret_v1" "netbird_routing_peer_setup_key" {
+  depends_on = [kubernetes_namespace_v1.netbird]
+
+  metadata {
+    name      = "netbird-setup-key"
+    namespace = "netbird"
+  }
+
+  data = {
+    setupKey = var.netbird_k8s_routing_peer_setup_key
+  }
+}
+
 resource "kubernetes_namespace_v1" "external_secrets" {
   depends_on = [helm_release.flux_operator]
 
@@ -40,6 +78,10 @@ resource "kubernetes_namespace_v1" "external_secrets" {
       "kustomize.toolkit.fluxcd.io/namespace" = "flux-system"
     }
     name = "external-secrets"
+  }
+
+  lifecycle {
+    ignore_changes = [metadata[0].labels, metadata[0].annotations]
   }
 }
 

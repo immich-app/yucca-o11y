@@ -1,0 +1,50 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/operator.victoriametrics.com/vmauth_v1beta1.json
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMAuth
+metadata:
+  name: mesh-unauth
+spec:
+  # Unauthenticated, mesh-only vmauth (read+write); the NetBird ACL is the only gate.
+  port: "8427"
+  replicaCount: 2
+  podDisruptionBudget:
+    minAvailable: 1
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app.kubernetes.io/name: vmauth
+          app.kubernetes.io/instance: mesh-unauth
+  selectAllByDefault: false
+  httpRoute:
+    hostnames:
+      - vmauth.${MESH_DOMAIN}
+    parentRefs:
+      - name: mesh
+        namespace: envoy-system
+  # Insert + select. No default_url, so admin paths are unrouted.
+  unauthorizedUserAccessSpec:
+    targetRefs:
+      - static:
+          url: http://vminsert-victoria-metrics.o11y.svc.cluster.local:8480
+        paths:
+          - /insert/0/.*
+      - static:
+          url: http://victoria-logs-vlinsert.o11y.svc.cluster.local:9481
+        paths:
+          - /insert/jsonline
+          - /insert/native
+          - /insert/elasticsearch/.*
+          - /insert/loki/.*
+          - /insert/opentelemetry/.*
+      - static:
+          url: http://vmselect-victoria-metrics.o11y.svc.cluster.local:8481
+        paths:
+          - /select/0/.*
+      - static:
+          url: http://victoria-logs-vlselect.o11y.svc.cluster.local:9471
+        paths:
+          - /select/logsql/.*
