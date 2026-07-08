@@ -29,7 +29,6 @@ spec:
               cpu: 50m
             limits:
               memory: 512Mi
-      # Reached over the mesh via the pinned-VIP Service (service.yaml), which the NetBird
-      # network resource advertises; this generated Service stays ClusterIP and unused.
+      # The pinned-VIP Service (service.yaml) is the mesh entrypoint; this one is unused.
       envoyService:
         type: ClusterIP

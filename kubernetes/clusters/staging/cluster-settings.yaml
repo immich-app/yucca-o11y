@@ -7,8 +7,7 @@ metadata:
 data:
   APP_DOMAIN: staging.futostatus.com
   MESH_DOMAIN: staging.o11y.futo.network
-  # PLACEHOLDER — NetBox-allocate; globally unique on the shared NetBird account (NOT under
-  # bootstrap's 10.250.128.0/17). VIP must equal netbird local.netbird_gateway_vip + be in the CIDR.
+  # NetBox-allocated; VIP must equal netbird local.netbird_gateway_vip and be in the CIDR.
   NETBIRD_GATEWAY_VIP: 10.252.1.10
   NETBIRD_SERVICE_CIDR: 10.252.1.0/24
   CLUSTER_NAME: o11y-staging

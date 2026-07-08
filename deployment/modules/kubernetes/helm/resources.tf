@@ -1,6 +1,5 @@
-# TF bootstraps these namespaces so their secrets exist before Flux reconciles, but Flux
-# (each overlay's namespace.yaml) owns namespace metadata — labels (e.g. pod-security) and
-# annotations. So every ns here ignore_changes both, or TF would revert Flux's edits.
+# TF only bootstraps these namespaces (so their secrets exist before Flux); Flux owns their
+# labels/annotations via each overlay namespace.yaml, so ignore_changes both below.
 resource "kubernetes_namespace_v1" "cert_manager" {
   depends_on = [helm_release.flux_operator]
 

@@ -1,8 +1,6 @@
 ---
-# Cloudflare DNS-01 issuer for *.o11y.futo.network (futo.network is on Cloudflare).
-# cert-manager has native Cloudflare support — no webhook needed (unlike the OVH issuer
-# `letsencrypt-production` that the cert-manager-webhook-ovh chart creates for
-# futostatus.com). Token from the cloudflare-api-token Secret (externalsecret.yaml, shared_tf).
+# Cloudflare DNS-01 issuer for *.o11y.futo.network (native support, no webhook; the OVH
+# letsencrypt-production issuer handles futostatus.com). Token via externalsecret.yaml.
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
