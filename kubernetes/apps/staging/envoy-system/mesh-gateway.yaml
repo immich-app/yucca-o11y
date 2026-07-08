@@ -9,6 +9,7 @@ spec:
   dependsOn:
     - name: envoy-gateway
     - name: cert-manager-issuers
+    - name: mesh-gateway-network
   interval: 1h
   path: ./kubernetes/apps/base/mesh-gateway
   prune: true
