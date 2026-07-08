@@ -9,6 +9,7 @@ spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
     email: acme@futo.org
+    profile: shortlived
     privateKeySecretRef:
       name: letsencrypt-cloudflare-account-key
     solvers:
