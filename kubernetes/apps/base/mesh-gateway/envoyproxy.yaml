@@ -1,0 +1,35 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.envoyproxy.io/envoyproxy_v1alpha1.json
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: mesh
+spec:
+  logging:
+    level:
+      default: info
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyDeployment:
+        replicas: 2
+        pod:
+          topologySpreadConstraints:
+            - maxSkew: 1
+              topologyKey: kubernetes.io/hostname
+              whenUnsatisfiable: ScheduleAnyway
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: envoy
+                  gateway.envoyproxy.io/owning-gateway-name: mesh
+        container:
+          imageRepository: mirror.gcr.io/envoyproxy/envoy
+          resources:
+            requests:
+              cpu: 50m
+            limits:
+              memory: 512Mi
+      # Reached over the mesh via the pinned-VIP Service (service.yaml), which the NetBird
+      # network resource advertises; this generated Service stays ClusterIP and unused.
+      envoyService:
+        type: ClusterIP

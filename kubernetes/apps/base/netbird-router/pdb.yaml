@@ -1,0 +1,11 @@
+---
+# Keep at least one routing peer up during voluntary disruptions (node drains, etc.).
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: netbird-router
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: netbird-router

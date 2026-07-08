@@ -54,3 +54,8 @@ variable "op_connect_token_env" {
   type      = string
   sensitive = true
 }
+
+variable "netbird_k8s_routing_peer_setup_key" {
+  type      = string
+  sensitive = true
+}

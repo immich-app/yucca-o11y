@@ -1,0 +1,11 @@
+---
+# Secondary Service CIDR (k8s 1.33+ multi-ServiceCIDR) the pinned gateway VIP lives in.
+# A dedicated, NetBox-allocated range keeps the VIP globally unique on the shared NetBird
+# account (the default 10.96.0.0/12 is not). Must contain NETBIRD_GATEWAY_VIP.
+apiVersion: networking.k8s.io/v1
+kind: ServiceCIDR
+metadata:
+  name: netbird-gateway
+spec:
+  cidrs:
+    - ${NETBIRD_SERVICE_CIDR}

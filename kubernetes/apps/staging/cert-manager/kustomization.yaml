@@ -5,4 +5,5 @@ kind: Kustomization
 resources:
   - ./cert-manager.yaml
   - ./cert-manager-webhook-ovh.yaml
+  - ./cert-manager-issuers.yaml
   - ./namespace.yaml

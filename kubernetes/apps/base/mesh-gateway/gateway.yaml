@@ -1,0 +1,21 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.networking.k8s.io/gateway_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: mesh
+spec:
+  gatewayClassName: mesh
+  listeners:
+    # HTTPS terminated at Envoy with the *.<MESH_DOMAIN> wildcard cert (certificate.yaml,
+    # Cloudflare DNS-01). Reachability + the yucca-only ACL are enforced by NetBird.
+    - name: https
+      protocol: HTTPS
+      port: 443
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        certificateRefs:
+          - kind: Secret
+            name: o11y-futo-network-tls

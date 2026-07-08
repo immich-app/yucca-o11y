@@ -1,0 +1,22 @@
+---
+# Pinned-ClusterIP VIP in front of the mesh Envoy gateway. The NetBird network resource
+# (netbird_network_resource.k8s_gateway) advertises this fixed /32 and the routing peers
+# route it; *.<MESH_DOMAIN> resolves here. clusterIP MUST equal NETBIRD_GATEWAY_VIP and
+# the netbird local.netbird_gateway_vip, and sit inside the netbird-gateway ServiceCIDR.
+# Envoy Gateway shifts privileged listener ports +10000, so 443 is served on 10443.
+# Must NOT be named "envoy" (would collide with the controller's own Service).
+apiVersion: v1
+kind: Service
+metadata:
+  name: mesh-gateway-vip
+spec:
+  type: ClusterIP
+  clusterIP: ${NETBIRD_GATEWAY_VIP}
+  selector:
+    gateway.envoyproxy.io/owning-gateway-name: mesh
+    gateway.envoyproxy.io/owning-gateway-namespace: envoy-system
+  ports:
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 10443

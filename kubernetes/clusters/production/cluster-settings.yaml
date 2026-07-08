@@ -6,6 +6,11 @@ metadata:
   namespace: flux-system
 data:
   APP_DOMAIN: futostatus.com
+  MESH_DOMAIN: o11y.futo.network
+  # PLACEHOLDER — NetBox-allocate; globally unique on the shared NetBird account (NOT under
+  # bootstrap's 10.250.128.0/17). VIP must equal netbird local.netbird_gateway_vip + be in the CIDR.
+  NETBIRD_GATEWAY_VIP: 10.252.0.10
+  NETBIRD_SERVICE_CIDR: 10.252.0.0/24
   CLUSTER_NAME: o11y-production
   OP_O11Y_VAULT: o11y_tf_prod
   OP_SHARED_VAULT: shared_tf_prod

@@ -1,0 +1,55 @@
+---
+# In-cluster NetBird routing peer for the mesh workload-ingress network. A plain NetBird
+# client enrolled with the reusable setup key (netbird-setup-key Secret, injected by the
+# kubernetes/helm TF module) into O11Y_<ENV>_K8S_ROUTING_PEERS. It routes peers to the
+# Envoy gateway's pinned VIP (netbird_network_resource.k8s_gateway). No operator; routing
+# via Pods (not Talos nodes) is what makes advertising a Service ClusterIP work.
+#
+# HA: 2 replicas on different hosts; NetBird fails over between routing peers in the group.
+# NET_ADMIN + userspace WireGuard — no tun device or privileged mode.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: netbird-router
+  labels:
+    app.kubernetes.io/name: netbird-router
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: netbird-router
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: netbird-router
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: netbird-router
+      containers:
+        - name: netbird
+          # renovate: datasource=docker depName=netbirdio/netbird
+          # Keep compatible with NetBird Cloud + the Talos ext-netbird version.
+          image: netbirdio/netbird:0.73.2
+          env:
+            - name: NB_SETUP_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: netbird-setup-key
+                  key: setupKey
+            - name: NB_MANAGEMENT_URL
+              value: https://api.netbird.io
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
