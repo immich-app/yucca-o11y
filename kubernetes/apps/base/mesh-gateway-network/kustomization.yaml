@@ -3,8 +3,4 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ./envoy-gateway.yaml
-  - ./envoy-proxy.yaml
-  - ./mesh-gateway-network.yaml
-  - ./mesh-gateway.yaml
-  - ./namespace.yaml
+  - ./servicecidr.yaml

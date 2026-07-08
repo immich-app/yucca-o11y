@@ -3,19 +3,14 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: mesh-gateway
+  name: mesh-gateway-network
   namespace: flux-system
 spec:
-  dependsOn:
-    - name: envoy-gateway
-    - name: cert-manager-issuers
-    - name: mesh-gateway-network
   interval: 1h
-  path: ./kubernetes/apps/base/mesh-gateway
+  path: ./kubernetes/apps/base/mesh-gateway-network
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  targetNamespace: envoy-system
   wait: true
