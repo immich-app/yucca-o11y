@@ -25,9 +25,6 @@ spec:
         spec:
           postBuild:
             substituteFrom:
-              # TF-created in-cluster only (bootstrap-settings.tf), so offline renderers
-              # (flate CI) can't see it — optional avoids a hard edge; consumers still
-              # fail loud at apply if it's truly absent.
               - kind: ConfigMap
                 name: bootstrap-settings
                 optional: true
