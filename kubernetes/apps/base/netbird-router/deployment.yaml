@@ -1,6 +1,6 @@
 ---
-# In-cluster NetBird routing peer: enrols via the netbird-setup-key Secret (from
-# kubernetes/helm) and routes peers to the Envoy gateway VIP. 2 replicas for HA.
+# In-cluster NetBird routing peer: routes mesh peers to the Envoy gateway VIP and serves
+# NetBird DNS to the cluster (CoreDNS forwards futo.network to the netbird-dns Service).
 # NET_ADMIN + userspace WireGuard — no tun/privileged.
 apiVersion: apps/v1
 kind: Deployment
@@ -18,6 +18,13 @@ spec:
       labels:
         app.kubernetes.io/name: netbird-router
     spec:
+      # Public upstreams: NetBird forwards non-mesh names to the pod's original resolvers —
+      # with cluster DNS, undistributed futo.network names would loop back through CoreDNS.
+      dnsPolicy: None
+      dnsConfig:
+        nameservers:
+          - 1.1.1.1
+          - 9.9.9.9
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
@@ -37,6 +44,16 @@ spec:
                   key: setupKey
             - name: NB_MANAGEMENT_URL
               value: https://api.netbird.io
+            # Bind pod-wide (default is the dynamic NetBird IP) so the Service can front it.
+            - name: NB_DNS_RESOLVER_ADDRESS
+              value: 0.0.0.0:53
+          ports:
+            - name: dns-udp
+              containerPort: 53
+              protocol: UDP
+            - name: dns-tcp
+              containerPort: 53
+              protocol: TCP
           startupProbe:
             exec:
               command: [netbird, status, --check, startup]

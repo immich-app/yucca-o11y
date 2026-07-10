@@ -27,7 +27,7 @@ spec:
     httpRoute:
       enabled: true
       hostnames:
-        - echo.${APP_DOMAIN}
+        - echo.${CLUSTER_APP_DOMAIN}
       parentRefs:
         - name: envoy
           namespace: envoy-system

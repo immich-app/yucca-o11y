@@ -4,6 +4,8 @@ kind: Kustomization
 resources:
   - ./descheduler.yaml
   - ./metrics-server.yaml
+  - ./multus.yaml
+  - ./multus-networks.yaml
   - ./namespace.yaml
   - ./reloader.yaml
   - ./spegel.yaml

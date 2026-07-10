@@ -44,7 +44,7 @@ spec:
       angular_support_enabled: "true"
     server:
       enable_gzip: "true"
-      root_url: https://grafana.${APP_DOMAIN}
+      root_url: https://grafana.${CLUSTER_APP_DOMAIN}
     database:
       type: postgres
       host: grafana-postgres-rw.o11y.svc.cluster.local:5432
@@ -110,7 +110,7 @@ spec:
   httpRoute:
     spec:
       hostnames:
-        - grafana.${APP_DOMAIN}
+        - grafana.${CLUSTER_APP_DOMAIN}
       parentRefs:
         - name: envoy
           namespace: envoy-system

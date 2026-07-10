@@ -3,23 +3,23 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: external-secrets
+  name: multus
   namespace: flux-system
 spec:
-  dependsOn:
-    - name: prometheus-operator-crds
-    # The controller pod's netbird-egress annotation needs the NAD to exist to schedule.
-    - name: multus-networks
+  interval: 1h
+  path: ./kubernetes/apps/base/multus
+  prune: true
+  wait: true
   healthChecks:
     - apiVersion: helm.toolkit.fluxcd.io/v2
       kind: HelmRelease
-      name: external-secrets
-      namespace: external-secrets
-  interval: 1h
-  path: ./kubernetes/apps/base/external-secrets
-  prune: true
+      name: multus
+      namespace: kube-system
+    - apiVersion: apiextensions.k8s.io/v1
+      kind: CustomResourceDefinition
+      name: network-attachment-definitions.k8s.cni.cncf.io
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  targetNamespace: external-secrets
+  targetNamespace: kube-system

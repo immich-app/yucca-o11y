@@ -1,10 +1,10 @@
 ---
 # Secondary ServiceCIDR (k8s 1.33+) holding the gateway VIP — a NetBox-allocated range,
-# globally unique on the shared NetBird account. Must contain NETBIRD_GATEWAY_VIP.
+# globally unique on the shared NetBird account. TF-published via bootstrap-settings.
 apiVersion: networking.k8s.io/v1
 kind: ServiceCIDR
 metadata:
   name: netbird-gateway
 spec:
   cidrs:
-    - ${NETBIRD_SERVICE_CIDR}
+    - ${BOOTSTRAP_NETBIRD_SERVICE_CIDR}

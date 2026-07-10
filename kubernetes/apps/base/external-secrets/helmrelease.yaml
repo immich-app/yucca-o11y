@@ -22,5 +22,8 @@ spec:
       remediateLastFailure: true
       retries: 2
   values:
+    # Resolve DNS via the CoreDNS futo.network zone
+    podAnnotations:
+      k8s.v1.cni.cncf.io/networks: kube-system/netbird-egress
     serviceMonitor:
       enabled: true

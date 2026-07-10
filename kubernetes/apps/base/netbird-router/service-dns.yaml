@@ -1,0 +1,21 @@
+---
+# Stable endpoint for the routers' NetBird DNS resolver; the TF-seeded CoreDNS forwards
+# futo.network here. The IP is TF-published via bootstrap-settings.
+apiVersion: v1
+kind: Service
+metadata:
+  name: netbird-dns
+spec:
+  type: ClusterIP
+  clusterIP: ${BOOTSTRAP_NETBIRD_DNS_IP}
+  selector:
+    app.kubernetes.io/name: netbird-router
+  ports:
+    - name: dns-udp
+      protocol: UDP
+      port: 53
+      targetPort: 53
+    - name: dns-tcp
+      protocol: TCP
+      port: 53
+      targetPort: 53

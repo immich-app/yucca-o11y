@@ -46,6 +46,8 @@ resource "talos_machine_configuration_apply" "controlplane" {
           nodeIP = {
             validSubnets = [var.private_network_cidr]
           }
+          # Explicit: Talos CoreDNS is disabled; the TF-seeded chart keeps this Service IP.
+          clusterDNS = ["10.96.0.10"]
         }
         network = {
           interfaces = [
@@ -66,6 +68,11 @@ resource "talos_machine_configuration_apply" "controlplane" {
       }
       cluster = {
         allowSchedulingOnControlPlanes = false
+        # CoreDNS is TF-seeded (kubernetes/helm): Flux needs DNS before it can install
+        # anything, and disabling Talos's copy keeps upgrade-k8s off the Corefile.
+        coreDNS = {
+          disabled = true
+        }
         # Control-plane components bind their metrics to localhost by default, so
         # VMAgent (on a worker) can't scrape them. Bind to all interfaces; the
         # Talos ingress firewall below keeps the ports private (vRack + pod CIDR

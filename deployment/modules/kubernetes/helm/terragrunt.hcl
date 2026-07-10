@@ -34,14 +34,24 @@ dependency "netbird" {
 
   mock_outputs = {
     k8s_routing_peer_setup_key = "mock"
+    mesh_dns_zone              = "mock.futo.network"
+    gateway_vip                = "10.0.0.10"
+    service_cidr               = "10.0.0.0/24"
+    egress_cidr                = "10.0.1.0/24"
   }
   mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
   mock_outputs_merge_strategy_with_state  = "shallow"
 }
 
 inputs = {
-  cluster                             = dependency.talos.outputs.cluster
-  netbird_k8s_routing_peer_setup_key  = dependency.netbird.outputs.k8s_routing_peer_setup_key
+  cluster                            = dependency.talos.outputs.cluster
+  netbird_k8s_routing_peer_setup_key = dependency.netbird.outputs.k8s_routing_peer_setup_key
+  netbird = {
+    mesh_dns_zone = dependency.netbird.outputs.mesh_dns_zone
+    gateway_vip   = dependency.netbird.outputs.gateway_vip
+    service_cidr  = dependency.netbird.outputs.service_cidr
+    egress_cidr   = dependency.netbird.outputs.egress_cidr
+  }
 }
 
 generate "backend" {

@@ -25,6 +25,11 @@ variable "flux_operator_version" {
   default = "0.50.0"
 }
 
+variable "coredns_version" {
+  type    = string
+  default = "1.46.0"
+}
+
 variable "ovh_application_key" {
   type      = string
   sensitive = true
@@ -58,4 +63,14 @@ variable "op_connect_token_env" {
 variable "netbird_k8s_routing_peer_setup_key" {
   type      = string
   sensitive = true
+}
+
+# TF-owned network values from netbird/cluster, published to Flux via bootstrap-settings.
+variable "netbird" {
+  type = object({
+    mesh_dns_zone = string
+    gateway_vip   = string
+    service_cidr  = string
+    egress_cidr   = string
+  })
 }

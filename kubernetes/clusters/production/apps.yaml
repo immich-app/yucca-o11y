@@ -26,4 +26,6 @@ spec:
           postBuild:
             substituteFrom:
               - kind: ConfigMap
+                name: bootstrap-settings
+              - kind: ConfigMap
                 name: cluster-settings

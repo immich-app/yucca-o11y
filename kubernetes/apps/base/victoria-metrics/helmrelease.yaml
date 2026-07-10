@@ -32,7 +32,7 @@ spec:
     vmcluster:
       enabled: true
       spec:
-        retentionPeriod: ${VMETRICS_RETENTION}
+        retentionPeriod: ${CLUSTER_VMETRICS_RETENTION}
         replicationFactor: 2
         vmstorage:
           replicaCount: 3
@@ -141,7 +141,7 @@ spec:
           disabled: true
         httpRoute:
           hostnames:
-            - vmauth.${APP_DOMAIN}
+            - vmauth.${CLUSTER_APP_DOMAIN}
           parentRefs:
             - name: envoy
               namespace: envoy-system
