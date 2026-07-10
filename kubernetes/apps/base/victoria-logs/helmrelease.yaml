@@ -23,9 +23,9 @@ spec:
 
     vlstorage:
       replicaCount: 3
-      retentionPeriod: ${VMLOGS_RETENTION}
+      retentionPeriod: ${CLUSTER_VMLOGS_RETENTION}
       persistentVolume:
-        storageClassName: ${VMLOGS_STORAGE_CLASS}
+        storageClassName: ${CLUSTER_VMLOGS_STORAGE_CLASS}
         size: 100Gi
       topologySpreadConstraints:
         - maxSkew: 1

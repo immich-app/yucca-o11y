@@ -6,8 +6,8 @@ metadata:
   name: futostatus-com
 spec:
   dnsNames:
-    - "*.${APP_DOMAIN}"
-    - "${APP_DOMAIN}"
+    - "*.${CLUSTER_APP_DOMAIN}"
+    - "${CLUSTER_APP_DOMAIN}"
   duration: 160h
   privateKey:
     algorithm: ECDSA

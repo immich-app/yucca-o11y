@@ -5,14 +5,12 @@ metadata:
   name: cluster-settings
   namespace: flux-system
 data:
-  APP_DOMAIN: futostatus.com
-  MESH_DOMAIN: o11y.futo.network
-  # NetBox-allocated; VIP must equal netbird local.netbird_gateway_vip and be in the CIDR.
-  NETBIRD_GATEWAY_VIP: 10.69.0.10
-  NETBIRD_SERVICE_CIDR: 10.69.0.0/24
+  CLUSTER_APP_DOMAIN: futostatus.com
+  # Bootstrap-cluster-owned opc VIP (not o11y TF, hence not in bootstrap-settings).
+  CLUSTER_OPC_VIP: 10.41.19.250
   CLUSTER_NAME: o11y-production
-  OP_O11Y_VAULT: o11y_tf_prod
-  OP_SHARED_VAULT: shared_tf_prod
-  VMLOGS_RETENTION: 120d
-  VMLOGS_STORAGE_CLASS: openebs-spare-disk-2
-  VMETRICS_RETENTION: 120d
+  CLUSTER_OP_O11Y_VAULT: o11y_tf_prod
+  CLUSTER_OP_SHARED_VAULT: shared_tf_prod
+  CLUSTER_VMLOGS_RETENTION: 120d
+  CLUSTER_VMLOGS_STORAGE_CLASS: openebs-spare-disk-2
+  CLUSTER_VMETRICS_RETENTION: 120d

@@ -41,6 +41,15 @@ resource "talos_machine_configuration_apply" "worker" {
             TOML
           }
         ]
+        # Pin the kubelet node IP to the vRack (CPs already do): kubelet otherwise picks the
+        # lowest 10.x host address — the Multus bridge IP once stole a worker's InternalIP.
+        kubelet = {
+          nodeIP = {
+            validSubnets = [var.private_network_cidr]
+          }
+          # Explicit because Talos's CoreDNS is disabled (see controlplane.tf).
+          clusterDNS = ["10.96.0.10"]
+        }
         network = {
           # NIC names aren't uniform across OVH workers (even within a plan code),
           # so they're per-node via var.worker_nics. Port 0 = public (DHCP),

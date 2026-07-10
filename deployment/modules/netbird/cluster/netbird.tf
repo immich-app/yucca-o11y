@@ -86,8 +86,9 @@ resource "netbird_policy" "yucca_to_o11y_resource" {
 locals {
   mesh_dns_zone = var.env == "production" ? "o11y.futo.network" : "${var.env}.o11y.futo.network"
 
-  # NetBox-allocated VIP; must equal the NETBIRD_GATEWAY_VIP cluster-setting.
-  netbird_gateway_vip = var.env == "production" ? "10.69.0.10" : "10.69.1.10"
+  # NetBox-allocated; published to Flux via the bootstrap-settings ConfigMap.
+  netbird_service_cidr = var.env == "production" ? "10.69.0.0/24" : "10.69.1.0/24"
+  netbird_gateway_vip  = cidrhost(local.netbird_service_cidr, 10)
 }
 
 resource "netbird_group" "k8s_routing_peers" {
@@ -131,13 +132,14 @@ resource "netbird_setup_key" "k8s_routing_peer" {
   usage_limit    = 0
 }
 
-# DNS zone; must match the MESH_DOMAIN cluster-setting.
+# Distributed to the router pods too — they serve NetBird DNS to the cluster
+# (CoreDNS forwards futo.network).
 resource "netbird_dns_zone" "mesh" {
   name                 = local.mesh_dns_zone
   domain               = local.mesh_dns_zone
   enabled              = true
   enable_search_domain = false
-  distribution_groups  = [data.netbird_group.yucca.id]
+  distribution_groups  = [data.netbird_group.yucca.id, netbird_group.k8s_routing_peers.id]
 }
 
 # Wildcard A -> the gateway VIP (HA is the >=2 routing Pods, not multiple records).
@@ -162,6 +164,59 @@ resource "netbird_policy" "yucca_to_k8s_gateway" {
     bidirectional = false
     sources       = [data.netbird_group.yucca.id]
     destinations  = [netbird_group.k8s_gateway.id]
+    ports         = ["443"]
+  }
+}
+
+# opc egress: pods with a Multus leg in this range (netbird-egress NAD) reach the bootstrap
+# 1Password Connect. The nodes advertise it, so NetBird's own rules masquerade it out wt0 —
+# pod-CIDR traffic would be dropped.
+locals {
+  # NetBox-allocated. Published to Flux via the bootstrap-settings ConfigMap.
+  netbird_egress_cidr = var.env == "production" ? "10.69.2.0/24" : "10.69.3.0/24"
+}
+
+resource "netbird_network" "k8s_egress" {
+  name        = "O11Y_${upper(var.env)}_K8S_EGRESS"
+  description = "o11y ${var.env} pod egress range (Multus netbird-egress NAD)"
+}
+
+resource "netbird_network_router" "k8s_egress" {
+  network_id  = netbird_network.k8s_egress.id
+  peer_groups = [netbird_group.talos.id]
+  masquerade  = true
+  metric      = 9999
+  enabled     = true
+}
+
+# In o11y_resource: NetBird only programs routers for resources a policy references
+# (a policy-less group left every node unprogrammed). The yucca 50000/6443 grant is inert here.
+resource "netbird_network_resource" "k8s_egress" {
+  network_id = netbird_network.k8s_egress.id
+  name       = "O11Y_${upper(var.env)}_K8S_EGRESS_CIDR"
+  address    = local.netbird_egress_cidr
+  groups     = [netbird_group.o11y_resource.id]
+  enabled    = true
+}
+
+# Bootstrap-owned group holding the opc resource (live account name — verify if it changes).
+data "netbird_group" "bootstrap_opc" {
+  name = "bootstrap-resources"
+}
+
+# Egress leaves masqueraded as the node peer -> nodes are the source; also pushes them the opc /32 route.
+resource "netbird_policy" "talos_to_bootstrap_opc" {
+  name    = "O11Y_${upper(var.env)}_TALOS_TO_BOOTSTRAP_OPC"
+  enabled = true
+
+  rule {
+    name          = "TALOS_TO_BOOTSTRAP_OPC"
+    action        = "accept"
+    protocol      = "tcp"
+    enabled       = true
+    bidirectional = false
+    sources       = [netbird_group.talos.id]
+    destinations  = [data.netbird_group.bootstrap_opc.id]
     ports         = ["443"]
   }
 }

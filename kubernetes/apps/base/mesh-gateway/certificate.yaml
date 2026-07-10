@@ -8,8 +8,8 @@ metadata:
   name: o11y-futo-network
 spec:
   dnsNames:
-    - "*.${MESH_DOMAIN}"
-    - "${MESH_DOMAIN}"
+    - "*.${BOOTSTRAP_MESH_DOMAIN}"
+    - "${BOOTSTRAP_MESH_DOMAIN}"
   duration: 160h
   privateKey:
     algorithm: ECDSA

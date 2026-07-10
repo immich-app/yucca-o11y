@@ -1,0 +1,32 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/k8s.cni.cncf.io/networkattachmentdefinition_v1.json
+# Second interface for mesh-egress pods (external-secrets -> opc). Node-local bridge; the
+# same range on every node is fine — traffic leaves masqueraded as the node peer (the nodes
+# advertise the range). Route scoped to the opc VIP so everything else stays on flannel.
+apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
+  name: netbird-egress
+spec:
+  config: |-
+    {
+      "cniVersion": "0.3.1",
+      "name": "netbird-egress",
+      "plugins": [
+        {
+          "type": "bridge",
+          "bridge": "nbegress0",
+          "isGateway": true,
+          "ipMasq": false,
+          "ipam": {
+            "type": "host-local",
+            "ranges": [
+              [{"subnet": "${BOOTSTRAP_NETBIRD_EGRESS_CIDR}", "gateway": "${BOOTSTRAP_NETBIRD_EGRESS_GW}"}]
+            ],
+            "routes": [
+              {"dst": "${CLUSTER_OPC_VIP}/32", "gw": "${BOOTSTRAP_NETBIRD_EGRESS_GW}"}
+            ]
+          }
+        }
+      ]
+    }

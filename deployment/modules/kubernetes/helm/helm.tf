@@ -7,6 +7,7 @@ resource "helm_release" "flux_operator" {
   create_namespace = true
   cleanup_on_fail  = true
   wait_for_jobs    = true
+  depends_on       = [helm_release.coredns]
 }
 
 resource "helm_release" "flux_instance" {

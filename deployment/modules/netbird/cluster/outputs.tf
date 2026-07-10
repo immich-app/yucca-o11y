@@ -10,3 +10,20 @@ output "k8s_routing_peer_setup_key" {
   sensitive = true
   value     = netbird_setup_key.k8s_routing_peer.key
 }
+
+# Consumed by kubernetes/helm -> bootstrap-settings ConfigMap (Flux substitution).
+output "mesh_dns_zone" {
+  value = local.mesh_dns_zone
+}
+
+output "gateway_vip" {
+  value = local.netbird_gateway_vip
+}
+
+output "service_cidr" {
+  value = local.netbird_service_cidr
+}
+
+output "egress_cidr" {
+  value = local.netbird_egress_cidr
+}

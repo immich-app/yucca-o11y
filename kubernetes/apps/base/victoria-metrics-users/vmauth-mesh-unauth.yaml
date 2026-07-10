@@ -21,7 +21,7 @@ spec:
   selectAllByDefault: false
   httpRoute:
     hostnames:
-      - vmauth.${MESH_DOMAIN}
+      - vmauth.${BOOTSTRAP_MESH_DOMAIN}
     parentRefs:
       - name: mesh
         namespace: envoy-system
