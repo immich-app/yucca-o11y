@@ -85,32 +85,6 @@ resource "kubernetes_namespace_v1" "external_secrets" {
   }
 }
 
-resource "kubernetes_secret_v1" "onepassword_connect_credentials" {
-  depends_on = [kubernetes_namespace_v1.external_secrets]
-
-  metadata {
-    name      = "onepassword-connect-credentials"
-    namespace = "external-secrets"
-  }
-
-  data = {
-    "1password-credentials.json" = var.op_credentials_file
-  }
-}
-
-resource "kubernetes_secret_v1" "onepassword_connect_token" {
-  depends_on = [kubernetes_namespace_v1.external_secrets]
-
-  metadata {
-    name      = "onepassword-connect"
-    namespace = "external-secrets"
-  }
-
-  data = {
-    token = var.op_connect_token
-  }
-}
-
 resource "kubernetes_secret_v1" "onepassword_connect_environment" {
   depends_on = [kubernetes_namespace_v1.external_secrets]
 
