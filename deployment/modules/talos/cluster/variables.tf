@@ -92,3 +92,9 @@ variable "use_public_endpoints" {
   type    = bool
   default = false
 }
+
+# Mesh DNS zone (from netbird/cluster) — used for the kube.<zone> apiserver certSAN so
+# kubectl can reach the HA endpoint the mesh gateway fronts (Envoy TLS-passthrough).
+variable "mesh_dns_zone" {
+  type = string
+}

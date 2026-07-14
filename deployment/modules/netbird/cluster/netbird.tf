@@ -151,7 +151,8 @@ resource "netbird_dns_record" "mesh_wildcard" {
   ttl     = 300
 }
 
-# Allow yucca peers to reach the gateway VIP over HTTPS.
+# Allow yucca peers to reach the gateway VIP: 443 for workloads, 6443 for the HA
+# kube-apiserver endpoint (Envoy TLS-passthrough; see mesh-gateway-api).
 resource "netbird_policy" "yucca_to_k8s_gateway" {
   name    = "O11Y_${upper(var.env)}_YUCCA_TO_K8S_GATEWAY"
   enabled = true
@@ -164,7 +165,7 @@ resource "netbird_policy" "yucca_to_k8s_gateway" {
     bidirectional = false
     sources       = [data.netbird_group.yucca.id]
     destinations  = [netbird_group.k8s_gateway.id]
-    ports         = ["443"]
+    ports         = ["443", "6443"]
   }
 }
 

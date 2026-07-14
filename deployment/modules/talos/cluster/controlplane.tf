@@ -120,11 +120,13 @@ resource "talos_machine_configuration_apply" "controlplane" {
           }
         }
         apiServer = {
-          # VIP for in-cluster traffic; CP private IPs for operators reaching the
-          # apiserver over the mesh (the floating VIP doesn't ARP reliably across DCs).
+          # VIP for in-cluster traffic; CP private IPs for direct/break-glass operator
+          # access; kube.<mesh-zone> for the HA endpoint the mesh gateway fronts (Envoy
+          # TLS-passthrough -> apiservers). The floating VIP doesn't ARP across DCs.
           certSANs = concat(
             [local.controlplane_vip],
             [for k in local.controlplane_keys : var.controlplane_nodes[k].private_ip],
+            ["kube.${var.mesh_dns_zone}"],
           )
         }
       }

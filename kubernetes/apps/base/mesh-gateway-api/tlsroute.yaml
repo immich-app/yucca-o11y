@@ -1,0 +1,21 @@
+---
+# HA kube-apiserver over the mesh: SNI kube.<MESH_DOMAIN> -> the default/kubernetes Service
+# (auto-managed endpoints = the apiservers), TLS passed through so kubectl validates the
+# apiserver's own cert. Lives in default (same ns as the backend) so no ReferenceGrant is
+# needed; attaches cross-ns to the mesh Gateway, which allows routes from all namespaces.
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TLSRoute
+metadata:
+  name: kube-apiserver
+  namespace: default
+spec:
+  parentRefs:
+    - name: mesh
+      namespace: envoy-system
+      sectionName: kube-api
+  hostnames:
+    - kube.${BOOTSTRAP_MESH_DOMAIN}
+  rules:
+    - backendRefs:
+        - name: kubernetes
+          port: 443

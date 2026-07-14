@@ -18,3 +18,8 @@ spec:
       protocol: TCP
       port: 443
       targetPort: 10443
+    # kube-api: 6443 >= 1024 so Envoy binds it directly (no +10000 privileged-port shift).
+    - name: kube-api
+      protocol: TCP
+      port: 6443
+      targetPort: 6443

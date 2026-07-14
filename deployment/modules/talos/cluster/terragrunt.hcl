@@ -67,6 +67,7 @@ dependency "netbird_cluster" {
   config_path = "../../netbird/cluster"
   mock_outputs = {
     talos_setup_key = "mock-netbird-setup-key"
+    mesh_dns_zone   = "mock.o11y.futo.network"
   }
   mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
 }
@@ -80,6 +81,7 @@ inputs = {
   worker_data_disk2_match = local.worker_data_disk2_match
   worker_nics             = local.worker_nics
   netbird_setup_key       = dependency.netbird_cluster.outputs.talos_setup_key
+  mesh_dns_zone           = dependency.netbird_cluster.outputs.mesh_dns_zone
 }
 
 generate "backend" {
