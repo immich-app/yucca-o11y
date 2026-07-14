@@ -15,7 +15,7 @@ gh = "2.95.0"
 yq = "4.53.3"
 "kustomize" = "5.8.1"
 "markdownlint-cli2" = "0.22.1"
-"github:home-operations/flate" = "0.4.8"
+"github:home-operations/flate" = "v0.4.10"
 
 [env]
 TF_VAR_dist_dir="{{config_root}}/dist"
