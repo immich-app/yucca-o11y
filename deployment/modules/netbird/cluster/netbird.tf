@@ -86,7 +86,7 @@ resource "netbird_policy" "yucca_to_o11y_resource" {
 locals {
   mesh_dns_zone = var.env == "production" ? "o11y.futo.network" : "${var.env}.o11y.futo.network"
 
-  # NetBox-allocated; published to Flux via the bootstrap-settings ConfigMap.
+  # Registered in netbox/cluster; published to Flux via the bootstrap-settings ConfigMap.
   netbird_service_cidr = var.env == "production" ? "10.69.0.0/24" : "10.69.1.0/24"
   netbird_gateway_vip  = cidrhost(local.netbird_service_cidr, 10)
 }
@@ -172,7 +172,7 @@ resource "netbird_policy" "yucca_to_k8s_gateway" {
 # 1Password Connect. The nodes advertise it, so NetBird's own rules masquerade it out wt0 —
 # pod-CIDR traffic would be dropped.
 locals {
-  # NetBox-allocated. Published to Flux via the bootstrap-settings ConfigMap.
+  # Registered in netbox/cluster; published to Flux via the bootstrap-settings ConfigMap.
   netbird_egress_cidr = var.env == "production" ? "10.69.2.0/24" : "10.69.3.0/24"
 }
 
