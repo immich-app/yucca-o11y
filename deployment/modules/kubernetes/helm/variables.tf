@@ -9,10 +9,7 @@ variable "tf_state_s3_endpoint" {}
 
 variable "cluster" {
   type = object({
-    name               = string
-    endpoint           = string
     operator_endpoint  = string
-    vip                = string
     client_certificate = string
     client_key         = string
     ca_certificate     = string

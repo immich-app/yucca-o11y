@@ -31,23 +31,31 @@ ENVIRONMENT_SHORT = "{% set e = get_env(name='ENVIRONMENT', default='development
 # Control planes need the image uploaded to OVH glance (talos:{dl,ul}:cp); workers
 # are OVH BYOI, so OVH fetches their raw from the Factory at order time (no upload).
 
+# Image facts (schematic, version, glance name, regions) come from the ovh/account
+# cp_image output — one source, no must-match with the module.
 [tasks."talos:dl:cp"]
 run = """
+: "${ENVIRONMENT:?set ENVIRONMENT=staging (or production) first}"
 mkdir -p {{config_root}}/.private/dist
-wget https://factory.talos.dev/image/bbfcb7053b1609712a977830952455432825890922cb6bac23cea34b980970f1/v1.13.5/openstack-amd64.raw.xz -O {{config_root}}/.private/dist/talos.1.13.5-qemu-netbird.raw.xz
-unxz {{config_root}}/.private/dist/talos.1.13.5-qemu-netbird.raw.xz --force
+CP_IMAGE=$(mise run tg run --working-dir deployment/modules/ovh/account output -- -json cp_image)
+NAME=$(echo "$CP_IMAGE" | jq -r .glance_name)
+wget "$(echo "$CP_IMAGE" | jq -r .download_url)" -O {{config_root}}/.private/dist/${NAME}.raw.xz
+unxz {{config_root}}/.private/dist/${NAME}.raw.xz --force
 """
-description = "Download the control-plane Talos image (OpenStack, qemu-guest-agent + netbird schematic)"
+description = "Download the control-plane Talos image (OpenStack, from the ovh/account cp_image output)"
 dir = "{{cwd}}"
 
 [tasks."talos:ul:cp"]
 run = """
-for region in "RBX-A" "GRA9" "EU-WEST-PAR"; do
-  echo "Uploading to region ${region}..."
+: "${ENVIRONMENT:?set ENVIRONMENT=staging (or production) first}"
+CP_IMAGE=$(mise run tg run --working-dir deployment/modules/ovh/account output -- -json cp_image)
+NAME=$(echo "$CP_IMAGE" | jq -r .glance_name)
+for region in $(echo "$CP_IMAGE" | jq -r '.regions[]'); do
+  echo "Uploading ${NAME} to region ${region}..."
   source {{config_root}}/.private/openstack/${ENVIRONMENT}/openrc.sh
-  openstack image create "talos-1.13.5-qemu-netbird" \
+  openstack image create "${NAME}" \
       --os-region "${region}" \
-      --file {{config_root}}/.private/dist/talos.1.13.5-qemu-netbird.raw \
+      --file {{config_root}}/.private/dist/${NAME}.raw \
       --disk-format raw \
       --container-format bare \
       --property hw_qemu_guest_agent=yes \

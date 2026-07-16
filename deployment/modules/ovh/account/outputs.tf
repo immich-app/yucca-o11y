@@ -20,10 +20,6 @@ output "worker_nodes" {
   }
 }
 
-output "loadbalancer_ip" {
-  value = ovh_iploadbalancing.envoy.ipv4
-}
-
 # bare_metal for workers, public_cloud for CPs — sharing breaks upgrade on
 # the other. Openstack URL is hand-built because the talos provider's
 # data source returns null for platform = "openstack".
@@ -36,4 +32,14 @@ output "talos_installer_images" {
 
 output "private_network_cidr" {
   value = var.private_network_cidr
+}
+
+# Consumed by the talos:dl:cp / talos:ul:cp mise tasks, so the CP image facts
+# (schematic, version, glance name, regions) live only in this module.
+output "cp_image" {
+  value = {
+    download_url = "https://factory.talos.dev/image/${var.talos_schematic_id}/${var.talos_version}/openstack-amd64.raw.xz"
+    glance_name  = var.talos_public_cloud_image_name
+    regions      = distinct([for n in var.controlplane_nodes : n.region])
+  }
 }
