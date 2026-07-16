@@ -19,3 +19,15 @@ spec:
         certificateRefs:
           - kind: Secret
             name: o11y-futo-network-tls
+    # HA kube-apiserver endpoint (kube.<MESH_DOMAIN>). TLS passthrough: Envoy routes by SNI
+    # to the apiservers, which present their own cert end-to-end (see mesh-gateway-api).
+    - name: kube-api
+      protocol: TLS
+      port: 6443
+      tls:
+        mode: Passthrough
+      allowedRoutes:
+        kinds:
+          - kind: TLSRoute
+        namespaces:
+          from: All

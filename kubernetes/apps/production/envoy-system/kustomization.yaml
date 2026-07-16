@@ -7,4 +7,5 @@ resources:
   - ./envoy-proxy.yaml
   - ./mesh-gateway-network.yaml
   - ./mesh-gateway.yaml
+  - ./mesh-gateway-api.yaml
   - ./namespace.yaml

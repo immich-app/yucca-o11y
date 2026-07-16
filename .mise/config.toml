@@ -74,10 +74,14 @@ run = """
 : "${ENVIRONMENT:?set ENVIRONMENT=staging (or production) first}"
 mkdir -p {{config_root}}/.private/${ENVIRONMENT}
 mise run tg run --working-dir deployment/modules/talos/cluster output -- -raw kubeconfig > {{config_root}}/.private/${ENVIRONMENT}/kubeconfig
-sd 'server: https://10[.]150[.]([0-9]+)[.]5:6443' 'server: https://10.150.${1}.10:6443' {{config_root}}/.private/${ENVIRONMENT}/kubeconfig
+# HA endpoint fronted by the mesh gateway (Envoy TLS-passthrough -> apiservers), so kubectl
+# is no longer pinned to one CP. Break-glass for bootstrap/DR before the gateway is up:
+# kubectl --server=https://<cp-private-ip>:6443 (each CP private IP is an apiserver cert SAN).
+if [ "${ENVIRONMENT}" = "production" ]; then MESH_HOST="kube.o11y.futo.network"; else MESH_HOST="kube.${ENVIRONMENT}.o11y.futo.network"; fi
+sd 'server: https://10[.]150[.][0-9]+[.]5:6443' "server: https://${MESH_HOST}:6443" {{config_root}}/.private/${ENVIRONMENT}/kubeconfig
 chmod 600 {{config_root}}/.private/${ENVIRONMENT}/kubeconfig
 """
-description = "Fetch kubeconfig for $ENVIRONMENT into .private/<env>/ (server repointed to a CP private IP)"
+description = "Fetch kubeconfig for $ENVIRONMENT into .private/<env>/ (server = HA mesh endpoint kube.<zone>)"
 dir = "{{cwd}}"
 
 [tasks.tg]
