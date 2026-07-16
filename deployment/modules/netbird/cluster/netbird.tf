@@ -2,8 +2,9 @@
 # per-env — resource groups and policies included — so access can differ by env
 # (Zack: some people get dev/staging but not prod). No account-wide layer.
 #
-# All object names are UPPER_SNAKE to match yucca's convention (groups, setup keys,
-# networks, network resources, and policies/rules).
+# Object names are rfc1123 (lowercase-hyphen). Exception: the setup keys keep their
+# original UPPER_SNAKE names — renaming a key is RequiresReplace (new key value), which
+# cascades into talos machine configs + the router Secret; rename at the next rotation.
 
 # Existing account-wide users group (yucca peers — populated via users' auto_groups,
 # per NetBird's model). Referenced as the policy source so the same operators that
@@ -14,14 +15,13 @@ data "netbird_group" "yucca" {
 
 # Group the Talos nodes auto-join via the setup key below.
 resource "netbird_group" "talos" {
-  name = "O11Y_${upper(var.env)}_TALOS"
+  name = "o11y-${var.env}-talos"
 }
 
 # Per-env tag for this cluster's routed resources (the vRack subnet below tags into
-# it; the yucca->resource policy grants it). Created with its final name — the
-# NetBird provider can't rename a group once network resources are tagged into it.
+# it; the yucca->resource policy grants it).
 resource "netbird_group" "o11y_resource" {
-  name = "O11Y_${upper(var.env)}_RESOURCE"
+  name = "o11y-${var.env}-resource"
 }
 
 # Reusable, non-ephemeral enrollment key for the Talos nodes — fed to the netbird
@@ -41,7 +41,7 @@ resource "netbird_setup_key" "talos" {
 # masquerade NATs operator traffic to the routing peer's vRack IP, which the node
 # firewall already trusts.
 resource "netbird_network" "vrack" {
-  name        = "O11Y_${upper(var.env)}_VRACK"
+  name        = "o11y-${var.env}-vrack"
   description = "o11y ${var.env} vRack private subnet"
 }
 
@@ -56,7 +56,7 @@ resource "netbird_network_router" "vrack" {
 resource "netbird_network_resource" "vrack" {
   network_id = netbird_network.vrack.id
   # Per-env: Netbird network-resource names are account-globally unique.
-  name    = "O11Y_${upper(var.env)}_VRACK_CIDR"
+  name    = "o11y-${var.env}-vrack-cidr"
   address = var.private_network_cidr
   groups  = [netbird_group.o11y_resource.id]
   enabled = true
@@ -65,11 +65,11 @@ resource "netbird_network_resource" "vrack" {
 # NetBird default-denies; allow yucca to reach this env's routed subnet on the Talos
 # management ports (apid + kube-apiserver).
 resource "netbird_policy" "yucca_to_o11y_resource" {
-  name    = "O11Y_${upper(var.env)}_YUCCA_TO_RESOURCE"
+  name    = "o11y-${var.env}-yucca-to-resource"
   enabled = true
 
   rule {
-    name          = "YUCCA_TO_O11Y_RESOURCE"
+    name          = "yucca-to-o11y-resource"
     action        = "accept"
     protocol      = "tcp"
     enabled       = true
@@ -92,15 +92,15 @@ locals {
 }
 
 resource "netbird_group" "k8s_routing_peers" {
-  name = "O11Y_${upper(var.env)}_K8S_ROUTING_PEERS"
+  name = "o11y-${var.env}-k8s-routing-peers"
 }
 
 resource "netbird_group" "k8s_gateway" {
-  name = "O11Y_${upper(var.env)}_K8S_GATEWAY"
+  name = "o11y-${var.env}-k8s-gateway"
 }
 
 resource "netbird_network" "k8s" {
-  name        = "O11Y_${upper(var.env)}_K8S"
+  name        = "o11y-${var.env}-k8s"
   description = "o11y ${var.env} in-cluster workload ingress (Envoy gateway)"
 }
 
@@ -115,7 +115,7 @@ resource "netbird_network_router" "k8s" {
 # The Envoy gateway VIP as a /32 (mesh-gateway/service.yaml) — peers reach only this IP.
 resource "netbird_network_resource" "k8s_gateway" {
   network_id = netbird_network.k8s.id
-  name       = "O11Y_${upper(var.env)}_K8S_GATEWAY"
+  name       = "o11y-${var.env}-k8s-gateway"
   address    = "${local.netbird_gateway_vip}/32"
   groups     = [netbird_group.k8s_gateway.id]
   enabled    = true
@@ -154,11 +154,11 @@ resource "netbird_dns_record" "mesh_wildcard" {
 # Allow yucca peers to reach the gateway VIP: 443 for workloads, 6443 for the HA
 # kube-apiserver endpoint (Envoy TLS-passthrough; see mesh-gateway-api).
 resource "netbird_policy" "yucca_to_k8s_gateway" {
-  name    = "O11Y_${upper(var.env)}_YUCCA_TO_K8S_GATEWAY"
+  name    = "o11y-${var.env}-yucca-to-k8s-gateway"
   enabled = true
 
   rule {
-    name          = "YUCCA_TO_K8S_GATEWAY"
+    name          = "yucca-to-k8s-gateway"
     action        = "accept"
     protocol      = "tcp"
     enabled       = true
@@ -178,7 +178,7 @@ locals {
 }
 
 resource "netbird_network" "k8s_egress" {
-  name        = "O11Y_${upper(var.env)}_K8S_EGRESS"
+  name        = "o11y-${var.env}-k8s-egress"
   description = "o11y ${var.env} pod egress range (Multus netbird-egress NAD)"
 }
 
@@ -194,7 +194,7 @@ resource "netbird_network_router" "k8s_egress" {
 # (a policy-less group left every node unprogrammed). The yucca 50000/6443 grant is inert here.
 resource "netbird_network_resource" "k8s_egress" {
   network_id = netbird_network.k8s_egress.id
-  name       = "O11Y_${upper(var.env)}_K8S_EGRESS_CIDR"
+  name       = "o11y-${var.env}-k8s-egress-cidr"
   address    = local.netbird_egress_cidr
   groups     = [netbird_group.o11y_resource.id]
   enabled    = true
@@ -207,11 +207,11 @@ data "netbird_group" "bootstrap_opc" {
 
 # Egress leaves masqueraded as the node peer -> nodes are the source; also pushes them the opc /32 route.
 resource "netbird_policy" "talos_to_bootstrap_opc" {
-  name    = "O11Y_${upper(var.env)}_TALOS_TO_BOOTSTRAP_OPC"
+  name    = "o11y-${var.env}-talos-to-bootstrap-opc"
   enabled = true
 
   rule {
-    name          = "TALOS_TO_BOOTSTRAP_OPC"
+    name          = "talos-to-bootstrap-opc"
     action        = "accept"
     protocol      = "tcp"
     enabled       = true
