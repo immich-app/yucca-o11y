@@ -17,10 +17,7 @@ dependency "talos" {
   # Cert mocks must be valid base64 — providers.tf base64-decodes on every plan.
   mock_outputs = {
     cluster = {
-      name               = "mock"
-      endpoint           = "https://mock:6443"
       operator_endpoint  = "https://mock:6443"
-      vip                = "10.0.0.5"
       client_certificate = "bW9jaw=="
       client_key         = "bW9jaw=="
       ca_certificate     = "bW9jaw=="

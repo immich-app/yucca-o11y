@@ -84,9 +84,10 @@ mise run talos:kubeconfig         # for kubectl
 mise run talos:talosconfig        # for talosctl
 ```
 
-Each writes to `.private/$ENVIRONMENT/` (mode 600) from the Talos module's Terraform outputs. `talos:kubeconfig` also repoints the kubeconfig `server:` from the floating VIP (`10.150.200.5`) to a control-plane private IP (`10.150.200.10`) — the VIP doesn't ARP reliably across DCs over the NetBird network, and every CP IP is in the apiserver cert SANs so TLS still validates.
+Each writes to `.private/$ENVIRONMENT/` (mode 600) from the Talos module's Terraform outputs. The kubeconfig is TF-authored with two contexts:
 
-> **A highly-available operator API endpoint is TBD.** `kubectl` is pinned to a single control-plane IP, so if that CP is down you currently repoint to another by hand (any CP IP works — they're all cert SANs). The floating VIP is HA *inside* the cluster (kubelet and in-cluster clients use it) but doesn't ARP across DCs over the NetBird network, so there's no HA endpoint for operators yet.
+* **`o11y-<env>`** (default) — the HA endpoint `kube.<mesh-zone>:6443`, fronted by the Envoy mesh gateway (TLS passthrough to every apiserver). Survives any single CP being down and never hairpins through a NetBird routing peer.
+* **`o11y-<env>-direct`** — a control-plane private IP, for bootstrap/DR before the mesh gateway exists: `kubectl --context o11y-<env>-direct`. Every CP IP is an apiserver cert SAN, so TLS validates on both paths. (The floating VIP `.5` is in-cluster-only — it doesn't ARP across DCs.)
 
 **Point your tools at them:**
 
