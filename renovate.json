@@ -2,6 +2,7 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["local>immich-app/.github:renovate-config"],
   "semanticCommits": "enabled",
+  "prHourlyLimit": 0,
   "flux": {
     "managerFilePatterns": [
       "/(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$/"
@@ -60,12 +61,20 @@
       "semanticCommitScope": "staging"
     },
     {
-      "description": "Split production Kubernetes updates into their own PRs",
+      "description": "Split production Kubernetes updates into their own PRs; gate them on a Dependency Dashboard checkbox so base/staging merges and soaks first",
       "matchFileNames": [
         "kubernetes/apps/production/**"
       ],
       "additionalBranchPrefix": "production-",
-      "semanticCommitScope": "production"
+      "semanticCommitScope": "production",
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "netbox provider majors track NetBox server versions - bump deliberately after checking the server",
+      "matchDatasources": ["terraform-provider"],
+      "matchPackageNames": ["e-breuninger/netbox"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
     }
   ]
 }
