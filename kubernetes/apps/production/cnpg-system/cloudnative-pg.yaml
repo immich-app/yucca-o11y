@@ -29,6 +29,7 @@ spec:
           ref:
             # renovate: datasource=docker depName=ghcr.io/cloudnative-pg/charts/cloudnative-pg
             tag: 0.28.2
+            digest: sha256:395480811b5472e8e3c3f1d98d838596019d50b109e26bb0eb537c227fba679a
       target:
         kind: OCIRepository
         name: cloudnative-pg

@@ -31,6 +31,7 @@ spec:
           ref:
             # renovate: datasource=docker depName=ghcr.io/stakater/charts/reloader
             tag: 2.2.12
+            digest: sha256:1efe694acf4ada31404232a1889126ddc92789bddca3054f74f3b2e8ded1116a
       target:
         kind: OCIRepository
         name: reloader
