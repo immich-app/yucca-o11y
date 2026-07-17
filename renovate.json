@@ -2,6 +2,7 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["local>immich-app/.github:renovate-config"],
   "semanticCommits": "enabled",
+  "prHourlyLimit": 0,
   "flux": {
     "managerFilePatterns": [
       "/(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$/"
@@ -60,12 +61,13 @@
       "semanticCommitScope": "staging"
     },
     {
-      "description": "Split production Kubernetes updates into their own PRs",
+      "description": "Split production Kubernetes updates into their own PRs and gate behind manual approval in the dashboard",
       "matchFileNames": [
         "kubernetes/apps/production/**"
       ],
       "additionalBranchPrefix": "production-",
-      "semanticCommitScope": "production"
+      "semanticCommitScope": "production",
+      "dependencyDashboardApproval": true
     }
   ]
 }
