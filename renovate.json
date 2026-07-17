@@ -68,7 +68,6 @@
       "additionalBranchPrefix": "production-",
       "semanticCommitScope": "production",
       "dependencyDashboardApproval": true
-    },
     }
   ]
 }
