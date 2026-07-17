@@ -14,16 +14,16 @@ A second Envoy Gateway (`mesh`, in `envoy-system`) serves NetBird peers instead 
 
 ### TLS certificates
 
-cert-manager issues short-lived ECDSA P-256 wildcard certificates with always-rotate, using Let's Encrypt with the OVH DNS-01 challenge webhook. The certificate `dnsNames` are defined once in the base manifests using the `APP_DOMAIN` placeholders and resolve per environment from `cluster-settings` — staging gets `*.staging.futostatus.com`, production the bare-domain wildcards.
+cert-manager issues short-lived ECDSA P-256 wildcard certificates with always-rotate, using Let's Encrypt with the OVH DNS-01 challenge webhook. The certificate `dnsNames` are defined once in the base manifests using the `CLUSTER_APP_DOMAIN` placeholder and resolve per environment from `cluster-settings` — staging gets `*.staging.futostatus.com`, production the bare-domain wildcards.
 
 ## VictoriaMetrics — the central metrics store
 
 This cluster's VictoriaMetrics is the **central metrics store for all FUTO clusters**. Other Kubernetes clusters each run their own `vmagent` and remote-write into this cluster; it is the ingestion target plus the query and alerting brain for everyone.
 
-* **Storage** — VMCluster mode with `replicationFactor=2`, `vmstorage` spread one-per-worker across the three DCs on `openebs-spare-disk` with 90-day retention. The `vmstorage`, `vminsert`, and `vmselect` tiers scale independently.
+* **Storage** — VMCluster mode with `replicationFactor=2`, `vmstorage` spread one-per-worker across the three DCs on `openebs-spare-disk`; retention is set per environment via `CLUSTER_VMETRICS_RETENTION` (30d staging, 120d production). The `vmstorage`, `vminsert`, and `vmselect` tiers scale independently.
 * **Local collection** — a `vmagent` (with a persistent disk buffer) scrapes this cluster and remote-writes to the local `vminsert`. It tags series with the cluster's identity.
 * **Alerting** — `vmalert` evaluates rules; notifications are blackholed for now (no Alertmanager yet), so rules still evaluate and recording rules still write.
-* **Ingestion gateway** — a locked-down `vmauth` (no anonymous access, run as an HA pair) fronts `vminsert` and is exposed publicly at `vmauth.<APP_DOMAIN>` through the Envoy Gateway and IPLB with cert-manager TLS.
+* **Ingestion gateway** — a locked-down `vmauth` (no anonymous access, run as an HA pair) fronts `vminsert` and is exposed publicly at `vmauth.<CLUSTER_APP_DOMAIN>` through the Envoy Gateway and IPLB with cert-manager TLS.
 
 ### Tenancy and auth
 
@@ -41,9 +41,13 @@ Nothing changes on the central side. On the remote cluster: pull the shared toke
 
 The central store is a single point of failure for all observability, mitigated by the per-remote disk buffers, the RF=2 / three-DC resilience, and meta-monitoring that must live **outside** this cluster (it can't watch itself). Total load scales with the sum of each cluster's active series, so grow the storage and insert/select tiers as clusters onboard and add cardinality guardrails so one misbehaving remote can't overwhelm the store.
 
+## VictoriaLogs
+
+Logs follow the same shape as metrics: a **VictoriaLogs cluster** (`victoria-logs-cluster` chart) with three `vlstorage` replicas spread one-per-worker on `CLUSTER_VMLOGS_STORAGE_CLASS` (`openebs-spare-disk` staging, `openebs-spare-disk-2` production), retention per environment via `CLUSTER_VMLOGS_RETENTION` (30d staging, 120d production). A `victoria-logs-collector` DaemonSet tails this cluster's pod logs and writes them in, tagged with the cluster identity.
+
 ## Grafana
 
-Grafana runs as a 3-replica HA deployment managed by the Grafana operator, with non-blocking rolling updates (zero surge, one unavailable) and one replica per worker via a topology-spread constraint. Pod storage is ephemeral — **all state lives in Postgres** — and the replicas share a single security secret key (from 1Password) so signed cookies and sessions validate on any replica. Grafana connects to its Postgres over TLS; the password is supplied as an environment variable rather than written into config. It is reached at `grafana.<APP_DOMAIN>` and the alternate domain.
+Grafana runs as a 3-replica HA deployment managed by the Grafana operator, with non-blocking rolling updates (zero surge, one unavailable) and one replica per worker via a topology-spread constraint. Pod storage is ephemeral — **all state lives in Postgres** — and the replicas share a single security secret key (from 1Password) so signed cookies and sessions validate on any replica. Grafana connects to its Postgres over TLS; the password is supplied as an environment variable rather than written into config. It is reached at `grafana.<CLUSTER_APP_DOMAIN>` and the alternate domain.
 
 ## CloudNativePG
 
