@@ -42,11 +42,18 @@ The worker host firewall scopes `:30443` to OVH's IPLB NAT range (`10.108.0.0/14
 
 Because the farm targets the workers' public IPs (not the vRack), three things are required and are handled in the cluster config: NodePorts must answer on the public NIC, exactly one Envoy must run per worker, and Envoy must parse PROXY protocol. See the cluster architecture guide for those details.
 
-## Operator access (NetBird)
+## NetBird mesh
 
-NetBird runs as a Talos system extension on **every** node, so operators reach `talosctl` and `kubectl` over the NetBird network without exposing those APIs publicly. The vRack subnet is published as a NetBird network route with the Talos nodes as routing peers — any node can route, so it's HA — and operator traffic is masqueraded to the routing peer's vRack IP, which the host firewall already trusts. A per-environment access policy lets the shared `yucca` operator group reach this environment's routed subnet on the management ports only (apid `50000`, kube-apiserver `6443`); the groups and policy are environment-scoped (`O11Y_STAGING_*` vs `O11Y_PRODUCTION_*`), so staging operators can't pivot into production.
+NetBird connects operators, other FUTO clusters, and the bootstrap cluster to this environment without exposing anything publicly. Everything is Terraform-managed (`netbird/cluster`, objects named `o11y-<env>-*`) and environment-scoped — separate groups, networks, and policies per environment, so staging access can't pivot into production. Four building blocks:
 
-Operators point `kubectl`/`talosctl` at a specific control plane's static private IP — not the floating VIP, since cross-DC ARP for the VIP over the NetBird network route is unreliable. The VIP remains the in-cluster apiserver endpoint used by kubelet and other in-cluster components.
+* **Node mesh (operator access).** NetBird runs as a Talos system extension on every node, and the vRack subnet is advertised as a network route with the Talos nodes as routing peers — any node can route, so it's HA. Operator traffic arrives masqueraded to the routing peer's vRack IP, which the host firewall already trusts. A policy grants the shared `yucca` operator group the management ports only (apid `50000`, kube-apiserver `6443`). This is the path `talosctl` and the Terraform providers use.
+* **Workload ingress (mesh gateway).** In-cluster `netbird-router` pods are the routing peers for a pinned Envoy gateway VIP — a ClusterIP from a dedicated secondary ServiceCIDR, advertised as a `/32` resource. The pods exist because only pod-level routing can advertise a ClusterIP (kube-proxy's DNAT runs in the host netns). A NetBird DNS zone resolves `*.<mesh-domain>` to the VIP for mesh peers; the `yucca` group is allowed `:443` (mesh-facing HTTPRoutes) and `:6443` — the HA kube-apiserver endpoint `kube.<mesh-domain>`, which `kubectl` uses by default: it load-balances across every apiserver and never hairpins through a routing peer.
+* **Pod egress (Multus).** Pods can't normally originate mesh traffic — NetBird only masquerades traffic sourced from ranges a peer advertises, and the flannel pod CIDR isn't one. Pods that need the mesh (today: the external-secrets controller, reaching the bootstrap cluster's 1Password Connect at `opc.o11y.futo.network`) opt in via a Multus `NetworkAttachmentDefinition`: a second interface in an egress range the nodes advertise, with a route scoped to just the opc VIP. The node's own NetBird carries it out; everything else stays on flannel.
+* **Mesh DNS.** The router pods also serve NetBird DNS to the cluster: CoreDNS forwards the `futo.network` zone to a pinned `netbird-dns` Service in front of them, so any pod resolves mesh names (opc, mesh gateways) through ordinary cluster DNS with zero per-pod configuration.
+
+All the ranges involved — the vRack, the gateway ServiceCIDR, and the egress CIDR — are registered in NetBox by the `netbox/cluster` module from the same Terraform values that allocate them.
+
+Operators point `talosctl` at a control plane's static private IP over the node mesh (not the floating VIP — cross-DC ARP for the VIP is unreliable over the route; it remains the in-cluster apiserver endpoint). `kubectl` defaults to `kube.<mesh-domain>` through the mesh gateway, with a direct-CP break-glass context in the same kubeconfig for bootstrap/DR.
 
 ## Cost
 
@@ -69,5 +76,8 @@ Staging + production run-rate ≈ **$955/mo** plus the one-time **$221** product
 | Workers | 3× `SYS-2` (`24sys022`) | 3× `Rise-2` (`24rise02-v1`) |
 | IPLB | 1 zone (`gra`) | 3 zones (`gra` + `rbx` + `sbg`), anycast |
 | Private CIDR | `10.150.200.0/24` | `10.150.100.0/24` |
-| NetBird objects | `O11Y_STAGING_*` | `O11Y_PRODUCTION_*` |
+| Mesh domain | `staging.o11y.futo.network` | `o11y.futo.network` |
+| Gateway ServiceCIDR (VIP `.10`) | `10.69.1.0/24` | `10.69.0.0/24` |
+| Pod egress CIDR | `10.69.3.0/24` | `10.69.2.0/24` |
+| NetBird objects | `o11y-staging-*` | `o11y-production-*` |
 | Flux source | `staging` overlay | `production` overlay |
