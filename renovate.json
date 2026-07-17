@@ -61,7 +61,7 @@
       "semanticCommitScope": "staging"
     },
     {
-      "description": "Split production Kubernetes updates into their own PRs; gate them on a Dependency Dashboard checkbox so base/staging merges and soaks first",
+      "description": "Split production Kubernetes updates into their own PRs and gate behind manual approval in the dashboard",
       "matchFileNames": [
         "kubernetes/apps/production/**"
       ],
