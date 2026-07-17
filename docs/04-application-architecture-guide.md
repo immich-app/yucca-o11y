@@ -8,6 +8,10 @@ The workloads running on the cluster — the ingress edge, the observability sta
 
 Envoy Gateway is the only external ingress. It runs one replica per worker with a hostname topology-spread constraint, so every IPLB backend has a local endpoint under `externalTrafficPolicy: Local`. The OVH load balancer does TCP passthrough to Envoy's NodePort; TLS terminates at Envoy. A client traffic policy parses PROXY protocol v2 (which the IPLB prepends) as optional, so the LB's bare-TCP health probe isn't reset while real client connections still surface the true source IP. Platform services attach to the gateway through HTTPRoutes (Grafana, vmauth, the echo test app).
 
+### Mesh gateway
+
+A second Envoy Gateway (`mesh`, in `envoy-system`) serves NetBird peers instead of the public internet; it hangs off a pinned VIP Service the mesh advertises (see the infrastructure guide's NetBird section). It terminates TLS with a `*.<mesh-domain>` wildcard from the same cert-manager pipeline for mesh-facing HTTPRoutes — an unauthenticated vmauth at `vmauth.<mesh-domain>` gives other FUTO clusters a remote-write path that never leaves the mesh — and carries a TLS-**passthrough** listener on `:6443` fronting the kube-apiserver as `kube.<mesh-domain>`: SNI-routed to the `kubernetes` Service, apiserver's own certificate end-to-end, load-balanced across all three control planes.
+
 ### TLS certificates
 
 cert-manager issues short-lived ECDSA P-256 wildcard certificates with always-rotate, using Let's Encrypt with the OVH DNS-01 challenge webhook. The certificate `dnsNames` are defined once in the base manifests using the `APP_DOMAIN` placeholders and resolve per environment from `cluster-settings` — staging gets `*.staging.futostatus.com`, production the bare-domain wildcards.
@@ -47,7 +51,8 @@ Grafana's database is a CloudNativePG cluster. The operator runs in the `cnpg-sy
 
 ## Supporting components
 
-* **external-secrets + 1Password Connect** — sync 1Password items into Kubernetes Secrets through a cluster secret store; nearly every app above gets its credentials this way.
+* **external-secrets** — syncs 1Password items into Kubernetes Secrets through cluster secret stores backed by the **bootstrap cluster's** 1Password Connect (`opc.o11y.futo.network`), reached over the NetBird mesh: the controller pod carries a Multus egress interface and resolves the endpoint via mesh DNS. Nearly every app above gets its credentials this way; the auth token is Terraform-seeded.
+* **Multus** — meta-CNI providing opt-in secondary pod interfaces; today only the `netbird-egress` attachment used by external-secrets.
 * **grafana-operator** — manages the Grafana instance plus dashboard and datasource resources, which VictoriaMetrics' chart provisions.
 * **prometheus-operator CRDs** — the ServiceMonitor/PrometheusRule CRDs the VM stack consumes.
 * **OpenEBS** — the local-hostpath provisioner backing the `openebs-system-disk` and `openebs-spare-disk` StorageClasses.

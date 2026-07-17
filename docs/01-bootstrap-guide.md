@@ -31,34 +31,40 @@ export TF_VAR_env=staging
    mise run tg run --working-dir deployment/modules/ovh/account apply
    ```
 
-2. **NetBird** — the per-environment mesh objects: the Talos node group, a reusable setup key, the vRack network route (Talos nodes as routing peers), and the `yucca → resource` access policy. The Talos module consumes the setup key from here, so apply NetBird first.
+2. **NetBird** — the per-environment mesh objects (all named `o11y-<env>-*`): groups and setup keys for the Talos nodes and the in-cluster routing peers, the vRack network route, the mesh-gateway VIP resource and DNS zone, the pod-egress network, and the access policies (`yucca → resource`, `yucca → gateway`, `talos → bootstrap opc`). The Talos module consumes the node setup key and mesh zone from here, so apply NetBird first.
 
    ```bash
    mise run tg run --working-dir deployment/modules/netbird/cluster apply
    ```
 
-3. **Talos (bootstrap)** — initial bring-up over public IPs, because the NetBird extension isn't running yet.
+3. **NetBox** — registers the environment's ranges (vRack, gateway ServiceCIDR, pod-egress CIDR) in IPAM, from the same values the other modules allocate.
+
+   ```bash
+   mise run tg run --working-dir deployment/modules/netbox/cluster apply
+   ```
+
+4. **Talos (bootstrap)** — initial bring-up over public IPs, because the NetBird extension isn't running yet.
 
    ```bash
    TF_VAR_use_public_endpoints=true mise run tg run --working-dir deployment/modules/talos/cluster apply
    ```
 
-4. **Verify** the cluster is up and operator-side NetBird routing works. Pull the configs (see [Cluster access](#cluster-access)) and hit the APIs over the NetBird network:
+5. **Verify** the cluster is up and operator-side NetBird routing works. Pull the configs (see [Cluster access](#cluster-access)) and hit the APIs over the NetBird network — use the **direct** kubeconfig context during bring-up, since the default context targets the mesh gateway, which only exists once Flux has reconciled:
 
    ```bash
    mise run talos:kubeconfig && mise run talos:talosconfig
-   kubectl --kubeconfig .private/$ENVIRONMENT/kubeconfig get nodes -o wide
+   kubectl --kubeconfig .private/$ENVIRONMENT/kubeconfig --context o11y-$ENVIRONMENT-direct get nodes -o wide
    talosctl --talosconfig .private/$ENVIRONMENT/talosconfig -n 10.150.200.10 get members
    ```
 
-5. **Talos (steady state)** — drop the public-endpoints override now that NetBird routes work; the host firewall closes the public NIC (everything except `:30443` on workers).
+6. **Talos (steady state)** — drop the public-endpoints override now that NetBird routes work; the host firewall closes the public NIC (everything except `:30443` on workers).
 
    ```bash
    unset TF_VAR_use_public_endpoints
    mise run tg run --working-dir deployment/modules/talos/cluster apply
    ```
 
-6. **Kubernetes/Helm** — install the Flux Operator + Instance and create bootstrap secrets (cert-manager, OVH DNS credentials, external-secrets 1Password token). After this, Flux owns cluster state.
+7. **Kubernetes/Helm** — install CoreDNS (Terraform-seeded — Flux needs cluster DNS from its first reconcile; Talos's copy is disabled), the Flux Operator + Instance, the `bootstrap-settings` ConfigMap, and the bootstrap secrets (cert-manager OVH DNS credentials, the 1Password Connect token for external-secrets). After this, Flux owns cluster state.
 
    ```bash
    mise run tg run --working-dir deployment/modules/kubernetes/helm apply
