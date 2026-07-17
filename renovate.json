@@ -69,12 +69,6 @@
       "semanticCommitScope": "production",
       "dependencyDashboardApproval": true
     },
-    {
-      "description": "netbox provider majors track NetBox server versions - bump deliberately after checking the server",
-      "matchDatasources": ["terraform-provider"],
-      "matchPackageNames": ["e-breuninger/netbox"],
-      "matchUpdateTypes": ["major"],
-      "enabled": false
     }
   ]
 }
