@@ -35,7 +35,7 @@ spec:
       containers:
         - name: netbird
           # renovate: datasource=docker depName=netbirdio/netbird
-          image: netbirdio/netbird:0.73.2
+          image: netbirdio/netbird:0.73.2@sha256:201ce4bfa4f72c458db8a75db2dbb6929bed3a16f5150ce44f9ef3a49998a3fb
           env:
             - name: NB_SETUP_KEY
               valueFrom:
