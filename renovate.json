@@ -71,8 +71,10 @@
       "dependencyDashboardApproval": true
     },
     {
-      "description": "Digests in production patches are managed by the custom manager",
+      "description": "Digests in env overlay patches are managed by the custom manager",
       "matchFileNames": [
+        "kubernetes/apps/development/**",
+        "kubernetes/apps/staging/**",
         "kubernetes/apps/production/**"
       ],
       "matchUpdateTypes": ["pinDigest"],
