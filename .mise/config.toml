@@ -90,8 +90,9 @@ chmod 600 {{config_root}}/.private/${ENVIRONMENT}/kubeconfig
 description = "Fetch kubeconfig for $ENVIRONMENT into .private/<env>/ (server = HA mesh endpoint kube.<zone>)"
 dir = "{{cwd}}"
 
+# CI authenticates with a service-account token, which op rejects alongside --account.
 [tasks.tg]
-run = "op run --account 'team-futo.1password.com' '--env-file={{config_root}}/deployment/.env' -- terragrunt"
+run = "op run {% if get_env(name='OP_SERVICE_ACCOUNT_TOKEN', default='') == '' %}--account 'team-futo.1password.com' {% endif %}'--env-file={{config_root}}/deployment/.env' -- terragrunt"
 description = "Wrapper for terragrunt"
 dir = "{{cwd}}"
 

@@ -1,0 +1,58 @@
+name: Connect to NetBird
+description: >-
+  Install the NetBird client and join the mesh with a setup key the caller
+  already read (and masked). The key is minted by netbird/cluster
+  (o11y-<env>-ci), so that module must be applied before this runs.
+
+inputs:
+  setup-key:
+    description: NetBird setup key (plaintext; mask it before passing).
+    required: true
+  management-url:
+    description: NetBird management URL.
+    required: false
+    default: https://api.netbird.io
+  hostname:
+    description: Peer hostname to register the runner as.
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Install NetBird client
+      shell: bash
+      run: |
+        set -euo pipefail
+        curl -fsSL https://pkgs.netbird.io/install.sh | sh
+        netbird version
+
+    - name: Connect to NetBird
+      shell: bash
+      env:
+        NB_SETUP_KEY: ${{ inputs.setup-key }}
+        NB_MANAGEMENT_URL: ${{ inputs.management-url }}
+        NB_HOSTNAME: ${{ inputs.hostname }}
+      run: |
+        set -euo pipefail
+        args=(--setup-key "$NB_SETUP_KEY" --management-url "$NB_MANAGEMENT_URL")
+        if [ -n "$NB_HOSTNAME" ]; then
+          args+=(--hostname "$NB_HOSTNAME")
+        fi
+        sudo netbird up "${args[@]}"
+
+    - name: Wait for NetBird connection
+      shell: bash
+      run: |
+        set -euo pipefail
+        for _ in $(seq 1 30); do
+          if sudo netbird status 2>/dev/null | grep -qE "Management:[[:space:]]+Connected"; then
+            sudo netbird status --detail || true
+            echo "NetBird connected."
+            exit 0
+          fi
+          sleep 2
+        done
+        echo "NetBird did not reach the Connected state in time." >&2
+        sudo netbird status --detail || true
+        exit 1
