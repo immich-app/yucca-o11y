@@ -34,7 +34,6 @@ jobs:
         with:
           client-id: ${{ secrets.PUSH_O_MATIC_APP_CLIENT_ID }}
           private-key: ${{ secrets.PUSH_O_MATIC_APP_KEY }}
-          # Token only feeds use-mise's github_token (tool downloads from GitHub releases).
           permission-contents: read
 
       - name: Setup Mise
