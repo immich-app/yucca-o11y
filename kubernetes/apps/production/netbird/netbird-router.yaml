@@ -14,3 +14,19 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: netbird
+  patches:
+    - patch: |-
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: netbird-router
+        spec:
+          template:
+            spec:
+              containers:
+                - name: netbird
+                  # renovate: datasource=docker depName=netbirdio/netbird
+                  image: netbirdio/netbird:0.73.2@sha256:201ce4bfa4f72c458db8a75db2dbb6929bed3a16f5150ce44f9ef3a49998a3fb
+      target:
+        kind: Deployment
+        name: netbird-router

@@ -29,7 +29,8 @@
       "description": "OCIRepository Tags and Digests",
       "managerFilePatterns": ["/(^|/)kubernetes/apps/.+\\.ya?ml$/"],
       "matchStrings": [
-        "datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: versioning=(?<versioning>\\S+))?\\s*\\n\\s*tag:\\s*\"?(?<currentValue>[^\"\\s]+)\"?\\s*\\n\\s*digest:\\s*\"?(?<currentDigest>sha256:[a-f0-9]{64})\"?"
+        "datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: versioning=(?<versioning>\\S+))?\\s*\\n\\s*tag:\\s*\"?(?<currentValue>[^\"\\s]+)\"?\\s*\\n\\s*digest:\\s*\"?(?<currentDigest>sha256:[a-f0-9]{64})\"?",
+        "datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: versioning=(?<versioning>\\S+))?\\s*\\n\\s*(?:-\\s+)?image: \\S+?:(?<currentValue>[^@\\s]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
       ],
       "datasourceTemplate": "{{#if datasource}}{{{datasource}}}{{else}}github-releases{{/if}}",
       "versioningTemplate": "{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}"
