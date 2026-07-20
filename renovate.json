@@ -68,6 +68,14 @@
       "additionalBranchPrefix": "production-",
       "semanticCommitScope": "production",
       "dependencyDashboardApproval": true
+    },
+    {
+      "description": "Digests in production patches are managed by the custom manager",
+      "matchFileNames": [
+        "kubernetes/apps/production/**"
+      ],
+      "matchUpdateTypes": ["pinDigest"],
+      "enabled": false
     }
   ]
 }
