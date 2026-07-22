@@ -5,3 +5,4 @@ resources:
   - ./externalsecret.yaml
   - ./grafana.yaml
   - ./datasource.yaml
+  - ./dashboards
