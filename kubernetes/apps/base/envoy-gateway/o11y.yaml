@@ -1,0 +1,38 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/podmonitor_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: envoy-proxy
+spec:
+  jobLabel: envoy-proxy
+  namespaceSelector:
+    matchNames:
+      - envoy-system
+  # Matches every Envoy Gateway proxy pod (public + mesh gateways) on :19001.
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: proxy
+      app.kubernetes.io/name: envoy
+  podMetricsEndpoints:
+    - port: metrics
+      path: /stats/prometheus
+      honorLabels: true
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/servicemonitor_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: envoy-gateway
+spec:
+  jobLabel: envoy-gateway
+  namespaceSelector:
+    matchNames:
+      - envoy-system
+  selector:
+    matchLabels:
+      control-plane: envoy-gateway
+  endpoints:
+    - port: metrics
+      path: /metrics
+      honorLabels: true
