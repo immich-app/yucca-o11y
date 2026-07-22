@@ -11,7 +11,7 @@ name: Infra (Terraform)
 # target, the connection hairpins; re-run the job.
 #
 # Prerequisites (out-of-band, once):
-#   - Repo secret OP_TF_O11Y_ENV: a 1Password service-account token with read
+#   - Repo secret OP_TF_O11Y: a 1Password service-account token with read
 #     access to o11y_tf, o11y_tf_staging, o11y_tf_prod, shared_tf.
 #   - netbird/cluster applied per env (mints the CI setup key).
 #   - Re-enable the workflow: gh workflow enable deploy.yml
@@ -49,7 +49,7 @@ jobs:
     env:
       ENVIRONMENT: ${{ matrix.environment }}
       TF_VAR_env: ${{ matrix.environment }}
-      OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_TF_O11Y_ENV }}
+      OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_TF_O11Y }}
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
