@@ -36,6 +36,15 @@ spec:
         replicationFactor: 2
         vmstorage:
           replicaCount: 3
+          # Memory feeds the index caches; the chart default (1.5Gi limit) left
+          # tagFiltersToMetricIDs/indexBlocks missing on queries. One pod per node.
+          resources:
+            requests:
+              cpu: 500m
+              memory: 2Gi
+            limits:
+              cpu: "2"
+              memory: 6Gi
           topologySpreadConstraints:
             - maxSkew: 1
               topologyKey: kubernetes.io/hostname
@@ -52,6 +61,15 @@ spec:
                     storage: 100Gi
         vmselect:
           replicaCount: 2
+          # CPU limit sets GOMAXPROCS, which sets the default maxConcurrentRequests
+          # (2*cores); the chart's 500m limit capped it at ~2 and queries queued.
+          resources:
+            requests:
+              cpu: 500m
+              memory: 500Mi
+            limits:
+              cpu: "4"
+              memory: 1Gi
           extraArgs:
             # RF=2 requires vmselect dedup set to the scrape interval — matches the
             # chart's default scrapeInterval (20s).
@@ -72,6 +90,15 @@ spec:
                     storage: 5Gi
         vminsert:
           replicaCount: 2
+          # CPU limit sets GOMAXPROCS -> concurrent insert capacity; the chart's
+          # 500m limit was throttling ingestion concurrency.
+          resources:
+            requests:
+              cpu: 500m
+              memory: 200Mi
+            limits:
+              cpu: "4"
+              memory: 500Mi
           extraArgs:
             replicationFactor: "2"
           topologySpreadConstraints:
