@@ -94,6 +94,12 @@ spec:
                     secretKeyRef:
                       name: grafana-oauth
                       key: GF_AUTH_GENERIC_OAUTH_CLIENT_ID
+                - name: GF_UNIFIED_ALERTING_HA_PEERS
+                  value: grafana-alerting.o11y.svc.cluster.local:9094
+                - name: GF_UNIFIED_ALERTING_HA_ADVERTISE_ADDRESS
+                  value: "$(POD_IP):9094"
+                - name: GF_UNIFIED_ALERTING_HA_SINGLE_NODE_EVALUATION
+                  value: "true"
               securityContext:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true
