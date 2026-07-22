@@ -23,6 +23,12 @@ spec:
 
     vlstorage:
       replicaCount: 3
+      resources:
+        requests:
+          cpu: 200m
+          memory: 1Gi
+        limits:
+          memory: 12Gi
       retentionPeriod: ${CLUSTER_VMLOGS_RETENTION}
       persistentVolume:
         storageClassName: ${CLUSTER_VMLOGS_STORAGE_CLASS}
@@ -38,6 +44,12 @@ spec:
         enabled: true
 
     vlinsert:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 512Mi
+        limits:
+          memory: 6Gi
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
@@ -49,6 +61,12 @@ spec:
         enabled: true
 
     vlselect:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 512Mi
+        limits:
+          memory: 6Gi
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname

@@ -5,6 +5,7 @@ kind: GrafanaDashboard
 metadata:
   name: yucca-overview
 spec:
+  folderRef: yucca
   instanceSelector:
     matchLabels:
       dashboards: grafana
@@ -19,6 +20,7 @@ kind: GrafanaDashboard
 metadata:
   name: yucca-michael
 spec:
+  folderRef: yucca
   instanceSelector:
     matchLabels:
       dashboards: grafana
@@ -33,6 +35,7 @@ kind: GrafanaDashboard
 metadata:
   name: yucca-telemetry-pipeline
 spec:
+  folderRef: yucca
   instanceSelector:
     matchLabels:
       dashboards: grafana
@@ -47,6 +50,7 @@ kind: GrafanaDashboard
 metadata:
   name: yucca-father-kubernetes
 spec:
+  folderRef: yucca
   instanceSelector:
     matchLabels:
       dashboards: grafana
@@ -61,6 +65,7 @@ kind: GrafanaDashboard
 metadata:
   name: yucca-spice-ceph-health
 spec:
+  folderRef: yucca
   instanceSelector:
     matchLabels:
       dashboards: grafana
@@ -75,6 +80,7 @@ kind: GrafanaDashboard
 metadata:
   name: yucca-spice-rgw-capacity
 spec:
+  folderRef: yucca
   instanceSelector:
     matchLabels:
       dashboards: grafana
@@ -89,6 +95,7 @@ kind: GrafanaDashboard
 metadata:
   name: yucca-spice-nodes
 spec:
+  folderRef: yucca
   instanceSelector:
     matchLabels:
       dashboards: grafana
@@ -103,6 +110,7 @@ kind: GrafanaDashboard
 metadata:
   name: yucca-fabric-htz-fsn1
 spec:
+  folderRef: yucca
   instanceSelector:
     matchLabels:
       dashboards: grafana
