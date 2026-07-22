@@ -9,7 +9,6 @@ spec:
   namespaceSelector:
     matchNames:
       - envoy-system
-  # Matches every Envoy Gateway proxy pod (public + mesh gateways) on :19001.
   selector:
     matchLabels:
       app.kubernetes.io/component: proxy
