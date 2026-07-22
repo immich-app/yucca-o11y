@@ -1,0 +1,27 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.networking.k8s.io/httproute_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: vmetrics-mesh
+spec:
+  parentRefs:
+    - name: mesh
+      namespace: envoy-system
+  hostnames:
+    - vmetrics.${BOOTSTRAP_MESH_DOMAIN}
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: /select/0/vmui/
+            statusCode: 302
+    - backendRefs:
+        - name: vmselect-victoria-metrics
+          port: 8481
