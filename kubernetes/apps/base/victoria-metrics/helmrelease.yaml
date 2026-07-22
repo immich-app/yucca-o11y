@@ -36,6 +36,12 @@ spec:
         replicationFactor: 2
         vmstorage:
           replicaCount: 3
+          resources:
+            requests:
+              cpu: 500m
+              memory: 2Gi
+            limits:
+              memory: 6Gi
           topologySpreadConstraints:
             - maxSkew: 1
               topologyKey: kubernetes.io/hostname
@@ -52,9 +58,13 @@ spec:
                     storage: 100Gi
         vmselect:
           replicaCount: 2
+          resources:
+            requests:
+              cpu: 500m
+              memory: 500Mi
+            limits:
+              memory: 1Gi
           extraArgs:
-            # RF=2 requires vmselect dedup set to the scrape interval — matches the
-            # chart's default scrapeInterval (20s).
             dedup.minScrapeInterval: 20s
           topologySpreadConstraints:
             - maxSkew: 1
@@ -72,6 +82,12 @@ spec:
                     storage: 5Gi
         vminsert:
           replicaCount: 2
+          resources:
+            requests:
+              cpu: 500m
+              memory: 200Mi
+            limits:
+              memory: 500Mi
           extraArgs:
             replicationFactor: "2"
           topologySpreadConstraints:
