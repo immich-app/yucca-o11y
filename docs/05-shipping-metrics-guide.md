@@ -102,7 +102,7 @@ remote_write:
 
 Everything lands in one tenant, distinguished by labels rather than VictoriaMetrics multitenancy: one organization, mutual trust, everything queryable together. Every remote `vmagent` must set:
 
-* **`cluster`** (mandatory) - a name unique to the remote cluster, so series never collide with another cluster's. Cheap to enforce now, painful to retrofit.
+* **`cluster`** (mandatory) - a name unique to the remote cluster, so series never collide with another cluster's, and so alerting can tell clusters apart: o11y's alert rules aggregate `by (cluster)` and notifications group on it, so a missing or reused `cluster` label collapses every cluster into a single alert and a single notification. Cheap to enforce now, painful to retrofit.
 * **`env`** and **`region`** - conventional, so dashboards and alerts can slice by environment and location.
 
 ## Verify data is arriving

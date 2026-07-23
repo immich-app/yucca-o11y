@@ -89,7 +89,7 @@ spec:
             datasource:
               type: prometheus
               uid: VictoriaMetrics
-            expr: count(up == 0)
+            expr: count(up == 0) by (cluster)
             instant: true
             range: false
             intervalMs: 1000

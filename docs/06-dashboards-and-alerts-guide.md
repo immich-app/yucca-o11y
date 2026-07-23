@@ -13,6 +13,13 @@ Each project gets a Grafana **folder** named for it, and both its dashboards and
 
 Add a project, add a folder. That folder is the unit you scope dashboards, alerts, and (eventually) permissions to.
 
+## Tags cut across folders
+
+A folder files a dashboard under exactly one project; a **tag** is the orthogonal axis - signal type (`metrics`, `logs`), layer (`infra`, `k8s`, `app`) - that Grafana's dashboard browser filters on across every folder at once. Grafana stores tags inside the dashboard JSON model and `grafana-operator` exposes no field to inject them, so tags can only be set where the JSON is authored:
+
+- **Bundle (Model A) and first-party (Model B) dashboards you write:** set `tags` in the dashboard JSON before shipping. Folder is your project; tags are the signal/layer cross-cut.
+- **Dashboards pulled from grafana.com or a raw URL** (`spec.grafanaCom` / `spec.url`, e.g. the envoy and cnpg dashboards): they carry whatever tags upstream set. o11y cannot add or normalize them without vendoring the JSON inline, which forfeits the live reference and `resyncPeriod` auto-updates - so leave them as-is.
+
 ## Model A: a project ships a signed OCI manifest bundle
 
 This is how yucca ships (immich-app/yucca#315, see that repo's `o11y/README.md`). The project's CI renders each dashboard into a self-contained `GrafanaDashboard` CR (JSON embedded as `spec.gzipJson`) plus any `GrafanaAlertRuleGroup` CRs and a `GrafanaFolder`, pushes them as **one signed OCI artifact** (`flux push artifact` + cosign keyless), and o11y consumes the whole thing with a single Flux `OCIRepository` + `Kustomization`. New dashboards/alerts flow automatically on the next artifact.
@@ -71,9 +78,9 @@ route:
       receiver: discord        # point at an o11y-specific contact point when one exists
 ```
 
-So **every alert rule must set a `project` label** matching its folder, or it falls through to the default route.
+So **every alert rule must set a `project` label** matching its folder, or it falls through to the default route. Notifications additionally group by `cluster` (alongside `grafana_folder` and `alertname`), so the same rule firing in two clusters arrives as two grouped notifications rather than one blended message.
 
-**Alert rule anatomy.** A `GrafanaAlertRuleGroup` (`folderRef: <project>`, an `interval`) with `rules[]`; each rule is a query stage on the `VictoriaMetrics` datasource (uid `VictoriaMetrics`) feeding a `__expr__` threshold stage, plus `labels` (at least `project` + `severity`) and `annotations`. See `base/grafana/alerts-o11y.yaml` for the pattern (a heartbeat plus target-down and ingestion-stalled rules).
+**Alert rule anatomy.** A `GrafanaAlertRuleGroup` (`folderRef: <project>`, an `interval`) with `rules[]`; each rule is a query stage on the `VictoriaMetrics` datasource (uid `VictoriaMetrics`) feeding a `__expr__` threshold stage, plus `labels` (at least `project` + `severity`) and `annotations`. See `base/grafana/alerts-o11y.yaml` for the pattern (a heartbeat plus target-down and ingestion-stalled rules). Rules that span clusters aggregate `by (cluster)` so each cluster raises its own instance and carries its `cluster` label into notification grouping; store-local rules (the heartbeat, ingestion-stalled) don't.
 
 ## If you ship metrics to this cluster and want dashboards/alerts
 
@@ -81,6 +88,7 @@ So **every alert rule must set a `project` label** matching its folder, or it fa
 2. Everything you ship files under **your project's folder**; ask for one if it does not exist.
 3. Label every alert rule `project: <you>` so the notification policy routes it; add a route (and, if you want your own channel, a contact point) for your project.
 4. Dashboards use a `$datasource` variable and map `DS_PROMETHEUS` to `VictoriaMetrics`; alerts query the `VictoriaMetrics` datasource.
+5. Tag dashboards by signal/layer in the JSON (`metrics`, `logs`, `infra`, ...) so they stay filterable across folders (see Tags). Alerts that compare across clusters aggregate `by (cluster)`; set the `cluster` label on your series so per-cluster alerting works.
 
 ## How updates flow
 
