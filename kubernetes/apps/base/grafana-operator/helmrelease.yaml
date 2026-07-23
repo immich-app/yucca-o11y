@@ -23,6 +23,6 @@ spec:
       retries: 2
   values:
     dashboard:
-      enabled: true
+      enabled: false
     serviceMonitor:
       enabled: true

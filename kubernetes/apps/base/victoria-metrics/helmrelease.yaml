@@ -170,6 +170,7 @@ spec:
       grafanaOperator:
         enabled: true
         spec:
+          folderRef: o11y
           instanceSelector:
             matchLabels:
               dashboards: grafana

@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - ./envoy.yaml
   - ./cnpg.yaml
+  - ./grafana-operator.yaml
