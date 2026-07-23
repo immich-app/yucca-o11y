@@ -6,4 +6,6 @@ resources:
   - ./grafana.yaml
   - ./datasource.yaml
   - ./contactpoint-discord.yaml
+  - ./notificationpolicy.yaml
+  - ./alerts-o11y.yaml
   - ./dashboards
