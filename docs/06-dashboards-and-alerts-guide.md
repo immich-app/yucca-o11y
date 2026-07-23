@@ -1,67 +1,88 @@
-# Grafana dashboards: build and deploy
+# Grafana dashboards and alerts
 
-Dashboards are not committed to Grafana or to this repo as provisioning files. They are authored in the [immich-app/yucca](https://github.com/immich-app/yucca) repo, built once by CI into a single OCI artifact on GHCR, and imported here by the grafana-operator. Two repos, one artifact, no manual Grafana edits that survive a pod restart.
+o11y's Grafana renders the dashboards and alert rules that each project ships to it. Nothing is clicked in the UI and left to rot: every dashboard and alert is a `grafana-operator` CR, delivered one of two ways, and grouped into a per-project folder.
 
-```text
-yucca repo                          GHCR                         o11y (this repo)
-dashboards/*.json  --CI (oras)-->   ghcr.io/immich-app/yucca/    GrafanaDashboard CRs
-                                    dashboards:latest       -->  grafana-operator --> Grafana
+## Folders are the project boundary
+
+Each project gets a Grafana **folder** named for it, and both its dashboards and its alert rule groups file under that folder:
+
+| Folder | Owner | Delivered by |
+| --- | --- | --- |
+| `yucca` | the yucca cluster/product | yucca's signed OCI bundle (Model A) |
+| `o11y` | this cluster's own dashboards/alerts | authored in this repo (Model B) |
+
+Add a project, add a folder. That folder is the unit you scope dashboards, alerts, and (eventually) permissions to.
+
+## Model A: a project ships a signed OCI manifest bundle
+
+This is how yucca ships (immich-app/yucca#315, see that repo's `o11y/README.md`). The project's CI renders each dashboard into a self-contained `GrafanaDashboard` CR (JSON embedded as `spec.gzipJson`) plus any `GrafanaAlertRuleGroup` CRs and a `GrafanaFolder`, pushes them as **one signed OCI artifact** (`flux push artifact` + cosign keyless), and o11y consumes the whole thing with a single Flux `OCIRepository` + `Kustomization`. New dashboards/alerts flow automatically on the next artifact.
+
+o11y's consumer side lives once in `kubernetes/apps/base/yucca-o11y/` and is pulled into each env's `o11y` overlay:
+
+```yaml
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata: { name: yucca-o11y, namespace: flux-system }
+spec:
+  interval: 1m
+  url: oci://ghcr.io/immich-app/yucca/o11y-manifests
+  ref:
+    tag: main            # tracks every merge; no digest, or auto-updates stop
+  verify:                # gate on the CI cosign signature
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://token\\.actions\\.githubusercontent\\.com$"
+        subject: "^https://github\\.com/immich-app/yucca/\\.github/workflows/o11y\\.yml@refs/(heads/main|tags/v[^@]+)$"
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: { name: yucca-o11y, namespace: flux-system }
+spec:
+  interval: 10m
+  sourceRef: { kind: OCIRepository, name: yucca-o11y }
+  path: ./
+  prune: true
+  targetNamespace: o11y
+  dependsOn: [{ name: grafana-operator }]
 ```
 
-## Building the artifact (yucca repo)
+The bundle's CRs carry sane defaults (`instanceSelector: {dashboards: grafana}`, `folderRef: <project>`, `resyncPeriod`), so o11y applies them as-is. The GHCR package must be public (or set `secretRef` on the OCIRepository), and source-controller needs sigstore egress for `verify`.
 
-Source of truth is `dashboards/*.json` in yucca. The workflow [`.github/workflows/dashboards.yml`](https://github.com/immich-app/yucca/blob/main/.github/workflows/dashboards.yml) does two jobs:
+## Model B: authored in this repo (o11y's own)
 
-* **validate** (on every push and PR): each file must have a `uid`, a `title`, and at least one panel, and the **file name must equal `<uid>.json`**. o11y references each dashboard by that in-artifact path, so the name/uid match is load-bearing.
-* **push** (on merge to `main`, not on PRs): `oras` packages every JSON as one layer of a single artifact (type `application/vnd.grafana.dashboard+json`) and pushes it to `ghcr.io/immich-app/yucca/dashboards` with three tags:
+For this cluster's own dashboards and alerts, they live under `kubernetes/apps/base/grafana/` and deploy with the grafana Flux Kustomization:
 
-| Tag | Mutability | Purpose |
-|-----|-----------|---------|
-| `0.0.<run>` | immutable | pin an exact build |
-| `sha-<sha>` | immutable | trace back to a commit |
-| `latest` | moving | what o11y tracks by default |
+- **Dashboards** - `base/grafana/dashboards/*.yaml`, one `GrafanaDashboard` per file, `folderRef: o11y`. Source the JSON however fits: `spec.url` to a raw/grafana.com dashboard (the envoy and cnpg dashboards), `spec.gzipJson`, etc. Map dashboard `__inputs` (e.g. `DS_PROMETHEUS`) to `datasourceName: VictoriaMetrics`.
+- **Alerts** - `base/grafana/alerts-*.yaml`, a `GrafanaAlertRuleGroup` with `folderRef: o11y`.
 
-The GHCR package is public, so o11y pulls it anonymously (no pull secret). Triggers are `push`/`pull_request` scoped to `dashboards/**` plus the workflow file, and `workflow_dispatch`. See yucca's [`dashboards/README.md`](https://github.com/immich-app/yucca/blob/main/dashboards/README.md) for the dashboard set and label conventions.
+## Alerting
 
-## Deploying on o11y (this repo)
+**Contact points.** A `GrafanaContactPoint` per destination. Secrets (like a Discord webhook) come from a Secret via `receivers[].valuesFrom`, populated by an ExternalSecret from 1Password - never in git. Contact points live in the shared Grafana Postgres, so with the HA replica gossip cluster a firing alert notifies **once**, not once per replica.
 
-The consumer side is the bundle in [`kubernetes/apps/base/grafana/dashboards/`](../kubernetes/apps/base/grafana/dashboards):
+**Routing.** One `GrafanaNotificationPolicy` routes by the **`project`** label - the same axis as the folders:
 
-* `folder.yaml` - a `GrafanaFolder` named `yucca`, so all of these land in one Grafana folder.
-* `yucca.yaml` - one `GrafanaDashboard` per artifact file: `folderRef: yucca`, `instanceSelector` `dashboards: grafana`, `resyncPeriod: 10m`, `oci.reference` the `:latest` tag, and `oci.path` the `<uid>.json`.
-* `kustomization.yaml` - lists the two files above.
-
-The bundle is pulled in by `base/grafana`, which both environments deploy through the `grafana` Flux Kustomization (`dependsOn: grafana-operator`, so the CRD exists first). Because we track the mutable `:latest` tag, the operator re-pulls on its `resyncPeriod` and **content changes roll out with no o11y commit**. A dormant renovate customManager (`renovate.json`) exists only to keep the pair in lockstep if a `reference:` is ever pinned to `tag@sha256:...`.
-
-## Add or edit a dashboard, end to end
-
-**Edit an existing dashboard** (no o11y change needed):
-
-1. Edit it in Grafana, then export the JSON model (Share, then Export, then the dashboard JSON).
-2. In yucca, save over `dashboards/<uid>.json`, keeping the same `uid` (so the file name stays `<uid>.json`).
-3. Merge to `main`. CI validates and pushes; the o11y operator re-fetches within one `resyncPeriod` (~10m).
-
-**Add a new dashboard** (needs a change in both repos):
-
-1. In yucca: add `dashboards/<uid>.json` (file name must equal the uid), merge to `main`. CI adds it as a new layer of the artifact.
-2. In o11y: add a `GrafanaDashboard` entry to [`dashboards/yucca.yaml`](../kubernetes/apps/base/grafana/dashboards/yucca.yaml) with `path: <uid>.json`, `folderRef: yucca`, and a `metadata.name` (convention `yucca-<name>`), then reconcile. The new artifact layer alone does **not** create the dashboard: each file is imported by its own `GrafanaDashboard`, one per `path`.
-
-**Remove a dashboard**: delete its `GrafanaDashboard` entry in o11y (and the source file in yucca).
-
-## Verify
-
-After a reconcile, all dashboards should report synced:
-
-```bash
-kubectl get grafanadashboard -n o11y -o custom-columns=\
-'NAME:.metadata.name,SYNCED:.status.conditions[0].reason'
+```yaml
+route:
+  receiver: discord           # default / catch-all
+  routes:
+    - object_matchers: [["project", "=", "yucca"]]
+      receiver: discord
+    - object_matchers: [["project", "=", "o11y"]]
+      receiver: discord        # point at an o11y-specific contact point when one exists
 ```
 
-`ApplySuccessful` on each means the operator pulled the artifact and pushed it into Grafana; the dashboards then appear under the **yucca** folder in the UI.
+So **every alert rule must set a `project` label** matching its folder, or it falls through to the default route.
 
-## Conventions and gotchas
+**Alert rule anatomy.** A `GrafanaAlertRuleGroup` (`folderRef: <project>`, an `interval`) with `rules[]`; each rule is a query stage on the `VictoriaMetrics` datasource (uid `VictoriaMetrics`) feeding a `__expr__` threshold stage, plus `labels` (at least `project` + `severity`) and `annotations`. See `base/grafana/alerts-o11y.yaml` for the pattern (a heartbeat plus target-down and ingestion-stalled rules).
 
-* **File name equals `<uid>.json`** on both sides (CI enforces it; o11y's `oci.path` references it).
-* Dashboards use a `$datasource` variable rather than a baked-in datasource UID, so they bind to whichever VictoriaMetrics datasource the operator provisions.
-* Pin `oci.reference` to `tag@sha256:...` only if you want renovate-driven, commit-gated rollout instead of the `:latest` auto-resync; the customManager then tracks it.
-* Michael's OTel metrics have dotted names; query them as `{__name__="http.server.request.count", ...}` in VictoriaMetrics.
+## If you ship metrics to this cluster and want dashboards/alerts
+
+1. Pick a delivery model: **Model A** (recommended for a separate repo/cluster - you own a signed bundle, o11y adds one OCIRepository) or **Model B** (PR the CRs into `base/grafana`).
+2. Everything you ship files under **your project's folder**; ask for one if it does not exist.
+3. Label every alert rule `project: <you>` so the notification policy routes it; add a route (and, if you want your own channel, a contact point) for your project.
+4. Dashboards use a `$datasource` variable and map `DS_PROMETHEUS` to `VictoriaMetrics`; alerts query the `VictoriaMetrics` datasource.
+
+## How updates flow
+
+- **Model A:** edit in the source repo, merge to `main` -> CI pushes the `:main` artifact (signed) -> o11y's OCIRepository picks it up within its `interval` -> Kustomization applies -> grafana-operator syncs. Roughly a minute end to end.
+- **Model B:** PR the CR change here -> merge -> Flux reconciles `base/grafana`.
