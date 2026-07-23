@@ -5,6 +5,7 @@ kind: GrafanaDashboard
 metadata:
   name: envoy-overview
 spec:
+  folderRef: o11y
   instanceSelector:
     matchLabels:
       dashboards: grafana
@@ -20,6 +21,7 @@ kind: GrafanaDashboard
 metadata:
   name: envoy-upstream
 spec:
+  folderRef: o11y
   instanceSelector:
     matchLabels:
       dashboards: grafana
@@ -35,6 +37,7 @@ kind: GrafanaDashboard
 metadata:
   name: envoy-downstream
 spec:
+  folderRef: o11y
   instanceSelector:
     matchLabels:
       dashboards: grafana
