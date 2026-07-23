@@ -1,0 +1,20 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/grafana.integreatly.org/grafanacontactpoint_v1beta1.json
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaContactPoint
+metadata:
+  name: discord
+spec:
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
+  name: discord
+  receivers:
+    - type: discord
+      settings: {}
+      valuesFrom:
+        - targetPath: url
+          valueFrom:
+            secretKeyRef:
+              name: grafana-discord-webhook
+              key: url

@@ -5,4 +5,5 @@ resources:
   - ./externalsecret.yaml
   - ./grafana.yaml
   - ./datasource.yaml
+  - ./contactpoint-discord.yaml
   - ./dashboards
