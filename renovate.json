@@ -34,16 +34,6 @@
       ],
       "datasourceTemplate": "{{#if datasource}}{{{datasource}}}{{else}}github-releases{{/if}}",
       "versioningTemplate": "{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}"
-    },
-    {
-      "customType": "regex",
-      "description": "GrafanaDashboard OCI references (tag + digest)",
-      "managerFilePatterns": ["/(^|/)kubernetes/apps/.+\\.ya?ml$/"],
-      "matchStrings": [
-        "reference:\\s+(?<depName>\\S+?):(?<currentValue>[^@\\s]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
-      ],
-      "datasourceTemplate": "docker",
-      "versioningTemplate": "docker"
     }
   ],
   "packageRules": [

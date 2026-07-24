@@ -1,0 +1,178 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/grafana.integreatly.org/grafanaalertrulegroup_v1beta1.json
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaAlertRuleGroup
+metadata:
+  name: o11y
+spec:
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
+  folderRef: o11y
+  interval: 1m
+  rules:
+    - uid: o11y-heartbeat
+      title: o11y alerting heartbeat
+      condition: B
+      for: 0s
+      labels:
+        project: o11y
+        severity: none
+      annotations:
+        summary: o11y Grafana alerting is alive; this fires by design to prove alert -> policy -> Discord works.
+      execErrState: Error
+      noDataState: NoData
+      data:
+        - refId: A
+          datasourceUid: VictoriaMetrics
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: A
+            datasource:
+              type: prometheus
+              uid: VictoriaMetrics
+            expr: vector(1)
+            instant: true
+            range: false
+            intervalMs: 1000
+            maxDataPoints: 43200
+        - refId: B
+          datasourceUid: __expr__
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: B
+            type: threshold
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: A
+            intervalMs: 1000
+            maxDataPoints: 43200
+            conditions:
+              - type: query
+                evaluator:
+                  type: gt
+                  params: [0]
+                operator:
+                  type: and
+                query:
+                  params: [A]
+                reducer:
+                  type: last
+                  params: []
+    - uid: o11y-target-down
+      title: o11y scrape target down
+      condition: B
+      for: 10m
+      labels:
+        project: o11y
+        severity: warning
+      annotations:
+        summary: One or more scrape targets in the o11y cluster have been down for 10m.
+      execErrState: Error
+      noDataState: OK
+      data:
+        - refId: A
+          datasourceUid: VictoriaMetrics
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: A
+            datasource:
+              type: prometheus
+              uid: VictoriaMetrics
+            expr: count(up == 0) by (cluster)
+            instant: true
+            range: false
+            intervalMs: 1000
+            maxDataPoints: 43200
+        - refId: B
+          datasourceUid: __expr__
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: B
+            type: threshold
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: A
+            intervalMs: 1000
+            maxDataPoints: 43200
+            conditions:
+              - type: query
+                evaluator:
+                  type: gt
+                  params: [0]
+                operator:
+                  type: and
+                query:
+                  params: [A]
+                reducer:
+                  type: last
+                  params: []
+    - uid: o11y-ingestion-stalled
+      title: o11y metrics ingestion stalled
+      condition: B
+      for: 10m
+      labels:
+        project: o11y
+        severity: critical
+      annotations:
+        summary: vminsert ingestion in the o11y cluster is under 1 row/s for 10m; the metrics pipeline may be stalled.
+      execErrState: Error
+      noDataState: NoData
+      data:
+        - refId: A
+          datasourceUid: VictoriaMetrics
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: A
+            datasource:
+              type: prometheus
+              uid: VictoriaMetrics
+            expr: sum(rate(vm_rows_inserted_total[5m]))
+            instant: true
+            range: false
+            intervalMs: 1000
+            maxDataPoints: 43200
+        - refId: B
+          datasourceUid: __expr__
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: B
+            type: threshold
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: A
+            intervalMs: 1000
+            maxDataPoints: 43200
+            conditions:
+              - type: query
+                evaluator:
+                  type: lt
+                  params: [1]
+                operator:
+                  type: and
+                query:
+                  params: [A]
+                reducer:
+                  type: last
+                  params: []
