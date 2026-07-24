@@ -20,7 +20,7 @@ spec:
     routes:
       - receiver: discord
         object_matchers:
-          - ["project", "=", "yucca"]
+          - ["grafana_folder", "=", "yucca"]
       - receiver: discord
         object_matchers:
-          - ["project", "=", "o11y"]
+          - ["grafana_folder", "=", "o11y"]

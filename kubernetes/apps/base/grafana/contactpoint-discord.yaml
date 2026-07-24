@@ -11,7 +11,16 @@ spec:
   name: discord
   receivers:
     - type: discord
-      settings: {}
+      settings:
+        title: |-
+          {{ if .Alerts.Firing }}🔴 {{ .Alerts.Firing | len }} firing{{ else }}✅ resolved{{ end }} · {{ .CommonLabels.grafana_folder }}{{ if .CommonLabels.cluster }} · {{ .CommonLabels.cluster }}{{ end }}
+        message: |-
+          {{ range .Alerts -}}
+          **{{ .Labels.alertname }}**  `{{ .Labels.severity }}`
+          {{ if .Annotations.summary }}> {{ .Annotations.summary }}{{ if match "67" .Annotations.summary }} <a:pepe67:1500112466921652265>{{ end }}
+          {{ end }}[View rule]({{ .GeneratorURL }}){{ if .SilenceURL }}  ·  [Silence]({{ .SilenceURL }}){{ end }}
+
+          {{ end -}}
       valuesFrom:
         - targetPath: url
           valueFrom:
