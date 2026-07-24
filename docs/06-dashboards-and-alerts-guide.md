@@ -66,27 +66,27 @@ For this cluster's own dashboards and alerts, they live under `kubernetes/apps/b
 
 **Contact points.** A `GrafanaContactPoint` per destination. Secrets (like a Discord webhook) come from a Secret via `receivers[].valuesFrom`, populated by an ExternalSecret from 1Password - never in git. Contact points live in the shared Grafana Postgres, so with the HA replica gossip cluster a firing alert notifies **once**, not once per replica.
 
-**Routing.** One `GrafanaNotificationPolicy` routes by the **`project`** label - the same axis as the folders:
+**Routing.** One `GrafanaNotificationPolicy` routes by the **`grafana_folder`** label - which Grafana adds automatically from the folder each rule files into, so routing follows the folder (the project boundary) with no label to maintain:
 
 ```yaml
 route:
   receiver: discord           # default / catch-all
   routes:
-    - object_matchers: [["project", "=", "yucca"]]
+    - object_matchers: [["grafana_folder", "=", "yucca"]]
       receiver: discord
-    - object_matchers: [["project", "=", "o11y"]]
+    - object_matchers: [["grafana_folder", "=", "o11y"]]
       receiver: discord        # point at an o11y-specific contact point when one exists
 ```
 
-So **every alert rule must set a `project` label** matching its folder, or it falls through to the default route. Notifications additionally group by `cluster` (alongside `grafana_folder` and `alertname`), so the same rule firing in two clusters arrives as two grouped notifications rather than one blended message.
+So **routing follows the folder automatically** - no per-rule label to set or keep in sync. (Existing rules still carry a `project` label; it is now legacy and unused for routing.) Notifications additionally group by `cluster` (alongside `grafana_folder` and `alertname`), so the same rule firing in two clusters arrives as two grouped notifications rather than one blended message.
 
-**Alert rule anatomy.** A `GrafanaAlertRuleGroup` (`folderRef: <project>`, an `interval`) with `rules[]`; each rule is a query stage on the `VictoriaMetrics` datasource (uid `VictoriaMetrics`) feeding a `__expr__` threshold stage, plus `labels` (at least `project` + `severity`) and `annotations`. See `base/grafana/alerts-o11y.yaml` for the pattern (a heartbeat plus target-down and ingestion-stalled rules). Rules that span clusters aggregate `by (cluster)` so each cluster raises its own instance and carries its `cluster` label into notification grouping; store-local rules (the heartbeat, ingestion-stalled) don't.
+**Alert rule anatomy.** A `GrafanaAlertRuleGroup` (`folderRef: <project>`, an `interval`) with `rules[]`; each rule is a query stage on the `VictoriaMetrics` datasource (uid `VictoriaMetrics`) feeding a `__expr__` threshold stage, plus `labels` (at least `severity`) and `annotations`. See `base/grafana/alerts-o11y.yaml` for the pattern (a heartbeat plus target-down and ingestion-stalled rules). Rules that span clusters aggregate `by (cluster)` so each cluster raises its own instance and carries its `cluster` label into notification grouping; store-local rules (the heartbeat, ingestion-stalled) don't.
 
 ## If you ship metrics to this cluster and want dashboards/alerts
 
 1. Pick a delivery model: **Model A** (recommended for a separate repo/cluster - you own a signed bundle, o11y adds one OCIRepository) or **Model B** (PR the CRs into `base/grafana`).
 2. Everything you ship files under **your project's folder**; ask for one if it does not exist.
-3. Label every alert rule `project: <you>` so the notification policy routes it; add a route (and, if you want your own channel, a contact point) for your project.
+3. Routing follows your folder automatically; add a route matching your `grafana_folder` (and, if you want your own channel, a contact point).
 4. Dashboards use a `$datasource` variable and map `DS_PROMETHEUS` to `VictoriaMetrics`; alerts query the `VictoriaMetrics` datasource.
 5. Tag dashboards by signal/layer in the JSON (`metrics`, `logs`, `infra`, ...) so they stay filterable across folders (see Tags). Alerts that compare across clusters aggregate `by (cluster)`; set the `cluster` label on your series so per-cluster alerting works.
 
