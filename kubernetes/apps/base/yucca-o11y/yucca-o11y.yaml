@@ -28,7 +28,7 @@ spec:
     kind: OCIRepository
     name: yucca-o11y
   path: ./
+  patches: []
   prune: true
-  targetNamespace: o11y
   dependsOn:
     - name: grafana-operator

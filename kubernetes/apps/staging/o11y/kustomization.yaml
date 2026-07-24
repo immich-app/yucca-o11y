@@ -4,12 +4,14 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../base/yucca-o11y
-  - ./prometheus-operator-crds.yaml
-  - ./grafana-operator.yaml
-  - ./grafana-postgres.yaml
-  - ./grafana.yaml
-  - ./victoria-metrics.yaml
-  - ./victoria-metrics-users.yaml
-  - ./victoria-logs.yaml
-  - ./victoria-logs-collector.yaml
+  - ../../base/prometheus-operator-crds
+  - ../../base/grafana-operator
+  - ../../base/grafana-postgres
+  - ../../base/grafana
+  - ../../base/victoria-metrics
+  - ../../base/victoria-metrics-users
+  - ../../base/victoria-logs
+  - ../../base/victoria-logs-collector
   - ./namespace.yaml
+components:
+  - ../../../components/replacements

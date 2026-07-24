@@ -57,10 +57,10 @@ The bundle's CRs carry sane defaults (`instanceSelector: {dashboards: grafana}`,
 
 ## Model B: authored in this repo (o11y's own)
 
-For this cluster's own dashboards and alerts, they live under `kubernetes/apps/base/grafana/` and deploy with the grafana Flux Kustomization:
+For this cluster's own dashboards and alerts, they live under `kubernetes/apps/base/grafana/app/` and deploy with the grafana Flux Kustomization:
 
-- **Dashboards** - `base/grafana/dashboards/*.yaml`, one `GrafanaDashboard` per file, `folderRef: o11y`. Source the JSON however fits: `spec.url` to a raw/grafana.com dashboard (the envoy and cnpg dashboards), `spec.gzipJson`, etc. Map dashboard `__inputs` (e.g. `DS_PROMETHEUS`) to `datasourceName: VictoriaMetrics`.
-- **Alerts** - `base/grafana/alerts-*.yaml`, a `GrafanaAlertRuleGroup` with `folderRef: o11y`.
+- **Dashboards** - `base/grafana/app/dashboards/*.yaml`, one `GrafanaDashboard` per file, `folderRef: o11y`. Source the JSON however fits: `spec.url` to a raw/grafana.com dashboard (the envoy and cnpg dashboards), `spec.gzipJson`, etc. Map dashboard `__inputs` (e.g. `DS_PROMETHEUS`) to `datasourceName: VictoriaMetrics`.
+- **Alerts** - `base/grafana/app/alerts-*.yaml`, a `GrafanaAlertRuleGroup` with `folderRef: o11y`.
 
 ## Alerting
 
@@ -80,7 +80,7 @@ route:
 
 So **routing follows the folder automatically** - no per-rule label to set or keep in sync. (Existing rules still carry a `project` label; it is now legacy and unused for routing.) Notifications additionally group by `cluster` (alongside `grafana_folder` and `alertname`), so the same rule firing in two clusters arrives as two grouped notifications rather than one blended message.
 
-**Alert rule anatomy.** A `GrafanaAlertRuleGroup` (`folderRef: <project>`, an `interval`) with `rules[]`; each rule is a query stage on the `VictoriaMetrics` datasource (uid `VictoriaMetrics`) feeding a `__expr__` threshold stage, plus `labels` (at least `severity`) and `annotations`. See `base/grafana/alerts-o11y.yaml` for the pattern (a heartbeat plus target-down and ingestion-stalled rules). Rules that span clusters aggregate `by (cluster)` so each cluster raises its own instance and carries its `cluster` label into notification grouping; store-local rules (the heartbeat, ingestion-stalled) don't.
+**Alert rule anatomy.** A `GrafanaAlertRuleGroup` (`folderRef: <project>`, an `interval`) with `rules[]`; each rule is a query stage on the `VictoriaMetrics` datasource (uid `VictoriaMetrics`) feeding a `__expr__` threshold stage, plus `labels` (at least `severity`) and `annotations`. See `base/grafana/app/alerts-o11y.yaml` for the pattern (a heartbeat plus target-down and ingestion-stalled rules). Rules that span clusters aggregate `by (cluster)` so each cluster raises its own instance and carries its `cluster` label into notification grouping; store-local rules (the heartbeat, ingestion-stalled) don't.
 
 ## If you ship metrics to this cluster and want dashboards/alerts
 

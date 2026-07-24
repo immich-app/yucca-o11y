@@ -130,9 +130,9 @@ Logs ride the identical `vmauth` hostnames (VictoriaLogs sits behind the same ga
 
 ## What backs this centrally
 
-For maintainers, the ingestion config lives in `kubernetes/apps/base/victoria-metrics-users/`:
+For maintainers, the ingestion config lives in `kubernetes/apps/base/victoria-metrics-users/app/`:
 
 * `vmuser-remote-clusters.yaml` - the `VMUser` behind the public gateway. It holds the shared token (via ExternalSecret) and the allowed path set: metrics and logs insert **and** select (remote clusters can read back, not only write).
 * `vmauth-mesh-unauth.yaml` - the unauthenticated `mesh-unauth` `VMAuth` on the mesh gateway, with the same path set exposed through `unauthorizedUserAccessSpec`.
 
-The public gateway itself is the `vmauth` defined in the VictoriaMetrics release (`kubernetes/apps/base/victoria-metrics/helmrelease.yaml`), reached at `vmauth.<CLUSTER_APP_DOMAIN>`.
+The public gateway itself is the `vmauth` defined in the VictoriaMetrics release (`kubernetes/apps/base/victoria-metrics/app/helmrelease.yaml`), reached at `vmauth.<CLUSTER_APP_DOMAIN>`.

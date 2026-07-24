@@ -3,5 +3,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
+  - ../../base/openebs
   - ./namespace.yaml
-  - ./openebs.yaml
+components:
+  - ../../../components/replacements

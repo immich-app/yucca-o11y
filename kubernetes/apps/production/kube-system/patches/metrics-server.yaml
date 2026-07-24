@@ -1,0 +1,21 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: metrics-server
+  namespace: flux-system
+spec:
+  patches:
+    - patch: |-
+        apiVersion: source.toolkit.fluxcd.io/v1
+        kind: OCIRepository
+        metadata:
+          name: metrics-server
+        spec:
+          ref:
+            # renovate: datasource=docker depName=ghcr.io/home-operations/charts-mirror/metrics-server
+            tag: 3.13.0
+            digest: sha256:40f86072c24a94faa1ae0035fa4688364f97cd7d9eea0b26858d89c756c2e74f
+      target:
+        kind: OCIRepository
+        name: metrics-server

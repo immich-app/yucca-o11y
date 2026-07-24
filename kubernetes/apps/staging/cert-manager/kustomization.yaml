@@ -3,7 +3,9 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ./cert-manager.yaml
-  - ./cert-manager-webhook-ovh.yaml
-  - ./cert-manager-issuers.yaml
+  - ../../base/cert-manager-issuers
+  - ../../base/cert-manager-webhook-ovh
+  - ../../base/cert-manager
   - ./namespace.yaml
+components:
+  - ../../../components/replacements
