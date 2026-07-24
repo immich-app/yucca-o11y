@@ -11,7 +11,16 @@ spec:
   name: discord
   receivers:
     - type: discord
-      settings: {}
+      settings:
+        title: |-
+          {{ if .Alerts.Firing }}🔴 {{ .Alerts.Firing | len }} firing{{ else }}✅ resolved{{ end }} · {{ .CommonLabels.grafana_folder }}
+        message: |-
+          {{ range .Alerts -}}
+          **{{ .Labels.alertname }}**  `{{ .Labels.severity }}`{{ if .Labels.cluster }}  ·  cluster `{{ .Labels.cluster }}`{{ end }}
+          {{ if .Annotations.summary }}> {{ .Annotations.summary }}
+          {{ end }}[View rule]({{ .GeneratorURL }}){{ if .SilenceURL }}  ·  [Silence]({{ .SilenceURL }}){{ end }}
+
+          {{ end -}}
       valuesFrom:
         - targetPath: url
           valueFrom:
