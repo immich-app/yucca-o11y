@@ -13,10 +13,10 @@ spec:
     - type: discord
       settings:
         title: |-
-          {{ if .Alerts.Firing }}🔴 {{ .Alerts.Firing | len }} firing{{ else }}✅ resolved{{ end }} · {{ .CommonLabels.grafana_folder }}
+          {{ if .Alerts.Firing }}🔴 {{ .Alerts.Firing | len }} firing{{ else }}✅ resolved{{ end }} · {{ .CommonLabels.grafana_folder }}{{ if .CommonLabels.cluster }} · {{ .CommonLabels.cluster }}{{ end }}
         message: |-
           {{ range .Alerts -}}
-          **{{ .Labels.alertname }}**  `{{ .Labels.severity }}`{{ if .Labels.cluster }}  ·  cluster `{{ .Labels.cluster }}`{{ end }}
+          **{{ .Labels.alertname }}**  `{{ .Labels.severity }}`
           {{ if .Annotations.summary }}> {{ .Annotations.summary }}
           {{ end }}[View rule]({{ .GeneratorURL }}){{ if .SilenceURL }}  ·  [Silence]({{ .SilenceURL }}){{ end }}
 
