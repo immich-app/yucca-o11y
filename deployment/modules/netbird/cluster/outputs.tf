@@ -11,6 +11,12 @@ output "k8s_routing_peer_setup_key" {
   value     = netbird_setup_key.k8s_routing_peer.key
 }
 
+# CI runner setup key; the infra workflow reads it from state to join the mesh.
+output "ci_setup_key" {
+  sensitive = true
+  value     = netbird_setup_key.ci.key
+}
+
 # Consumed by kubernetes/helm -> bootstrap-settings ConfigMap (Flux substitution).
 output "mesh_dns_zone" {
   value = local.mesh_dns_zone

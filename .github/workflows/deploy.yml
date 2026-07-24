@@ -1,27 +1,59 @@
-name: Deploy
+name: Infra (Terraform)
+
+# Plans every Terragrunt module on PRs and on manual dispatch (drift check).
+# One deployment tree drives both environments (ENVIRONMENT selects state +
+# vault), so every change plans against both. Applies stay operator-run.
+#
+# The talos + kubernetes/helm modules refresh against control-plane private IPs,
+# so jobs join the NetBird mesh with a CI setup key read from the netbird/cluster
+# state (o11y-<env>-ci peer; policy grants apid 50000 + kube-apiserver 6443).
+# Known flake: if the elected vRack routing peer is the same CP the providers
+# target, the connection hairpins; re-run the job.
+#
+# Prerequisites (out-of-band, once):
+#   - Per-env repo secrets OP_TF_O11Y_STAGING_ENV / OP_TF_O11Y_PROD_ENV: the
+#     1PASS_TF_SA_O11Y_READ service-account token for each env (stored in the
+#     o11y_tf_{staging,prod} vaults). Each needs read on o11y_tf (OVH + TF S3
+#     state), its own o11y_tf_<env>, and shared_tf (NetBird, NetBox).
+#   - netbird/cluster applied per env (mints the CI setup key).
+#   - Re-enable the workflow: gh workflow enable deploy.yml
+
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
+    paths:
+      - 'deployment/**'
+      - '.mise/config.toml'
+      - '.github/actions/netbird-connect/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 env:
-  ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
   TG_NON_INTERACTIVE: 'true'
 
 jobs:
-  deploy:
-    name: Deploy
+  plan:
+    name: Plan ${{ matrix.environment }}
+    # Fork PRs have no secrets and no mesh access.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [staging, production]
     env:
-      TF_VAR_stage: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || '' }}
-      OP_SERVICE_ACCOUNT_TOKEN: ${{ github.ref == 'refs/heads/main' && secrets.OP_TF_PROD_ENV || secrets.OP_TF_DEV_ENV }}
+      ENVIRONMENT: ${{ matrix.environment }}
+      TF_VAR_env: ${{ matrix.environment }}
+      OP_SERVICE_ACCOUNT_TOKEN: ${{ matrix.environment == 'production' && secrets.OP_TF_O11Y_PROD_ENV || secrets.OP_TF_O11Y_STAGING_ENV }}
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
@@ -41,6 +73,24 @@ jobs:
         with:
           github_token: ${{ steps.token.outputs.token }}
 
-      - name: Deploy All
-        working-directory: ${{ github.workspace }}/deployment
-        run: mise run tf:apply
+      - name: Init
+        run: mise run tf:init
+
+      - name: Read the CI mesh setup key from state
+        id: nb
+        working-directory: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          key=$(mise run tg run --working-dir deployment/modules/netbird/cluster output -- -raw ci_setup_key)
+          echo "::add-mask::$key"
+          echo "setup-key=$key" >> "$GITHUB_OUTPUT"
+
+      - name: Connect to NetBird
+        uses: ./.github/actions/netbird-connect
+        with:
+          setup-key: ${{ steps.nb.outputs.setup-key }}
+          hostname: gha-plan-${{ matrix.environment }}-${{ github.run_id }}
+
+      - name: Plan
+        run: mise run tf:plan
+
