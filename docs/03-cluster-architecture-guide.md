@@ -63,13 +63,19 @@ Kubernetes with flannel CNI and kube-proxy in nftables mode. **Multus** runs as 
 
 Everything above the OS is managed by Flux v2. Manifests are organized as reusable bases plus per-environment overlays:
 
-* **`kubernetes/apps/base/`** holds the chart sources and reusable manifests.
-* **`kubernetes/apps/<env>/`** holds the per-app Flux Kustomizations — each pins its chart version and declares its `dependsOn` ordering.
+* **`kubernetes/apps/base/<app>/`** is the app's single home: `ks.yaml` is its Flux Kustomization (`dependsOn` ordering, health checks) and `app/` is what that Kustomization deploys (chart source + manifests). Both environments reconcile the same definition.
+* **`kubernetes/apps/<env>/<ns>/`** is the per-namespace overlay: a kustomization listing which base apps run there, plus the Namespace itself. Anything an environment needs to differ from `base/` is one patch file per app under the overlay's `patches/` — today that's production's version pins.
+* **`kubernetes/components/`** holds shared kustomize Components — today just **`replacements/`**, included by every overlay. It copies the overlay Namespace's name into each Flux Kustomization's `spec.targetNamespace`, so an app deploys into whichever namespace lists it and `base/` stays namespace-agnostic. The corollary: an app belongs in the folder of the namespace its resources live in — `mesh-gateway-api` sits under `default/` because its TLSRoute must share a namespace with the `default/kubernetes` Service it fronts. The overlay's namespace is forced onto every namespaced resource (explicit values are overridden), so an app that genuinely needs resources in a foreign namespace would need a `reject` entry in the component.
+
 * **`kubernetes/clusters/<env>/apps.yaml`** is the `cluster-apps` entry point the Flux Instance points at.
 
-### Version pinning
+Cluster-wide HelmRelease lifecycle defaults (`crds: CreateReplace` on install and upgrade, `cleanupOnFail`, `RemediateOnFailure` with retries) are defined once in `kubernetes/clusters/<env>/apps.yaml`: `cluster-apps` **appends** them (a JSON6902 `add /spec/patches/-`) to every child Kustomization, which applies them to every HelmRelease it renders — individual releases declare only what deviates. Appending, rather than strategic-merging, is what lets the per-app override patches, which ride the same list, coexist: a strategic-merge there would replace the list and silently erase every override. Every base `ks.yaml` seeds `patches: []` so the append always has a list to land on; a new app that omits it fails the environment build loudly.
 
-Chart (and the CloudNativePG Postgres image) versions are pinned per environment in the overlay Kustomization patches, so a version can be promoted in staging and soaked before production moves. Staging rides `base/` directly; production pins via patches. OCI chart refs pin a **tag and its digest** — Flux gives the digest precedence, so the production patches must carry both or a base digest would silently override the env pin; a renovate custom manager keeps each tag+digest pair in lockstep, and the built-in flux manager maintains the pairs in `base/`. Component versions are not documented here because they change continuously — the manifests are the source of truth.
+### Environment overrides
+
+An overlay changes an app by dropping one patch file per app in its `patches/` folder and listing it in the overlay's `patches:` section — so the overlay reads as "these apps, these deltas". Each file patches the app's Flux Kustomization to inject a `spec.patches` override onto whatever resource must differ from `base/`; it has to ride the Kustomization because the app's resources are rendered by Flux from `base/`, never by the overlay build.
+
+Today the only overrides are version pins. Chart (and the CloudNativePG Postgres image) versions are pinned in production, so a version can be promoted in staging — which rides `base/` directly and floats with it — and soaked before production moves. OCI chart refs pin a **tag and its digest** — Flux gives the digest precedence, so the production patches must carry both or a base digest would silently override the env pin; a renovate custom manager keeps each tag+digest pair in lockstep, and the built-in flux manager maintains the pairs in `base/`. Component versions are not documented here because they change continuously — the manifests are the source of truth.
 
 ### Configuration substitution
 

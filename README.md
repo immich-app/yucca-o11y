@@ -27,8 +27,9 @@ deployment/modules/
 
 kubernetes/
 ├── apps/
-│   ├── base/             # chart sources + reusable manifests
-│   └── <env>/            # env overlay: Flux Kustomizations (version pins + dependsOn)
+│   ├── base/<app>/       # ks.yaml (the app's Flux Kustomization) + app/ (chart source + manifests)
+│   └── <env>/<ns>/       # namespace overlay: which base apps run; deltas from base as patches/<app>.yaml
+├── components/           # shared kustomize Components (targetNamespace replacement)
 └── clusters/
     └── <env>/
         ├── apps.yaml             # cluster-apps entry point (the Flux Instance points here)

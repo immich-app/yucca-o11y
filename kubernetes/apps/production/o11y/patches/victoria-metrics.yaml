@@ -1,0 +1,21 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: victoria-metrics
+  namespace: flux-system
+spec:
+  patches:
+    - patch: |-
+        apiVersion: source.toolkit.fluxcd.io/v1
+        kind: OCIRepository
+        metadata:
+          name: victoria-metrics
+        spec:
+          ref:
+            # renovate: datasource=docker depName=ghcr.io/victoriametrics/helm-charts/victoria-metrics-k8s-stack
+            tag: 0.81.0
+            digest: sha256:b8f7f31f3ee1ce7cb70fa6713c8f58519afe68d15a2cd0b9ed5a4b80c4c1de22
+      target:
+        kind: OCIRepository
+        name: victoria-metrics

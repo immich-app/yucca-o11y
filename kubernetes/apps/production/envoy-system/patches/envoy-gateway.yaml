@@ -1,0 +1,21 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: envoy-gateway
+  namespace: flux-system
+spec:
+  patches:
+    - patch: |-
+        apiVersion: source.toolkit.fluxcd.io/v1
+        kind: OCIRepository
+        metadata:
+          name: envoy-gateway
+        spec:
+          ref:
+            # renovate: datasource=docker depName=mirror.gcr.io/envoyproxy/gateway-helm
+            tag: 1.7.0
+            digest: sha256:fdc01017304bc676fb7097d1fe8ceda5cc1c9673bf1c01a7576898623b3310f7
+      target:
+        kind: OCIRepository
+        name: envoy-gateway

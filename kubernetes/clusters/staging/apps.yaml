@@ -30,3 +30,31 @@ spec:
                 optional: true
               - kind: ConfigMap
                 name: cluster-settings
+    - target:
+        group: kustomize.toolkit.fluxcd.io
+        kind: Kustomization
+      patch: |-
+        - op: add
+          path: /spec/patches/-
+          value:
+            patch: |-
+              apiVersion: helm.toolkit.fluxcd.io/v2
+              kind: HelmRelease
+              metadata:
+                name: _
+              spec:
+                install:
+                  crds: CreateReplace
+                rollback:
+                  cleanupOnFail: true
+                upgrade:
+                  cleanupOnFail: true
+                  crds: CreateReplace
+                  strategy:
+                    name: RemediateOnFailure
+                  remediation:
+                    remediateLastFailure: true
+                    retries: 2
+            target:
+              group: helm.toolkit.fluxcd.io
+              kind: HelmRelease

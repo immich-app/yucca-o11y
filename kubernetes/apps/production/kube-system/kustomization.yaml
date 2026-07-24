@@ -1,11 +1,19 @@
 ---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ./descheduler.yaml
-  - ./metrics-server.yaml
-  - ./multus.yaml
-  - ./multus-networks.yaml
+  - ../../base/descheduler
+  - ../../base/metrics-server
+  - ../../base/multus-networks
+  - ../../base/multus
+  - ../../base/reloader
+  - ../../base/spegel
   - ./namespace.yaml
-  - ./reloader.yaml
-  - ./spegel.yaml
+components:
+  - ../../../components/replacements
+patches:
+  - path: patches/descheduler.yaml
+  - path: patches/metrics-server.yaml
+  - path: patches/reloader.yaml
+  - path: patches/spegel.yaml
