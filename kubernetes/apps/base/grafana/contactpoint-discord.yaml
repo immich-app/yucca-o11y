@@ -17,7 +17,7 @@ spec:
         message: |-
           {{ range .Alerts -}}
           **{{ .Labels.alertname }}**  `{{ .Labels.severity }}`
-          {{ if .Annotations.summary }}> {{ .Annotations.summary }}
+          {{ if .Annotations.summary }}> {{ .Annotations.summary }}{{ if match "67" .Annotations.summary }} <a:pepe67:1500112466921652265>{{ end }}
           {{ end }}[View rule]({{ .GeneratorURL }}){{ if .SilenceURL }}  ·  [Silence]({{ .SilenceURL }}){{ end }}
 
           {{ end -}}
