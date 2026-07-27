@@ -9,6 +9,11 @@ extends = "tg:apply"
 
 [tasks.destroy]
 extends = "tg:destroy"
+wait_for = [
+  "//deployment/modules/netbird/cluster:destroy",
+  "//deployment/modules/netbox/cluster:destroy",
+  "//deployment/modules/talos/cluster:destroy",
+]
 
 [tasks.output]
 extends = "tg:output"
@@ -21,30 +26,29 @@ extends = "tg:output"
 # OVH fetches their raw from the Factory at order time (no upload).
 #
 # Image facts (schematic, version, glance name, regions) come from this module's
-# cp_image output — one source, no must-match with the module.
+# cp_image output: one source, no must-match with the module.
 [tasks."image:download"]
 run = """
-: "${ENVIRONMENT:?set ENVIRONMENT=staging (or production) first}"
-mkdir -p $REPO_ROOT/.private/dist
-CP_IMAGE=$(mise run :output -- -json cp_image)
+: "${ENVIRONMENT:?set ENVIRONMENT=staging (or production) first}" "${MISE_MONOREPO_ROOT:?}"
+mkdir -p "$MISE_MONOREPO_ROOT/.private/dist"
+CP_IMAGE=$({{vars.tg}} run -- output -json cp_image)
 NAME=$(echo "$CP_IMAGE" | jq -r .glance_name)
-wget "$(echo "$CP_IMAGE" | jq -r .download_url)" -O $REPO_ROOT/.private/dist/${NAME}.raw.xz
-unxz $REPO_ROOT/.private/dist/${NAME}.raw.xz --force
+wget "$(echo "$CP_IMAGE" | jq -r .download_url)" -O "$MISE_MONOREPO_ROOT/.private/dist/${NAME}.raw.xz"
+unxz "$MISE_MONOREPO_ROOT/.private/dist/${NAME}.raw.xz" --force
 """
 description = "Download the control-plane Talos image (OpenStack, from this module's cp_image output)"
-dir = "{{config_root}}"
 
 [tasks."image:upload"]
 run = """
-: "${ENVIRONMENT:?set ENVIRONMENT=staging (or production) first}"
-CP_IMAGE=$(mise run :output -- -json cp_image)
+: "${ENVIRONMENT:?set ENVIRONMENT=staging (or production) first}" "${MISE_MONOREPO_ROOT:?}"
+CP_IMAGE=$({{vars.tg}} run -- output -json cp_image)
 NAME=$(echo "$CP_IMAGE" | jq -r .glance_name)
 for region in $(echo "$CP_IMAGE" | jq -r '.regions[]'); do
   echo "Uploading ${NAME} to region ${region}..."
-  source $REPO_ROOT/.private/openstack/${ENVIRONMENT}/openrc.sh
+  source "$MISE_MONOREPO_ROOT/.private/openstack/${ENVIRONMENT}/openrc.sh"
   openstack image create "${NAME}" \
       --os-region "${region}" \
-      --file $REPO_ROOT/.private/dist/${NAME}.raw \
+      --file "$MISE_MONOREPO_ROOT/.private/dist/${NAME}.raw" \
       --disk-format raw \
       --container-format bare \
       --property hw_qemu_guest_agent=yes \
@@ -54,4 +58,3 @@ for region in $(echo "$CP_IMAGE" | jq -r '.regions[]'); do
 done
 """
 description = "Upload the control-plane Talos image to the env's OVH OpenStack regions (control planes only)"
-dir = "{{config_root}}"

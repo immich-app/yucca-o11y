@@ -34,7 +34,7 @@ output "private_network_cidr" {
   value = var.private_network_cidr
 }
 
-# Consumed by the talos:dl:cp / talos:ul:cp mise tasks, so the CP image facts
+# Consumed by this module's image:download / image:upload mise tasks, so the CP image facts
 # (schematic, version, glance name, regions) live only in this module.
 output "cp_image" {
   value = {

@@ -1,7 +1,7 @@
 monorepo_root = true
 
 [monorepo]
-config_roots = ["deployment", "deployment/modules/*/*", "docs"]
+config_roots = ["deployment", "deployment/modules/*/*"]
 
 [tools]
 opentofu = "1.12.5"
@@ -23,10 +23,6 @@ markdownlint-cli2 = "0.23.1"
 "github:home-operations/flate" = "v0.4.12"
 
 [env]
-# In a subproject task {{config_root}} is that subproject's directory, so
-# repo-root paths have to come from here, where it still means the repo root.
-REPO_ROOT = "{{config_root}}"
-
 TF_VAR_dist_dir = "{{config_root}}/dist"
 
 # Maps long env names (development/staging/production) to the short suffixes
@@ -34,37 +30,49 @@ TF_VAR_dist_dir = "{{config_root}}/dist"
 ENVIRONMENT_SHORT = "{% set e = get_env(name='ENVIRONMENT', default='development') %}{% if e == 'development' or e == '' %}dev{% elif e == 'production' %}prod{% else %}{{ e }}{% endif %}"
 
 # CI authenticates with a service-account token, which op rejects alongside --account.
+# Rendered at the root, so {{config_root}} here is the repo root from any subproject.
+[vars]
+tg = "op run {% if get_env(name='OP_SERVICE_ACCOUNT_TOKEN', default='') == '' %}--account 'team-futo.1password.com' {% endif %}'--env-file={{config_root}}/deployment/.env' -- terragrunt"
+
+# Escape hatch for terragrunt subcommands the tasks below don't cover
+# (state rm/import/force-unlock, ...); operates on the caller's directory.
 [tasks.tg]
-run = "op run {% if get_env(name='OP_SERVICE_ACCOUNT_TOKEN', default='') == '' %}--account 'team-futo.1password.com' {% endif %}'--env-file={{config_root}}/deployment/.env' -- terragrunt"
+run = "{{vars.tg}}"
 description = "Wrapper for terragrunt"
 dir = "{{cwd}}"
 
-# Every module gets the same five terragrunt tasks. dir = {{config_root}} lands
-# terragrunt in the module directory, replacing the old --working-dir flag.
+# Module tasks extend these; each runs in its own module directory. Caller args
+# append after the verb and land in tofu's argv (terragrunt run -- plan -target=...).
+# apply/destroy in the module files carry wait_for mirroring the terragrunt
+# dependency blocks, so wildcard fan-outs like //deployment/modules/...:apply
+# cannot run out of dependency order.
 [task_templates."tg:init"]
-run = "mise run //:tg run init -- -reconfigure"
+run = "{{vars.tg}} run -- init -reconfigure"
 description = "Init this module"
-dir = "{{config_root}}"
 
 [task_templates."tg:plan"]
-run = "mise run //:tg run plan"
+run = "{{vars.tg}} run -- plan"
 description = "Plan this module"
-dir = "{{config_root}}"
 
 [task_templates."tg:apply"]
-run = "mise run //:tg run apply"
+run = "{{vars.tg}} run -- apply"
 description = "Apply this module"
-dir = "{{config_root}}"
 
 [task_templates."tg:destroy"]
-run = "mise run //:tg run destroy"
+run = "{{vars.tg}} run -- destroy"
 description = "Destroy this module"
-dir = "{{config_root}}"
 
 [task_templates."tg:output"]
-run = "mise run //:tg run output --"
+run = "{{vars.tg}} run -- output"
 description = "Read outputs from this module"
-dir = "{{config_root}}"
+
+[tasks."md:lint"]
+run = "markdownlint-cli2 'docs/**/*.md' 'README.md'"
+description = "Lint markdown docs"
+
+[tasks."md:fix"]
+run = "markdownlint-cli2 --fix 'docs/**/*.md' 'README.md'"
+description = "Auto-fix markdown lint issues where possible"
 
 [settings]
 experimental = true

@@ -6,6 +6,10 @@ extends = "tg:plan"
 
 [tasks.apply]
 extends = "tg:apply"
+wait_for = [
+  "//deployment/modules/ovh/account:apply",
+  "//deployment/modules/netbird/cluster:apply",
+]
 
 [tasks.destroy]
 extends = "tg:destroy"
