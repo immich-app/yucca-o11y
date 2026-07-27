@@ -1,0 +1,40 @@
+[tasks.init]
+extends = "tg:init"
+
+[tasks.plan]
+extends = "tg:plan"
+
+[tasks.apply]
+extends = "tg:apply"
+wait_for = [
+  "//deployment/modules/ovh/account:apply",
+  "//deployment/modules/netbird/cluster:apply",
+]
+
+[tasks.destroy]
+extends = "tg:destroy"
+wait_for = ["//deployment/modules/kubernetes/helm:destroy"]
+
+[tasks.output]
+extends = "tg:output"
+
+[tasks.talosconfig]
+run = """
+: "${ENVIRONMENT:?set ENVIRONMENT=staging (or production) first}" "${MISE_MONOREPO_ROOT:?}"
+mkdir -p "$MISE_MONOREPO_ROOT/.private/${ENVIRONMENT}"
+{{vars.tg}} run -- output -raw talos_client_configuration > "$MISE_MONOREPO_ROOT/.private/${ENVIRONMENT}/talosconfig"
+chmod 600 "$MISE_MONOREPO_ROOT/.private/${ENVIRONMENT}/talosconfig"
+"""
+description = "Fetch talosconfig for $ENVIRONMENT into .private/<env>/"
+
+# The kubeconfig output already points at the HA mesh endpoint (kube.<zone>, rewritten in
+# outputs.tf). Break-glass for bootstrap/DR before the gateway is up:
+# kubectl --server=https://<cp-private-ip>:6443 (each CP private IP is an apiserver cert SAN).
+[tasks.kubeconfig]
+run = """
+: "${ENVIRONMENT:?set ENVIRONMENT=staging (or production) first}" "${MISE_MONOREPO_ROOT:?}"
+mkdir -p "$MISE_MONOREPO_ROOT/.private/${ENVIRONMENT}"
+{{vars.tg}} run -- output -raw kubeconfig > "$MISE_MONOREPO_ROOT/.private/${ENVIRONMENT}/kubeconfig"
+chmod 600 "$MISE_MONOREPO_ROOT/.private/${ENVIRONMENT}/kubeconfig"
+"""
+description = "Fetch kubeconfig for $ENVIRONMENT into .private/<env>/ (server = HA mesh endpoint kube.<zone>)"

@@ -1,3 +1,8 @@
+monorepo_root = true
+
+[monorepo]
+config_roots = ["deployment", "deployment/modules/*/*"]
+
 [tools]
 opentofu = "1.12.5"
 terragrunt = "1.1.1"
@@ -18,122 +23,56 @@ markdownlint-cli2 = "0.23.1"
 "github:home-operations/flate" = "v0.4.12"
 
 [env]
-TF_VAR_dist_dir="{{config_root}}/dist"
+TF_VAR_dist_dir = "{{config_root}}/dist"
 
 # Maps long env names (development/staging/production) to the short suffixes
 # used by 1Password vault paths (dev/staging/prod).
 ENVIRONMENT_SHORT = "{% set e = get_env(name='ENVIRONMENT', default='development') %}{% if e == 'development' or e == '' %}dev{% elif e == 'production' %}prod{% else %}{{ e }}{% endif %}"
 
-# Control plane and workers boot from different Talos Factory schematics:
-#   control plane (Public Cloud / KVM): qemu-guest-agent + netbird
-#   worker (bare metal):                netbird only — qemu-guest-agent wedges
-#                                       bare-metal boot and reboot-loops the node
-# Control planes need the image uploaded to OVH glance (talos:{dl,ul}:cp); workers
-# are OVH BYOI, so OVH fetches their raw from the Factory at order time (no upload).
-
-# Image facts (schematic, version, glance name, regions) come from the ovh/account
-# cp_image output — one source, no must-match with the module.
-[tasks."talos:dl:cp"]
-run = """
-: "${ENVIRONMENT:?set ENVIRONMENT=staging (or production) first}"
-mkdir -p {{config_root}}/.private/dist
-CP_IMAGE=$(mise run tg run --working-dir deployment/modules/ovh/account output -- -json cp_image)
-NAME=$(echo "$CP_IMAGE" | jq -r .glance_name)
-wget "$(echo "$CP_IMAGE" | jq -r .download_url)" -O {{config_root}}/.private/dist/${NAME}.raw.xz
-unxz {{config_root}}/.private/dist/${NAME}.raw.xz --force
-"""
-description = "Download the control-plane Talos image (OpenStack, from the ovh/account cp_image output)"
-dir = "{{cwd}}"
-
-[tasks."talos:ul:cp"]
-run = """
-: "${ENVIRONMENT:?set ENVIRONMENT=staging (or production) first}"
-CP_IMAGE=$(mise run tg run --working-dir deployment/modules/ovh/account output -- -json cp_image)
-NAME=$(echo "$CP_IMAGE" | jq -r .glance_name)
-for region in $(echo "$CP_IMAGE" | jq -r '.regions[]'); do
-  echo "Uploading ${NAME} to region ${region}..."
-  source {{config_root}}/.private/openstack/${ENVIRONMENT}/openrc.sh
-  openstack image create "${NAME}" \
-      --os-region "${region}" \
-      --file {{config_root}}/.private/dist/${NAME}.raw \
-      --disk-format raw \
-      --container-format bare \
-      --property hw_qemu_guest_agent=yes \
-      --property img_config_drive=mandatory \
-      --shared \
-      --progress
-done
-"""
-description = "Upload the control-plane Talos image to the env's OVH OpenStack regions (control planes only)"
-dir = "{{cwd}}"
-
-[tasks."talos:talosconfig"]
-run = """
-: "${ENVIRONMENT:?set ENVIRONMENT=staging (or production) first}"
-mkdir -p {{config_root}}/.private/${ENVIRONMENT}
-mise run tg run --working-dir deployment/modules/talos/cluster output -- -raw talos_client_configuration > {{config_root}}/.private/${ENVIRONMENT}/talosconfig
-chmod 600 {{config_root}}/.private/${ENVIRONMENT}/talosconfig
-"""
-description = "Fetch talosconfig for $ENVIRONMENT into .private/<env>/"
-dir = "{{cwd}}"
-
-[tasks."talos:kubeconfig"]
-run = """
-: "${ENVIRONMENT:?set ENVIRONMENT=staging (or production) first}"
-mkdir -p {{config_root}}/.private/${ENVIRONMENT}
-# The kubeconfig output already points at the HA mesh endpoint (kube.<zone>, rewritten in
-# talos/cluster outputs.tf). Break-glass for bootstrap/DR before the gateway is up:
-# kubectl --server=https://<cp-private-ip>:6443 (each CP private IP is an apiserver cert SAN).
-mise run tg run --working-dir deployment/modules/talos/cluster output -- -raw kubeconfig > {{config_root}}/.private/${ENVIRONMENT}/kubeconfig
-chmod 600 {{config_root}}/.private/${ENVIRONMENT}/kubeconfig
-"""
-description = "Fetch kubeconfig for $ENVIRONMENT into .private/<env>/ (server = HA mesh endpoint kube.<zone>)"
-dir = "{{cwd}}"
-
 # CI authenticates with a service-account token, which op rejects alongside --account.
+# Rendered at the root, so {{config_root}} here is the repo root from any subproject.
+[vars]
+tg = "op run {% if get_env(name='OP_SERVICE_ACCOUNT_TOKEN', default='') == '' %}--account 'team-futo.1password.com' {% endif %}'--env-file={{config_root}}/deployment/.env' -- terragrunt"
+
+# Escape hatch for terragrunt subcommands the tasks below don't cover
+# (state rm/import/force-unlock, ...); operates on the caller's directory.
 [tasks.tg]
-run = "op run {% if get_env(name='OP_SERVICE_ACCOUNT_TOKEN', default='') == '' %}--account 'team-futo.1password.com' {% endif %}'--env-file={{config_root}}/deployment/.env' -- terragrunt"
+run = "{{vars.tg}}"
 description = "Wrapper for terragrunt"
 dir = "{{cwd}}"
 
-[tasks."tg:fmt"]
-run = "mise run tg hcl fmt"
-description = "Format terragrunt files"
+# Module tasks extend these; each runs in its own module directory. Caller args
+# append after the verb and land in tofu's argv (terragrunt run -- plan -target=...).
+# apply/destroy in the module files carry wait_for mirroring the terragrunt
+# dependency blocks, so wildcard fan-outs like //deployment/modules/...:apply
+# cannot run out of dependency order.
+[task_templates."tg:init"]
+run = "{{vars.tg}} run -- init -reconfigure"
+description = "Init this module"
 
-[tasks.tf]
-run = "mise run tg run --all"
-description = "Wrapper for terragrunt run-all"
-dir = "{{cwd}}"
+[task_templates."tg:plan"]
+run = "{{vars.tg}} run -- plan"
+description = "Plan this module"
 
-[tasks."tf:fmt"]
-run = "tofu fmt -recursive {{config_root}}/deployment"
-description = "Format terraform files"
+[task_templates."tg:apply"]
+run = "{{vars.tg}} run -- apply"
+description = "Apply this module"
 
-[tasks."tf:init"]
-run = "mise run tf init -- -reconfigure"
-dir = "{{cwd}}"
+[task_templates."tg:destroy"]
+run = "{{vars.tg}} run -- destroy"
+description = "Destroy this module"
 
-[tasks."tf:plan"]
-run = "mise run tf plan"
-dir = "{{cwd}}"
-
-[tasks."tf:apply"]
-run = "mise run tf apply"
-dir = "{{cwd}}"
-
-[tasks."tf:destroy"]
-run = "mise run tf destroy"
-dir = "{{cwd}}"
+[task_templates."tg:output"]
+run = "{{vars.tg}} run -- output"
+description = "Read outputs from this module"
 
 [tasks."md:lint"]
 run = "markdownlint-cli2 'docs/**/*.md' 'README.md'"
 description = "Lint markdown docs"
-dir = "{{config_root}}"
 
 [tasks."md:fix"]
 run = "markdownlint-cli2 --fix 'docs/**/*.md' 'README.md'"
 description = "Auto-fix markdown lint issues where possible"
-dir = "{{config_root}}"
 
 [settings]
 experimental = true

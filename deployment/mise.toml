@@ -1,0 +1,24 @@
+[tasks.init]
+run = "{{vars.tg}} run --all -- init -reconfigure"
+description = "Init every module in dependency order"
+
+[tasks.plan]
+run = "{{vars.tg}} run --all -- plan"
+description = "Plan every module in dependency order"
+
+[tasks.apply]
+run = "{{vars.tg}} run --all -- apply"
+description = "Apply every module in dependency order"
+
+[tasks.destroy]
+run = "{{vars.tg}} run --all -- destroy"
+description = "Destroy every module in dependency order"
+
+# hcl fmt reads no state and needs no credentials, so terragrunt runs bare
+# here rather than through the op wrapper.
+[tasks.fmt]
+run = """
+tofu fmt -recursive {{config_root}}
+terragrunt hcl fmt
+"""
+description = "Format terraform and terragrunt files"

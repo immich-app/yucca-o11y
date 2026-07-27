@@ -59,7 +59,7 @@ variable "talos_worker_schematic_id" {
   default = "7326f0cbca7a0e700ac1efa3f32e88df9ebe5010e6e842a8ed36fdc99ee98ead"
 }
 
-# Image must be pre-uploaded out-of-band (talos:dl:cp + talos:ul:cp mise tasks) —
+# Image must be pre-uploaded out-of-band (this module's image:download + image:upload mise tasks) —
 # the OVH provider doesn't upload custom images.
 variable "talos_public_cloud_image_name" {
   type    = string

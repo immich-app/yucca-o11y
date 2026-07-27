@@ -14,7 +14,7 @@ data "talos_image_factory_urls" "metal" {
 # The OpenStack installer URL is built manually in outputs.tf — the talos
 # provider's data source returns null for platform = "openstack".
 
-# Image must be pre-uploaded via `mise run talos:ul:cp` before apply; the OVH
+# Image must be pre-uploaded via `mise run //deployment/modules/ovh/account:image:upload` before apply; the OVH
 # provider doesn't upload custom images.
 data "ovh_cloud_project_images" "talos" {
   for_each = var.controlplane_nodes
