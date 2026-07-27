@@ -74,14 +74,14 @@ jobs:
           github_token: ${{ steps.token.outputs.token }}
 
       - name: Init
-        run: mise run tf:init
+        run: mise run //deployment:init
 
       - name: Read the CI mesh setup key from state
         id: nb
         working-directory: ${{ github.workspace }}
         run: |
           set -euo pipefail
-          key=$(mise run tg run --working-dir deployment/modules/netbird/cluster output -- -raw ci_setup_key)
+          key=$(mise run //deployment/modules/netbird/cluster:output -- -raw ci_setup_key)
           echo "::add-mask::$key"
           echo "setup-key=$key" >> "$GITHUB_OUTPUT"
 
@@ -92,5 +92,5 @@ jobs:
           hostname: gha-plan-${{ matrix.environment }}-${{ github.run_id }}
 
       - name: Plan
-        run: mise run tf:plan
+        run: mise run //deployment:plan
 

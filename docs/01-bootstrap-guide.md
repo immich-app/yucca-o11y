@@ -9,7 +9,8 @@ How to stand up an environment from nothing. The cluster is built by Terragrunt 
 3. Upload the Talos **OpenStack** image (control planes only) to the environment's regions:
 
    ```bash
-   mise run talos:dl:cp && mise run talos:ul:cp
+   mise run //deployment/modules/ovh/account:image:download
+   mise run //deployment/modules/ovh/account:image:upload
    ```
 
    This image carries the `qemu-guest-agent` + `netbird` schematic.
@@ -28,31 +29,31 @@ export TF_VAR_env=staging
 1. **OVH** — cloud project, vRack, private network, CP instances, workers, IPLB, DNS. First-time runs are slow (CP instances ~5 min each, bare-metal orders 20–45 min each, IPLB ~10 min).
 
    ```bash
-   mise run tg run --working-dir deployment/modules/ovh/account apply
+   mise run //deployment/modules//Users/devin/Code/repos/immich-app/yucca-o11y/ovh/accountpply
    ```
 
 2. **NetBird** — the per-environment mesh objects (all named `o11y-<env>-*`): groups and setup keys for the Talos nodes and the in-cluster routing peers, the vRack network route, the mesh-gateway VIP resource and DNS zone, the pod-egress network, and the access policies (`yucca → resource`, `yucca → gateway`, `talos → bootstrap opc`). The Talos module consumes the node setup key and mesh zone from here, so apply NetBird first.
 
    ```bash
-   mise run tg run --working-dir deployment/modules/netbird/cluster apply
+   mise run //deployment/modules//Users/devin/Code/repos/immich-app/yucca-o11y/netbird/clusterpply
    ```
 
 3. **NetBox** — registers the environment's ranges (vRack, gateway ServiceCIDR, pod-egress CIDR) in IPAM, from the same values the other modules allocate.
 
    ```bash
-   mise run tg run --working-dir deployment/modules/netbox/cluster apply
+   mise run //deployment/modules//Users/devin/Code/repos/immich-app/yucca-o11y/netbox/clusterpply
    ```
 
 4. **Talos (bootstrap)** — initial bring-up over public IPs, because the NetBird extension isn't running yet.
 
    ```bash
-   TF_VAR_use_public_endpoints=true mise run tg run --working-dir deployment/modules/talos/cluster apply
+   TF_VAR_use_public_endpoints=true mise run //deployment/modules//Users/devin/Code/repos/immich-app/yucca-o11y/talos/clusterpply
    ```
 
 5. **Verify** the cluster is up and operator-side NetBird routing works. Pull the configs (see [Cluster access](#cluster-access)) and hit the APIs over the NetBird network — use the **direct** kubeconfig context during bring-up, since the default context targets the mesh gateway, which only exists once Flux has reconciled:
 
    ```bash
-   mise run talos:kubeconfig && mise run talos:talosconfig
+   mise run //deployment/modules/talos/cluster:kubeconfig && mise run //deployment/modules/talos/cluster:talosconfig
    kubectl --kubeconfig .private/$ENVIRONMENT/kubeconfig --context o11y-$ENVIRONMENT-direct get nodes -o wide
    talosctl --talosconfig .private/$ENVIRONMENT/talosconfig -n 10.150.200.10 get members
    ```
@@ -61,13 +62,13 @@ export TF_VAR_env=staging
 
    ```bash
    unset TF_VAR_use_public_endpoints
-   mise run tg run --working-dir deployment/modules/talos/cluster apply
+   mise run //deployment/modules//Users/devin/Code/repos/immich-app/yucca-o11y/talos/clusterpply
    ```
 
 7. **Kubernetes/Helm** — install CoreDNS (Terraform-seeded — Flux needs cluster DNS from its first reconcile; Talos's copy is disabled), the Flux Operator + Instance, the `bootstrap-settings` ConfigMap, and the bootstrap secrets (cert-manager OVH DNS credentials, the 1Password Connect token for external-secrets). After this, Flux owns cluster state.
 
    ```bash
-   mise run tg run --working-dir deployment/modules/kubernetes/helm apply
+   mise run //deployment/modules//Users/devin/Code/repos/immich-app/yucca-o11y/kubernetes/helmpply
    ```
 
 Flux then reconciles from `kubernetes/clusters/<env>/apps.yaml`, fanning out to the per-app Kustomizations in dependency order.
@@ -79,15 +80,15 @@ How to get `kubectl` / `talosctl` access to an **existing** cluster (no bootstra
 **Prerequisites:**
 
 * **NetBird** — the cluster APIs are reachable only over the NetBird network, so your host must be running the NetBird client (`netbird up`) and joined to the FUTO NetBird account, which places your peer in the `yucca` group. The access policy then distributes the route to the cluster's vRack CIDR, so `kubectl`/`talosctl` can reach the nodes' private IPs.
-* **1Password CLI (`op`)** — installed and signed in to the `team-futo.1password.com` account. `mise run talos:config` fetches the configs through `mise run tg`, which wraps `op run` to inject the Terraform state credentials; without an authenticated `op` it can't read state.
+* **1Password CLI (`op`)** — installed and signed in to the `team-futo.1password.com` account. `mise run //deployment/modules/talos/cluster:kubeconfig` fetches the configs through `mise run tg`, which wraps `op run` to inject the Terraform state credentials; without an authenticated `op` it can't read state.
 
 **Fetch the configs.** Two tasks pull `kubeconfig` and `talosconfig` for the environment (run whichever you need):
 
 ```bash
 export ENVIRONMENT=staging        # or production
 export TF_VAR_env=$ENVIRONMENT
-mise run talos:kubeconfig         # for kubectl
-mise run talos:talosconfig        # for talosctl
+mise run //deployment/modules/talos/cluster:kubeconfig         # for kubectl
+mise run //deployment/modules/talos/cluster:talosconfig        # for talosctl
 ```
 
 Each writes to `.private/$ENVIRONMENT/` (mode 600) from the Talos module's Terraform outputs. The kubeconfig is TF-authored with two contexts:
@@ -109,12 +110,12 @@ talosctl -n 10.150.200.10 health   # any CP private IP; the talosconfig also lis
 
 | Task | Command |
 | --- | --- |
-| Plan/apply one module | `mise run tg run --working-dir deployment/modules/<m> {plan,apply}` |
-| Plan/apply all in dep order | `mise run tf:{plan,apply}` |
-| Re-init backends | `mise run tf:init` |
-| Format HCL / Terraform | `mise run tg:fmt` / `mise run tf:fmt` |
-| Lint docs | `mise run md:lint` |
-| Fetch kubeconfig / talosconfig | `mise run talos:kubeconfig` / `mise run talos:talosconfig` (see [Cluster access](#cluster-access)) |
+| Plan/apply one module | `mise //deployment/modules/<m>:{plan,apply}` (or `mise :plan` from inside the module) |
+| Plan/apply all in dep order | `mise //deployment:{plan,apply}` |
+| Re-init backends | `mise //deployment:init` |
+| Format HCL / Terraform | `mise //deployment:fmt` |
+| Lint docs | `mise //docs:lint` |
+| Fetch kubeconfig / talosconfig | `mise run //deployment/modules/talos/cluster:kubeconfig` / `mise run //deployment/modules/talos/cluster:talosconfig` (see [Cluster access](#cluster-access)) |
 
 ## Tooling
 

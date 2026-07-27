@@ -1,0 +1,30 @@
+# Whole-tree operations. These keep terragrunt's own DAG (run --all walks the
+# dependency blocks in order); the per-module tasks under
+# //deployment/modules/... do not.
+[tasks.init]
+run = "mise run //:tg run --all init -- -reconfigure"
+description = "Init every module in dependency order"
+dir = "{{config_root}}"
+
+[tasks.plan]
+run = "mise run //:tg run --all plan"
+description = "Plan every module in dependency order"
+dir = "{{config_root}}"
+
+[tasks.apply]
+run = "mise run //:tg run --all apply"
+description = "Apply every module in dependency order"
+dir = "{{config_root}}"
+
+[tasks.destroy]
+run = "mise run //:tg run --all destroy"
+description = "Destroy every module in dependency order"
+dir = "{{config_root}}"
+
+[tasks.fmt]
+run = """
+tofu fmt -recursive {{config_root}}
+mise run //:tg hcl fmt
+"""
+description = "Format terraform and terragrunt files"
+dir = "{{config_root}}"
