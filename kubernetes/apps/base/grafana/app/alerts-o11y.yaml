@@ -451,3 +451,223 @@ spec:
                 reducer:
                   type: last
                   params: []
+    - uid: o11y-grafana-notif-failing
+      title: o11y Grafana notification delivery failing
+      condition: B
+      for: 0s
+      labels:
+        project: o11y
+        severity: critical
+      annotations:
+        summary: Grafana in {{ $labels.cluster }} failed to deliver one or more alert notifications in the last 15m; check the contact point and Discord webhook.
+      execErrState: Error
+      noDataState: OK
+      data:
+        - refId: A
+          datasourceUid: VictoriaMetrics
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: A
+            datasource:
+              type: prometheus
+              uid: VictoriaMetrics
+            expr: sum by (cluster) (increase(grafana_alerting_notifications_failed_total[15m])) > 0
+            instant: true
+            range: false
+            intervalMs: 1000
+            maxDataPoints: 43200
+        - refId: B
+          datasourceUid: __expr__
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: B
+            type: threshold
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: A
+            intervalMs: 1000
+            maxDataPoints: 43200
+            conditions:
+              - type: query
+                evaluator:
+                  type: gt
+                  params: [0]
+                operator:
+                  type: and
+                query:
+                  params: [A]
+                reducer:
+                  type: last
+                  params: []
+    - uid: o11y-postgres-primary-count
+      title: o11y grafana-postgres primary count off
+      condition: B
+      for: 5m
+      labels:
+        project: o11y
+        severity: critical
+      annotations:
+        summary: grafana-postgres in {{ $labels.cluster }} does not have exactly one primary; the cluster may be headless or split-brain.
+      execErrState: Error
+      noDataState: OK
+      data:
+        - refId: A
+          datasourceUid: VictoriaMetrics
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: A
+            datasource:
+              type: prometheus
+              uid: VictoriaMetrics
+            expr: sum by (cluster) (1 - cnpg_pg_replication_in_recovery)
+            instant: true
+            range: false
+            intervalMs: 1000
+            maxDataPoints: 43200
+        - refId: B
+          datasourceUid: __expr__
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: B
+            type: threshold
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: A
+            intervalMs: 1000
+            maxDataPoints: 43200
+            conditions:
+              - type: query
+                evaluator:
+                  type: outside_range
+                  params: [0.5, 1.5]
+                operator:
+                  type: and
+                query:
+                  params: [A]
+                reducer:
+                  type: last
+                  params: []
+    - uid: o11y-postgres-standbys-detached
+      title: o11y grafana-postgres standby detached
+      condition: B
+      for: 15m
+      labels:
+        project: o11y
+        severity: warning
+      annotations:
+        summary: grafana-postgres in {{ $labels.cluster }} has fewer than 2 standbys streaming from the primary; HA is degraded.
+      execErrState: Error
+      noDataState: OK
+      data:
+        - refId: A
+          datasourceUid: VictoriaMetrics
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: A
+            datasource:
+              type: prometheus
+              uid: VictoriaMetrics
+            expr: max by (cluster) (cnpg_pg_replication_streaming_replicas)
+            instant: true
+            range: false
+            intervalMs: 1000
+            maxDataPoints: 43200
+        - refId: B
+          datasourceUid: __expr__
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: B
+            type: threshold
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: A
+            intervalMs: 1000
+            maxDataPoints: 43200
+            conditions:
+              - type: query
+                evaluator:
+                  type: lt
+                  params: [2]
+                operator:
+                  type: and
+                query:
+                  params: [A]
+                reducer:
+                  type: last
+                  params: []
+    - uid: o11y-postgres-replication-lag
+      title: o11y grafana-postgres replication lag
+      condition: B
+      for: 15m
+      labels:
+        project: o11y
+        severity: warning
+      annotations:
+        summary: grafana-postgres standby {{ $labels.pod }} in {{ $labels.cluster }} is more than 5m behind the primary.
+      execErrState: Error
+      noDataState: OK
+      data:
+        - refId: A
+          datasourceUid: VictoriaMetrics
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: A
+            datasource:
+              type: prometheus
+              uid: VictoriaMetrics
+            expr: max by (cluster, pod) (cnpg_pg_replication_lag)
+            instant: true
+            range: false
+            intervalMs: 1000
+            maxDataPoints: 43200
+        - refId: B
+          datasourceUid: __expr__
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: B
+            type: threshold
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: A
+            intervalMs: 1000
+            maxDataPoints: 43200
+            conditions:
+              - type: query
+                evaluator:
+                  type: gt
+                  params: [300]
+                operator:
+                  type: and
+                query:
+                  params: [A]
+                reducer:
+                  type: last
+                  params: []
