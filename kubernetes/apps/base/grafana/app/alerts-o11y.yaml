@@ -11,61 +11,6 @@ spec:
   folderRef: o11y
   interval: 1m
   rules:
-    - uid: o11y-heartbeat
-      title: o11y alerting heartbeat
-      condition: B
-      for: 0s
-      labels:
-        project: o11y
-        severity: none
-      annotations:
-        summary: o11y Grafana alerting is alive; this fires by design to prove alert -> policy -> Discord works.
-      execErrState: Error
-      noDataState: NoData
-      data:
-        - refId: A
-          datasourceUid: VictoriaMetrics
-          queryType: ""
-          relativeTimeRange:
-            from: 600
-            to: 0
-          model:
-            refId: A
-            datasource:
-              type: prometheus
-              uid: VictoriaMetrics
-            expr: vector(1)
-            instant: true
-            range: false
-            intervalMs: 1000
-            maxDataPoints: 43200
-        - refId: B
-          datasourceUid: __expr__
-          queryType: ""
-          relativeTimeRange:
-            from: 600
-            to: 0
-          model:
-            refId: B
-            type: threshold
-            datasource:
-              type: __expr__
-              uid: __expr__
-            expression: A
-            intervalMs: 1000
-            maxDataPoints: 43200
-            conditions:
-              - type: query
-                evaluator:
-                  type: gt
-                  params: [0]
-                operator:
-                  type: and
-                query:
-                  params: [A]
-                reducer:
-                  type: last
-                  params: []
     - uid: o11y-target-down
       title: o11y scrape target down
       condition: B
@@ -169,6 +114,336 @@ spec:
                 evaluator:
                   type: lt
                   params: [1]
+                operator:
+                  type: and
+                query:
+                  params: [A]
+                reducer:
+                  type: last
+                  params: []
+    - uid: o11y-logs-ingestion-stalled
+      title: o11y logs ingestion stalled
+      condition: B
+      for: 10m
+      labels:
+        project: o11y
+        severity: warning
+      annotations:
+        summary: VictoriaLogs ingestion in the o11y cluster is under 1 row/s for 10m; the logs pipeline may be stalled.
+      execErrState: Error
+      noDataState: NoData
+      data:
+        - refId: A
+          datasourceUid: VictoriaMetrics
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: A
+            datasource:
+              type: prometheus
+              uid: VictoriaMetrics
+            expr: sum(rate(vl_rows_ingested_total[5m]))
+            instant: true
+            range: false
+            intervalMs: 1000
+            maxDataPoints: 43200
+        - refId: B
+          datasourceUid: __expr__
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: B
+            type: threshold
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: A
+            intervalMs: 1000
+            maxDataPoints: 43200
+            conditions:
+              - type: query
+                evaluator:
+                  type: lt
+                  params: [1]
+                operator:
+                  type: and
+                query:
+                  params: [A]
+                reducer:
+                  type: last
+                  params: []
+    - uid: o11y-cluster-silent
+      title: o11y cluster stopped reporting
+      condition: B
+      for: 15m
+      labels:
+        project: o11y
+        severity: critical
+      annotations:
+        summary: Cluster {{ $labels.cluster }} reported metrics within the last day but has sent nothing recently; its remote write path may be down.
+      execErrState: Error
+      noDataState: OK
+      data:
+        - refId: A
+          datasourceUid: VictoriaMetrics
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: A
+            datasource:
+              type: prometheus
+              uid: VictoriaMetrics
+            expr: count by (cluster) (up offset 1d) unless count by (cluster) (up)
+            instant: true
+            range: false
+            intervalMs: 1000
+            maxDataPoints: 43200
+        - refId: B
+          datasourceUid: __expr__
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: B
+            type: threshold
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: A
+            intervalMs: 1000
+            maxDataPoints: 43200
+            conditions:
+              - type: query
+                evaluator:
+                  type: gt
+                  params: [0]
+                operator:
+                  type: and
+                query:
+                  params: [A]
+                reducer:
+                  type: last
+                  params: []
+    - uid: o11y-node-not-ready
+      title: o11y node not ready
+      condition: B
+      for: 5m
+      labels:
+        project: o11y
+        severity: critical
+      annotations:
+        summary: Node {{ $labels.node }} in {{ $labels.cluster }} is not Ready.
+      execErrState: Error
+      noDataState: OK
+      data:
+        - refId: A
+          datasourceUid: VictoriaMetrics
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: A
+            datasource:
+              type: prometheus
+              uid: VictoriaMetrics
+            expr: min by (cluster, node) (kube_node_status_condition{condition="Ready",status="true"})
+            instant: true
+            range: false
+            intervalMs: 1000
+            maxDataPoints: 43200
+        - refId: B
+          datasourceUid: __expr__
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: B
+            type: threshold
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: A
+            intervalMs: 1000
+            maxDataPoints: 43200
+            conditions:
+              - type: query
+                evaluator:
+                  type: lt
+                  params: [1]
+                operator:
+                  type: and
+                query:
+                  params: [A]
+                reducer:
+                  type: last
+                  params: []
+    - uid: o11y-pvc-low-space
+      title: o11y volume almost full
+      condition: B
+      for: 15m
+      labels:
+        project: o11y
+        severity: critical
+      annotations:
+        summary: PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} in {{ $labels.cluster }} has less than 10% free space.
+      execErrState: Error
+      noDataState: OK
+      data:
+        - refId: A
+          datasourceUid: VictoriaMetrics
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: A
+            datasource:
+              type: prometheus
+              uid: VictoriaMetrics
+            expr: min by (cluster, namespace, persistentvolumeclaim) (kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes)
+            instant: true
+            range: false
+            intervalMs: 1000
+            maxDataPoints: 43200
+        - refId: B
+          datasourceUid: __expr__
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: B
+            type: threshold
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: A
+            intervalMs: 1000
+            maxDataPoints: 43200
+            conditions:
+              - type: query
+                evaluator:
+                  type: lt
+                  params: [0.1]
+                operator:
+                  type: and
+                query:
+                  params: [A]
+                reducer:
+                  type: last
+                  params: []
+    - uid: o11y-pod-crashlooping
+      title: o11y pod crashlooping
+      condition: B
+      for: 5m
+      labels:
+        project: o11y
+        severity: warning
+      annotations:
+        summary: Pod {{ $labels.namespace }}/{{ $labels.pod }} in {{ $labels.cluster }} restarted more than 5 times in the last hour.
+      execErrState: Error
+      noDataState: OK
+      data:
+        - refId: A
+          datasourceUid: VictoriaMetrics
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: A
+            datasource:
+              type: prometheus
+              uid: VictoriaMetrics
+            expr: sum by (cluster, namespace, pod) (increase(kube_pod_container_status_restarts_total[1h])) > 5
+            instant: true
+            range: false
+            intervalMs: 1000
+            maxDataPoints: 43200
+        - refId: B
+          datasourceUid: __expr__
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: B
+            type: threshold
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: A
+            intervalMs: 1000
+            maxDataPoints: 43200
+            conditions:
+              - type: query
+                evaluator:
+                  type: gt
+                  params: [0]
+                operator:
+                  type: and
+                query:
+                  params: [A]
+                reducer:
+                  type: last
+                  params: []
+    - uid: o11y-cert-renewal-overdue
+      title: o11y certificate renewal overdue
+      condition: B
+      for: 30m
+      labels:
+        project: o11y
+        severity: warning
+      annotations:
+        summary: Certificate {{ $labels.exported_namespace }}/{{ $labels.name }} in {{ $labels.cluster }} is more than 6h past its scheduled renewal; cert-manager may be failing to renew it.
+      execErrState: Error
+      noDataState: OK
+      data:
+        - refId: A
+          datasourceUid: VictoriaMetrics
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: A
+            datasource:
+              type: prometheus
+              uid: VictoriaMetrics
+            expr: max by (cluster, name, exported_namespace) (time() - certmanager_certificate_renewal_timestamp_seconds)
+            instant: true
+            range: false
+            intervalMs: 1000
+            maxDataPoints: 43200
+        - refId: B
+          datasourceUid: __expr__
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: B
+            type: threshold
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: A
+            intervalMs: 1000
+            maxDataPoints: 43200
+            conditions:
+              - type: query
+                evaluator:
+                  type: gt
+                  params: [21600]
                 operator:
                   type: and
                 query:
