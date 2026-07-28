@@ -34,7 +34,7 @@ spec:
             datasource:
               type: prometheus
               uid: VictoriaMetrics
-            expr: count(up == 0) by (cluster)
+            expr: count(up{cluster="${CLUSTER_NAME}"} == 0) by (cluster)
             instant: true
             range: false
             intervalMs: 1000
@@ -89,7 +89,7 @@ spec:
             datasource:
               type: prometheus
               uid: VictoriaMetrics
-            expr: sum(rate(vm_rows_inserted_total[5m]))
+            expr: sum(rate(vm_rows_inserted_total{cluster="${CLUSTER_NAME}"}[5m]))
             instant: true
             range: false
             intervalMs: 1000
@@ -144,7 +144,7 @@ spec:
             datasource:
               type: prometheus
               uid: VictoriaMetrics
-            expr: sum(rate(vl_rows_ingested_total[5m]))
+            expr: sum(rate(vl_rows_ingested_total{cluster="${CLUSTER_NAME}"}[5m]))
             instant: true
             range: false
             intervalMs: 1000
@@ -254,7 +254,7 @@ spec:
             datasource:
               type: prometheus
               uid: VictoriaMetrics
-            expr: min by (cluster, node) (kube_node_status_condition{condition="Ready",status="true"})
+            expr: min by (cluster, node) (kube_node_status_condition{cluster="${CLUSTER_NAME}",condition="Ready",status="true"})
             instant: true
             range: false
             intervalMs: 1000
@@ -309,7 +309,7 @@ spec:
             datasource:
               type: prometheus
               uid: VictoriaMetrics
-            expr: min by (cluster, namespace, persistentvolumeclaim) (kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes)
+            expr: min by (cluster, namespace, persistentvolumeclaim) (kubelet_volume_stats_available_bytes{cluster="${CLUSTER_NAME}"} / kubelet_volume_stats_capacity_bytes{cluster="${CLUSTER_NAME}"})
             instant: true
             range: false
             intervalMs: 1000
@@ -364,7 +364,7 @@ spec:
             datasource:
               type: prometheus
               uid: VictoriaMetrics
-            expr: sum by (cluster, namespace, pod) (increase(kube_pod_container_status_restarts_total[1h])) > 5
+            expr: sum by (cluster, namespace, pod) (increase(kube_pod_container_status_restarts_total{cluster="${CLUSTER_NAME}"}[1h])) > 5
             instant: true
             range: false
             intervalMs: 1000
@@ -419,7 +419,7 @@ spec:
             datasource:
               type: prometheus
               uid: VictoriaMetrics
-            expr: max by (cluster, name, exported_namespace) (time() - certmanager_certificate_renewal_timestamp_seconds)
+            expr: max by (cluster, name, exported_namespace) (time() - certmanager_certificate_renewal_timestamp_seconds{cluster="${CLUSTER_NAME}"})
             instant: true
             range: false
             intervalMs: 1000
@@ -474,7 +474,7 @@ spec:
             datasource:
               type: prometheus
               uid: VictoriaMetrics
-            expr: sum by (cluster) (increase(grafana_alerting_notifications_failed_total[15m])) > 0
+            expr: sum by (cluster) (increase(grafana_alerting_notifications_failed_total{cluster="${CLUSTER_NAME}"}[15m])) > 0
             instant: true
             range: false
             intervalMs: 1000
@@ -529,7 +529,7 @@ spec:
             datasource:
               type: prometheus
               uid: VictoriaMetrics
-            expr: sum by (cluster) (1 - cnpg_pg_replication_in_recovery)
+            expr: sum by (cluster) (1 - cnpg_pg_replication_in_recovery{cluster="${CLUSTER_NAME}"})
             instant: true
             range: false
             intervalMs: 1000
@@ -584,7 +584,7 @@ spec:
             datasource:
               type: prometheus
               uid: VictoriaMetrics
-            expr: max by (cluster) (cnpg_pg_replication_streaming_replicas)
+            expr: max by (cluster) (cnpg_pg_replication_streaming_replicas{cluster="${CLUSTER_NAME}"})
             instant: true
             range: false
             intervalMs: 1000
@@ -639,7 +639,7 @@ spec:
             datasource:
               type: prometheus
               uid: VictoriaMetrics
-            expr: max by (cluster, pod) (cnpg_pg_replication_lag)
+            expr: max by (cluster, pod) (cnpg_pg_replication_lag{cluster="${CLUSTER_NAME}"})
             instant: true
             range: false
             intervalMs: 1000
