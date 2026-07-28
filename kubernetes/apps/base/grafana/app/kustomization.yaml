@@ -7,5 +7,6 @@ resources:
   - ./datasource.yaml
   - ./contactpoint-discord.yaml
   - ./notificationpolicy.yaml
+  - ./servicemonitor.yaml
   - ./alerts-o11y.yaml
   - ./dashboards
