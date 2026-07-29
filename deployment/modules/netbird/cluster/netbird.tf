@@ -253,3 +253,20 @@ resource "netbird_policy" "talos_to_bootstrap_opc" {
     ports         = ["443"]
   }
 }
+
+# CI runners plan/apply the rootly module, whose onepassword provider talks to opc.
+resource "netbird_policy" "ci_to_bootstrap_opc" {
+  name    = "o11y-${var.env}-ci-to-bootstrap-opc"
+  enabled = true
+
+  rule {
+    name          = "ci-to-bootstrap-opc"
+    action        = "accept"
+    protocol      = "tcp"
+    enabled       = true
+    bidirectional = false
+    sources       = [netbird_group.ci.id]
+    destinations  = [data.netbird_group.bootstrap_opc.id]
+    ports         = ["443"]
+  }
+}
