@@ -132,6 +132,16 @@ resource "netbird_setup_key" "k8s_routing_peer" {
   usage_limit    = 0
 }
 
+# Yucca's spice ceph nodes (prod only). They ship host logs to the mesh vmauth
+# and need to resolve its name; the zone holds a single wildcard pointing at the
+# gateway VIP, and reaching it is still gated by the yucca-side
+# ceph-to-o11y-gateway policy, so distribution grants no access on its own.
+# Created by yucca's prod/htz-fsn1 netbird stack.
+data "netbird_group" "yucca_ceph" {
+  count = var.env == "production" ? 1 : 0
+  name  = "yucca-prod-htz-fsn1-ceph"
+}
+
 # Distributed to the router pods too — they serve NetBird DNS to the cluster
 # (CoreDNS forwards futo.network).
 resource "netbird_dns_zone" "mesh" {
@@ -139,7 +149,10 @@ resource "netbird_dns_zone" "mesh" {
   domain               = local.mesh_dns_zone
   enabled              = true
   enable_search_domain = false
-  distribution_groups  = [data.netbird_group.yucca.id, netbird_group.k8s_routing_peers.id]
+  distribution_groups = concat(
+    [data.netbird_group.yucca.id, netbird_group.k8s_routing_peers.id],
+    var.env == "production" ? [data.netbird_group.yucca_ceph[0].id] : [],
+  )
 }
 
 # Wildcard A -> the gateway VIP (HA is the >=2 routing Pods, not multiple records).
