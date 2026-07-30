@@ -515,7 +515,7 @@ spec:
         project: o11y
         severity: critical
       annotations:
-        summary: Grafana in {{ $labels.cluster }} failed to deliver one or more alert notifications in the last 15m; check the contact point and Discord webhook.
+        summary: Grafana in {{ $labels.cluster }} failed to deliver more than one alert notification in the last 15m; check the contact points and webhooks.
       execErrState: Error
       noDataState: OK
       data:
@@ -530,7 +530,7 @@ spec:
             datasource:
               type: prometheus
               uid: VictoriaMetrics
-            expr: sum by (cluster) (increase(grafana_alerting_notifications_failed_total{cluster="${CLUSTER_NAME}"}[15m])) > 0
+            expr: sum by (cluster) (increase(grafana_alerting_notifications_failed_total{cluster="${CLUSTER_NAME}"}[15m])) > 1
             instant: true
             range: false
             intervalMs: 1000
