@@ -5,6 +5,7 @@ kind: GrafanaContactPoint
 metadata:
   name: rootly-heartbeat
 spec:
+  resyncPeriod: 1h
   instanceSelector:
     matchLabels:
       dashboards: grafana
