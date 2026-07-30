@@ -9,10 +9,10 @@ data "onepassword_vault" "env" {
   name = "o11y_tf_${local.env_short}"
 }
 
-# This env's Discord channel webhook; also consumed by the Grafana contact point.
+# Dedicated Discord webhook for Rootly's alert workflows (not Grafana's).
 data "onepassword_item" "discord_webhook" {
   vault = data.onepassword_vault.env.uuid
-  title = "GRAFANA_DISCORD_WEBHOOK"
+  title = "ROOTLY_DISCORD_WEBHOOK"
 }
 
 resource "onepassword_item" "heartbeat_ping_url" {
