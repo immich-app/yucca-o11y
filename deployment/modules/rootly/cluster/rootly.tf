@@ -19,7 +19,7 @@ resource "rootly_service" "o11y" {
 resource "rootly_heartbeat" "grafana_alerting" {
   name                     = "o11y-${var.env}-grafana-alerting"
   description              = "Expires when the o11y ${var.env} Grafana alerting pipeline stops pinging."
-  interval                 = 15
+  interval                 = 5
   interval_unit            = "minutes"
   alert_summary            = "o11y ${var.env} Grafana alerting heartbeat missed; the alert pipeline may be down."
   alert_urgency_id         = data.rootly_alert_urgency.high.id
