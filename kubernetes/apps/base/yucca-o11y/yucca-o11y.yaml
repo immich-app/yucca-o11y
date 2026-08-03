@@ -10,6 +10,7 @@ spec:
   url: oci://ghcr.io/immich-app/yucca/o11y-manifests
   ref:
     tag: main
+    digest: sha256:82151f3bbb1e7f80f0f562d17571f4bb33339edabd7560e932c8ecf827df2cad
   verify:
     provider: cosign
     matchOIDCIdentity:
