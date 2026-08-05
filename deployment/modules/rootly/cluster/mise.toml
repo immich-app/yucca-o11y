@@ -9,6 +9,7 @@ extends = "tg:apply"
 
 [tasks.destroy]
 extends = "tg:destroy"
+wait_for = ["//deployment/modules/ovh/account:destroy"]
 
 [tasks.output]
 extends = "tg:output"

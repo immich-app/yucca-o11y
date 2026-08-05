@@ -6,6 +6,7 @@ extends = "tg:plan"
 
 [tasks.apply]
 extends = "tg:apply"
+wait_for = ["//deployment/modules/rootly/cluster:apply"]
 
 [tasks.destroy]
 extends = "tg:destroy"

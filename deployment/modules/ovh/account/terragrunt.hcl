@@ -130,11 +130,23 @@ locals {
   topology = local.topology_by_env[local.env]
 }
 
+dependency "rootly" {
+  config_path = "../../rootly/cluster"
+
+  mock_outputs = {
+    status_page_cname_records = {}
+  }
+  mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
+}
+
 inputs = {
-  controlplane_nodes   = local.topology.controlplane_nodes
-  worker_nodes         = local.topology.worker_nodes
-  private_network_cidr = local.topology.private_network_cidr
-  loadbalancer_zones   = local.topology.loadbalancer_zones
+  controlplane_nodes        = local.topology.controlplane_nodes
+  worker_nodes              = local.topology.worker_nodes
+  private_network_cidr      = local.topology.private_network_cidr
+  loadbalancer_zones        = local.topology.loadbalancer_zones
+  # lookup: the attribute is missing entirely while the rootly module's state
+  # predates the status page (mocks only cover a dependency with no outputs).
+  status_page_cname_records = lookup(dependency.rootly.outputs, "status_page_cname_records", {})
 }
 
 generate "backend" {
