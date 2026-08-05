@@ -6,7 +6,7 @@ config_roots = ["deployment", "deployment/modules/*/*"]
 [tools]
 opentofu = "1.12.5"
 terragrunt = "1.1.2"
-python = "3.14.6"
+python = "3.14.7"
 uv = "0.11.32"
 pipx = "1.16.5"
 "pipx:python-openstackclient" = "10.2.1"
