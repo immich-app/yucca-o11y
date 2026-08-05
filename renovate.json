@@ -79,6 +79,12 @@
       ],
       "matchUpdateTypes": ["pinDigest"],
       "enabled": false
+    },
+    {
+      "description": "o11y-manifests deliberately tracks the mutable main tag (re-pulled in-cluster on an interval); never pin its digest",
+      "matchPackageNames": ["ghcr.io/immich-app/yucca/o11y-manifests"],
+      "matchUpdateTypes": ["pinDigest"],
+      "enabled": false
     }
   ]
 }
