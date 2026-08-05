@@ -8,9 +8,10 @@ locals {
 
 # Functionalities are the friendly public names shown as status-page items;
 # the rfc1123 service names stay internal. Status flips when an incident marks
-# the functionality affected — raw alerts alone don't.
+# the functionality affected — raw alerts alone don't. Names are unique
+# account-wide (Rootly 422s on duplicates), hence the env suffix off prod.
 resource "rootly_functionality" "grafana_heartbeat" {
-  name               = "o11y / Grafana Heartbeat"
+  name               = var.env == "production" ? "o11y / Grafana Heartbeat" : "o11y / Grafana Heartbeat (${var.env})"
   public_description = "Dead man's switch for the o11y ${var.env} Grafana alerting pipeline."
   service_ids        = [rootly_service.o11y.id]
   environment_ids    = [rootly_environment.env.id]
