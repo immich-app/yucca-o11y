@@ -81,7 +81,7 @@ Today the only overrides are version pins. Chart (and the CloudNativePG Postgres
 
 Per-environment values are **not** hardcoded in `base/` and **not** patched into each overlay. Instead, `cluster-apps` carries a single patch that targets every child Kustomization and injects `postBuild.substituteFrom` pointing at **two** ConfigMaps, resolved by Flux's envsubst at apply time — the prefix tells you who owns the value:
 
-* **`cluster-settings`** (`CLUSTER_*`, committed in `kubernetes/clusters/<env>/`) — git-owned values: `CLUSTER_APP_DOMAIN`, `CLUSTER_NAME`, the 1Password vault names, VictoriaMetrics retention/storage class, and the bootstrap Connect VIP.
+* **`cluster-settings`** (`CLUSTER_*`, committed in `kubernetes/clusters/<env>/`) — git-owned values: `CLUSTER_APP_DOMAIN`, the telemetry identity pair `CLUSTER_NAME`/`CLUSTER_ENV` (the `cluster` and `env` labels, see the [shipping guide](05-shipping-metrics-guide.md)), the 1Password vault names, VictoriaMetrics retention/storage class, and the bootstrap Connect VIP.
 * **`bootstrap-settings`** (`BOOTSTRAP_*`, created in-cluster by the `kubernetes/helm` Terraform module) — Terraform-owned values that must never drift from the infrastructure: the mesh DNS zone and the NetBird gateway VIP, ServiceCIDR, and egress CIDR/gateway. The entry is `optional` because offline renderers (flate CI) can't see an in-cluster-only ConfigMap; consumers still fail loudly at apply if it's genuinely missing.
 
 Because of this, values that vary by environment live exactly once — in git or in Terraform — rather than being duplicated across overlays; only versions are still patched per environment. A rendered object can be checked exactly as Flux will produce it using the `flate` CLI.

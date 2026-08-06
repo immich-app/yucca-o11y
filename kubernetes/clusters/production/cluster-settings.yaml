@@ -8,7 +8,8 @@ data:
   CLUSTER_APP_DOMAIN: futostatus.com
   # Bootstrap-cluster-owned opc VIP (not o11y TF, hence not in bootstrap-settings).
   CLUSTER_OPC_VIP: 10.41.19.250
-  CLUSTER_NAME: o11y-production
+  CLUSTER_NAME: o11y
+  CLUSTER_ENV: prod
   CLUSTER_OP_O11Y_VAULT: o11y_tf_prod
   CLUSTER_OP_SHARED_VAULT: shared_tf_prod
   CLUSTER_VMLOGS_RETENTION: 120d
