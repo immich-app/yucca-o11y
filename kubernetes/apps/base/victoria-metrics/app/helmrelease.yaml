@@ -20,6 +20,15 @@ spec:
         - name: VM_GATEWAY_API_ENABLED
           value: "true"
 
+    # The store is multi-tenant: without this filter every default rule
+    # evaluates over the remote clusters' series too and re-emits the result
+    # as o11y's own.
+    defaultRules:
+      group:
+        spec:
+          params:
+            extra_label: ["cluster=${CLUSTER_NAME}"]
+
     vmcluster:
       enabled: true
       spec:
@@ -95,7 +104,11 @@ spec:
     vmagent:
       spec:
         externalLabels:
+          project: o11y
+          env: ${CLUSTER_ENV}
           cluster: ${CLUSTER_NAME}
+          provider: ovh
+          region: fr
         statefulMode: true
         statefulStorage:
           volumeClaimTemplate:
@@ -114,8 +127,14 @@ spec:
     vmalert:
       enabled: true
       spec:
+        # No `cluster` here: rule results already carry it from the chart's
+        # group-by, and an external label of the same name displaces theirs
+        # to exported_cluster.
         externalLabels:
-          cluster: ${CLUSTER_NAME}
+          project: o11y
+          env: ${CLUSTER_ENV}
+          provider: ovh
+          region: fr
         # Alertmanager is stubbed off for now, so vmalert has no notifier. Blackhole
         # notifications — rules still evaluate (state visible in the vmalert UI /
         # recording rules still written) — until a real Alertmanager + receiver lands.

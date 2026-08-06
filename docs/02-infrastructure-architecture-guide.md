@@ -73,6 +73,7 @@ Staging + production run-rate ≈ **$955/mo** plus the one-time **$221** product
 | Parameter | Staging | Production |
 |-----------|---------|------------|
 | Cluster name | `o11y-staging` | `o11y-production` |
+| Telemetry labels | `cluster=o11y`, `env=staging` | `cluster=o11y`, `env=prod` |
 | Workers | 3× `SYS-2` (`24sys022`) | 3× `Rise-2` (`24rise02-v1`) |
 | IPLB | 1 zone (`gra`) | 3 zones (`gra` + `rbx` + `sbg`), anycast |
 | Private CIDR | `10.150.200.0/24` | `10.150.100.0/24` |

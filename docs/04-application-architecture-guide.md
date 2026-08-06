@@ -27,11 +27,11 @@ This cluster's VictoriaMetrics is the **central metrics store for all FUTO clust
 
 ### Tenancy and auth
 
-Everything lands in a **single tenant**, distinguished by a mandatory `cluster` external label rather than VictoriaMetrics multitenancy — one organization, mutual trust, everything queryable together. A **single shared bearer token** authenticates all remote clusters; it is stored in 1Password and injected via ExternalSecret into a `VMUser` that grants write-only access. Because the operator installs the `VMUser` CRD, those resources live in a separate Flux Kustomization that depends on the VictoriaMetrics release and external-secrets, so they don't race CRD registration.
+Everything lands in a **single tenant**, distinguished by mandatory identity labels rather than VictoriaMetrics multitenancy — one organization, mutual trust, everything queryable together. A **single shared bearer token** authenticates all remote clusters; it is stored in 1Password and injected via ExternalSecret into a `VMUser` that grants write-only access. Because the operator installs the `VMUser` CRD, those resources live in a separate Flux Kustomization that depends on the VictoriaMetrics release and external-secrets, so they don't race CRD registration.
 
 ### Label convention
 
-Every remote `vmagent` must set a unique `cluster` label (plus `env` and `region`) so series don't collide across clusters. `cluster` is mandatory — cheap to enforce now, painful to retrofit.
+Every shipper — metrics and logs, remote and local — stamps the same five identity labels: `project`, `env`, `cluster`, `provider`, `region`. `cluster` uniqueness is mandatory so series don't collide across clusters — cheap to enforce now, painful to retrofit. The [shipping guide](05-shipping-metrics-guide.md#labels) defines the values; this cluster's own pair comes from `CLUSTER_NAME`/`CLUSTER_ENV` in `cluster-settings`.
 
 ### Onboarding a remote cluster
 
@@ -43,7 +43,7 @@ The central store is a single point of failure for all observability, mitigated 
 
 ## VictoriaLogs
 
-Logs follow the same shape as metrics: a **VictoriaLogs cluster** (`victoria-logs-cluster` chart) with three `vlstorage` replicas spread one-per-worker on `CLUSTER_VMLOGS_STORAGE_CLASS` (`openebs-spare-disk` staging, `openebs-spare-disk-2` production), retention per environment via `CLUSTER_VMLOGS_RETENTION` (30d staging, 120d production). A `victoria-logs-collector` DaemonSet tails this cluster's pod logs and writes them in, tagged with the cluster identity.
+Logs follow the same shape as metrics: a **VictoriaLogs cluster** (`victoria-logs-cluster` chart) with three `vlstorage` replicas spread one-per-worker on `CLUSTER_VMLOGS_STORAGE_CLASS` (`openebs-spare-disk` staging, `openebs-spare-disk-2` production), retention per environment via `CLUSTER_VMLOGS_RETENTION` (30d staging, 120d production). A `victoria-logs-collector` DaemonSet tails this cluster's pod logs and writes them in, tagged with the five identity labels (`project`/`env`/`cluster`/`provider`/`region`) as fields.
 
 ## Grafana
 

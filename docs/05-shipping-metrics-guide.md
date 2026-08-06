@@ -34,7 +34,7 @@ The metrics remote-write path is the same on every host:
 ## Prerequisites (both paths)
 
 * **A `vmagent` with a persistent disk buffer.** The central store is a single point of failure for observability; a per-remote disk buffer means a central outage replays on recovery instead of dropping data. Give `vmagent` a PVC and point `-remoteWrite.tmpDataPath` at it (or, for Prometheus, rely on its WAL and tune `queue_config`).
-* **The mandatory `cluster` external label** (plus `env` and `region`). See Labels.
+* **The mandatory identity labels.** See [Labels](#labels).
 
 ## Option A: over the NetBird mesh
 
@@ -49,9 +49,11 @@ metadata:
   name: central-forwarder
 spec:
   externalLabels:
-    cluster: my-cluster   # unique per remote, mandatory
+    project: yucca
     env: prod
-    region: eu-west
+    cluster: father       # unique per remote, mandatory
+    provider: hetzner
+    region: fsn
   remoteWrite:
     - url: https://vmauth.o11y.futo.network/insert/0/prometheus/api/v1/write
   extraArgs:
@@ -70,9 +72,11 @@ metadata:
   name: central-forwarder
 spec:
   externalLabels:
-    cluster: my-cluster   # unique per remote, mandatory
+    project: yucca
     env: prod
-    region: eu-west
+    cluster: father       # unique per remote, mandatory
+    provider: hetzner
+    region: fsn
   remoteWrite:
     - url: https://vmauth.futostatus.com/insert/0/prometheus/api/v1/write
       bearerTokenSecret:
@@ -88,9 +92,11 @@ If the remote runs Prometheus rather than `vmagent`, the equivalent is:
 ```yaml
 global:
   external_labels:
-    cluster: my-cluster
+    project: yucca
     env: prod
-    region: eu-west
+    cluster: father
+    provider: hetzner
+    region: fsn
 remote_write:
   - url: https://vmauth.futostatus.com/insert/0/prometheus/api/v1/write
     authorization:
@@ -100,10 +106,17 @@ remote_write:
 
 ## Labels
 
-Everything lands in one tenant, distinguished by labels rather than VictoriaMetrics multitenancy: one organization, mutual trust, everything queryable together. Every remote `vmagent` must set:
+Everything lands in one tenant, distinguished by labels rather than VictoriaMetrics multitenancy: one organization, mutual trust, everything queryable together. Every shipper - metrics and logs alike - must stamp the same five identity labels on everything it sends:
 
-* **`cluster`** (mandatory) - a name unique to the remote cluster, so series never collide with another cluster's, and so alerting can tell clusters apart: o11y's alert rules aggregate `by (cluster)` and notifications group on it, so a missing or reused `cluster` label collapses every cluster into a single alert and a single notification. Cheap to enforce now, painful to retrofit.
-* **`env`** and **`region`** - conventional, so dashboards and alerts can slice by environment and location.
+* **`project`** - which project the cluster belongs to (`o11y`, `yucca`, ...).
+* **`env`** - short environment name: `dev`, `staging`, or `prod` (not `production`).
+* **`cluster`** (mandatory, unique) - a short name unique to the cluster (`father`, `o11y`, ...), so series never collide with another cluster's, and so alerting can tell clusters apart: o11y's alert rules aggregate `by (cluster)` and notifications group on it, so a missing or reused `cluster` label collapses every cluster into a single alert and a single notification. Cheap to enforce now, painful to retrofit.
+* **`provider`** - infrastructure provider (`ovh`, `hetzner`, ...).
+* **`region`** - site/city code of where the cluster runs (`fsn`, `lon`, ...). A cluster spanning several sites uses a broader code (the o11y clusters themselves use `fr`, spanning three French OVH datacenters).
+
+The value sets are open - these are the conventions, not a closed enumeration; the authority for any given cluster is its own shipper config. The o11y clusters stamp `project=o11y, env=<staging|prod>, cluster=o11y, provider=ovh, region=fr`, with `cluster` and `env` supplied per environment from `CLUSTER_NAME`/`CLUSTER_ENV` in `kubernetes/clusters/<env>/cluster-settings.yaml`.
+
+`externalLabels` only tags *scraped* series; if the shipper also forwards pushed data (e.g. OTLP app metrics through a `vmagent`), apply the same labels with a relabel config instead so ingested series are tagged too.
 
 ## Verify data is arriving
 
@@ -111,7 +124,7 @@ From the central side, query for the remote's series. Over the mesh (no token), 
 
 ```bash
 curl -s 'https://vmauth.o11y.futo.network/select/0/prometheus/api/v1/query' \
-  --data-urlencode 'query=count(up{cluster="my-cluster"})'
+  --data-urlencode 'query=count(up{cluster="father"})'
 ```
 
 Over the internet, the same query with the token:
@@ -119,7 +132,7 @@ Over the internet, the same query with the token:
 ```bash
 curl -s -H "Authorization: Bearer $TOKEN" \
   'https://vmauth.futostatus.com/select/0/prometheus/api/v1/query' \
-  --data-urlencode 'query=count(up{cluster="my-cluster"})'
+  --data-urlencode 'query=count(up{cluster="father"})'
 ```
 
 A non-zero count means the remote's series are landing. If it is zero, check the remote `vmagent`'s own `vmagent_remotewrite_*` metrics for send errors, and confirm the `cluster` label is set.
@@ -127,6 +140,8 @@ A non-zero count means the remote's series are landing. If it is zero, check the
 ## Logs, on the same gateways
 
 Logs ride the identical `vmauth` hostnames (VictoriaLogs sits behind the same gateways). Point a log shipper at `https://vmauth.<host>/insert/<format>/...`, where `<format>` is one of `native`, `jsonline`, `opentelemetry`, `loki`, or `elasticsearch`; read back with `/select/logsql/...`. Auth is the same as for metrics: none on the mesh, bearer token on the internet.
+
+Logs carry the same identity labels as metrics, stamped as fields by the shipper - e.g. the `victoria-logs-collector` chart takes them via `extraFields`.
 
 ## What backs this centrally
 
