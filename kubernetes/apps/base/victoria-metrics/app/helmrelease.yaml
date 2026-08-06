@@ -22,7 +22,11 @@ spec:
 
     # The store is multi-tenant: without this filter every default rule
     # evaluates over the remote clusters' series too and re-emits the result
-    # as o11y's own.
+    # as o11y's own. Inert on chart >=0.85: sync-job v0.0.11 parses its config
+    # with sigs.k8s.io/yaml, which drops the yaml-tagged/inline group spec
+    # (helm-charts#3065), so the VMRules land without params. Kept so the
+    # scoping returns with the upstream fix; until then the datasource-URL
+    # filter on vmalert below does the same job one layer down.
     defaultRules:
       group:
         spec:
@@ -127,6 +131,14 @@ spec:
     vmalert:
       enabled: true
       spec:
+        # Scope every rule evaluation to this cluster's series: vmalert keeps
+        # query args from the datasource URL on all requests, and vmselect
+        # enforces extra_label server-side. Covers what the (currently inert)
+        # defaultRules group params above would do, including rule groups
+        # added by future chart versions. Any deliberately fleet-wide rule
+        # must live in Grafana alerting instead (like o11y-cluster-silent).
+        datasource:
+          url: http://vmselect-victoria-metrics.o11y.svc.cluster.local:8481/select/0/prometheus?extra_label=cluster=${CLUSTER_NAME}
         # No `cluster` here: rule results already carry it from the chart's
         # group-by, and an external label of the same name displaces theirs
         # to exported_cluster.
