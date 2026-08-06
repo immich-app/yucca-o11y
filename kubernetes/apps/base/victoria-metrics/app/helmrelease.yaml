@@ -15,10 +15,6 @@ spec:
     global:
       clusterLabel: cluster
 
-    # gateway_support (not a raw VM_GATEWAY_API_ENABLED env) so the subchart
-    # also ships the gateway.networking.k8s.io RBAC: without it the operator's
-    # HTTPRoute watch is forbidden, its cache never syncs, and the vmauth
-    # controller wedges - CRs stop converging (stale images on mesh-unauth).
     victoria-metrics-operator:
       operator:
         gateway_support: true
