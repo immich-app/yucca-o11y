@@ -197,14 +197,13 @@ spec:
               dashboards: grafana
           allowCrossNamespaceImport: true
 
+    # Chart datasources replaced by hand-written ones in base/grafana/app:
+    # the default VictoriaMetrics datasource routes through vmauth-self-select
+    # so it only sees this cluster's series; VictoriaMetrics Fleet exposes the
+    # whole store as an explicit opt-in.
     defaultDatasources:
       grafanaOperator:
-        enabled: true
-        spec:
-          instanceSelector:
-            matchLabels:
-              dashboards: grafana
-          allowCrossNamespaceImport: true
+        enabled: false
 
     kubeControllerManager:
       service:
