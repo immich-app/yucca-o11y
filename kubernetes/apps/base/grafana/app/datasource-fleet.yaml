@@ -1,0 +1,19 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/grafana.integreatly.org/grafanadatasource_v1beta1.json
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: victoria-metrics-fleet
+spec:
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
+  datasource:
+    # Unscoped view of the whole multi-tenant store: explicit opt-in for
+    # cross-cluster dashboards (the yucca folder) and fleet-wide alerts.
+    name: VictoriaMetrics Fleet
+    uid: VictoriaMetricsFleet
+    type: prometheus
+    access: proxy
+    isDefault: false
+    url: http://vmselect-victoria-metrics.o11y.svc.cluster.local:8481/select/0/prometheus

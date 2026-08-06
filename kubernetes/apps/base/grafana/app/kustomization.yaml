@@ -5,9 +5,11 @@ resources:
   - ./externalsecret.yaml
   - ./grafana.yaml
   - ./datasource.yaml
+  - ./datasource-fleet.yaml
   - ./contactpoint-discord.yaml
   - ./contactpoint-rootly.yaml
   - ./notificationpolicy.yaml
   - ./servicemonitor.yaml
   - ./alerts-o11y.yaml
+  - ./alerts-fleet.yaml
   - ./dashboards

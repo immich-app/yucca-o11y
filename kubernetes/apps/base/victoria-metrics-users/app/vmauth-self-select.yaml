@@ -1,0 +1,32 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/operator.victoriametrics.com/vmauth_v1beta1.json
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMAuth
+metadata:
+  name: self-select
+spec:
+  # In-cluster only: backs Grafana's default datasource. The appended
+  # extra_label is enforced by vmselect on every request (queries and
+  # label/series metadata alike), pinning anything that queries through
+  # here to this cluster's own series. Cross-cluster reads go through the
+  # explicit VictoriaMetrics Fleet datasource instead.
+  port: "8427"
+  replicaCount: 2
+  podDisruptionBudget:
+    minAvailable: 1
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app.kubernetes.io/name: vmauth
+          app.kubernetes.io/instance: self-select
+  selectAllByDefault: false
+  unauthorizedUserAccessSpec:
+    targetRefs:
+      - static:
+          url: http://vmselect-victoria-metrics.o11y.svc.cluster.local:8481
+        paths:
+          - /select/0/.*
+        target_path_suffix: "?extra_label=cluster=${CLUSTER_NAME}"

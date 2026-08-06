@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - ./vmuser-remote-clusters.yaml
   - ./vmauth-mesh-unauth.yaml
+  - ./vmauth-self-select.yaml
