@@ -11,4 +11,5 @@ resources:
   - ./notificationpolicy.yaml
   - ./servicemonitor.yaml
   - ./alerts-o11y.yaml
+  - ./alerts-fleet.yaml
   - ./dashboards
