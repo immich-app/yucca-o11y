@@ -245,7 +245,7 @@ spec:
       noDataState: OK
       data:
         - refId: A
-          datasourceUid: VictoriaMetrics
+          datasourceUid: VictoriaMetricsFleet
           queryType: ""
           relativeTimeRange:
             from: 600
@@ -254,7 +254,7 @@ spec:
             refId: A
             datasource:
               type: prometheus
-              uid: VictoriaMetrics
+              uid: VictoriaMetricsFleet
             expr: count by (cluster) (up offset 1d) unless count by (cluster) (up)
             instant: true
             range: false
