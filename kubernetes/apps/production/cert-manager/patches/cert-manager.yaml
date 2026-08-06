@@ -14,8 +14,8 @@ spec:
         spec:
           ref:
             # renovate: datasource=docker depName=quay.io/jetstack/charts/cert-manager
-            tag: v1.19.4
-            digest: sha256:135b97727e98ab0af229c2dceaf2e2c3c074a7b83495c6e09a1697c85e5ef6c7
+            tag: v1.21.1
+            digest: sha256:15c0b46d9006ce8eb9ff14d1bf54d1bbfcc587bb9e24cd9fe186fb8fec56af1f
       target:
         kind: OCIRepository
         name: cert-manager
