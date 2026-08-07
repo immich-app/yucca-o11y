@@ -27,7 +27,7 @@ spec:
       "kubernetesCollector.decolorizeFields": _msg
 
     collector:
-      extraFields: '{"project":"o11y","env":"${CLUSTER_ENV}","cluster":"${CLUSTER_NAME}","provider":"ovh","region":"fr"}'
+      extraFields: '{"project":"o11y","env":"${CLUSTER_ENV}","cluster":"${CLUSTER_NAME}","provider":"ovh","region":"global"}'
       streamFields:
         - kubernetes.pod_name
         - kubernetes.pod_namespace

@@ -112,9 +112,9 @@ Everything lands in one tenant, distinguished by labels rather than VictoriaMetr
 * **`env`** - short environment name: `dev`, `staging`, or `prod` (not `production`).
 * **`cluster`** (mandatory, unique) - a short name unique to the cluster (`father`, `o11y`, ...), so series never collide with another cluster's, and so alerting can tell clusters apart: o11y's alert rules aggregate `by (cluster)` and notifications group on it, so a missing or reused `cluster` label collapses every cluster into a single alert and a single notification. Cheap to enforce now, painful to retrofit.
 * **`provider`** - infrastructure provider (`ovh`, `hetzner`, ...).
-* **`region`** - site/city code of where the cluster runs (`fsn`, `lon`, ...). A cluster spanning several sites uses a broader code (the o11y clusters themselves use `fr`, spanning three French OVH datacenters).
+* **`region`** - the IATA/ICAO airport code nearest the site (`fsn`, `aus`, ...). A cluster spanning several sites uses `global` (the o11y clusters do: their nodes span three OVH datacenters).
 
-The value sets are open - these are the conventions, not a closed enumeration; the authority for any given cluster is its own shipper config. The o11y clusters stamp `project=o11y, env=<staging|prod>, cluster=o11y, provider=ovh, region=fr`, with `cluster` and `env` supplied per environment from `CLUSTER_NAME`/`CLUSTER_ENV` in `kubernetes/clusters/<env>/cluster-settings.yaml`.
+The value sets are open - these are the conventions, not a closed enumeration; the authority for any given cluster is its own shipper config. The o11y clusters stamp `project=o11y, env=<staging|prod>, cluster=o11y, provider=ovh, region=global`, with `cluster` and `env` supplied per environment from `CLUSTER_NAME`/`CLUSTER_ENV` in `kubernetes/clusters/<env>/cluster-settings.yaml`.
 
 `externalLabels` only tags *scraped* series; if the shipper also forwards pushed data (e.g. OTLP app metrics through a `vmagent`), apply the same labels with a relabel config instead so ingested series are tagged too.
 
