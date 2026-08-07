@@ -6,6 +6,7 @@ resources:
   - ./grafana.yaml
   - ./datasource.yaml
   - ./datasource-fleet.yaml
+  - ./datasource-victoriametrics.yaml
   - ./contactpoint-discord.yaml
   - ./contactpoint-rootly.yaml
   - ./notificationpolicy.yaml
