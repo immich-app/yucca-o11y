@@ -111,7 +111,7 @@ spec:
           env: ${CLUSTER_ENV}
           cluster: ${CLUSTER_NAME}
           provider: ovh
-          region: fr
+          region: global
         statefulMode: true
         statefulStorage:
           volumeClaimTemplate:
@@ -145,7 +145,7 @@ spec:
           project: o11y
           env: ${CLUSTER_ENV}
           provider: ovh
-          region: fr
+          region: global
         # Alertmanager is stubbed off for now, so vmalert has no notifier. Blackhole
         # notifications — rules still evaluate (state visible in the vmalert UI /
         # recording rules still written) — until a real Alertmanager + receiver lands.
