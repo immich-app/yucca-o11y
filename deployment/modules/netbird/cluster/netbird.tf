@@ -80,6 +80,27 @@ resource "netbird_policy" "yucca_to_o11y_resource" {
   }
 }
 
+# The resource policy above only programs FORWARD accepts on the elected routing
+# peer. Traffic addressed to that peer's OWN vRack IP is delivered locally and
+# hits the node's NetBird INPUT chain, which only honors peer policies — without
+# this one the elected router is unreachable at its own IP (the vRack hairpin).
+# Also admits the nodes' NetBird peer IPs as cluster-independent endpoints.
+resource "netbird_policy" "yucca_to_talos" {
+  name    = "o11y-${var.env}-yucca-to-talos"
+  enabled = true
+
+  rule {
+    name          = "yucca-to-talos"
+    action        = "accept"
+    protocol      = "tcp"
+    enabled       = true
+    bidirectional = false
+    sources       = [data.netbird_group.yucca.id]
+    destinations  = [netbird_group.talos.id]
+    ports         = ["50000", "6443"]
+  }
+}
+
 # Mesh workload ingress. Routing peers are in-cluster Pods (netbird-router), not the Talos
 # nodes: only Pod routing can advertise a Service ClusterIP (kube-proxy's DNAT runs in the
 # host netns, after the Pod's netfilter matches the /32).

@@ -31,7 +31,7 @@ export TF_VAR_env=staging
    mise run //deployment/modules/ovh/account:apply
    ```
 
-2. **NetBird** — the per-environment mesh objects (all named `o11y-<env>-*`): groups and setup keys for the Talos nodes and the in-cluster routing peers, the vRack network route, the mesh-gateway VIP resource and DNS zone, the pod-egress network, and the access policies (`yucca → resource`, `yucca → gateway`, `talos → bootstrap opc`). The Talos module consumes the node setup key and mesh zone from here, so apply NetBird first.
+2. **NetBird** — the per-environment mesh objects (all named `o11y-<env>-*`): groups and setup keys for the Talos nodes and the in-cluster routing peers, the vRack network route, the mesh-gateway VIP resource and DNS zone, the pod-egress network, and the access policies (`yucca → resource`, `yucca → talos`, `yucca → gateway`, `talos → bootstrap opc`). The Talos module consumes the node setup key and mesh zone from here, so apply NetBird first.
 
    ```bash
    mise run //deployment/modules/netbird/cluster:apply

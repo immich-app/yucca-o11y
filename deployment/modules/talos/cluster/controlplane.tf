@@ -155,6 +155,11 @@ resource "talos_machine_configuration_apply" "controlplane" {
     # Talos ingress firewall — default-deny on host-bound services. Operators reach
     # apid/apiserver via the Netbird route, masqueraded to a routing-peer's vRack IP,
     # so every allow rule is the vRack CIDR (+ pod CIDR for in-cluster metrics).
+    # Exception: traffic addressed to the elected routing peer's OWN vRack IP is
+    # delivered locally and never traverses POSTROUTING, so masquerade doesn't fire
+    # and it arrives with the operator's Netbird peer source. apid/apiserver
+    # therefore also trust the Netbird peer CIDR (10.254.0.0/15) — Netbird ACLs
+    # gate reachability and both services require client TLS regardless.
     <<-EOT
       apiVersion: v1alpha1
       kind: NetworkDefaultActionConfig
@@ -171,6 +176,7 @@ resource "talos_machine_configuration_apply" "controlplane" {
         protocol: tcp
       ingress:
         - subnet: ${var.private_network_cidr}
+        - subnet: 10.254.0.0/15
     EOT
     ,
     <<-EOT
@@ -195,6 +201,7 @@ resource "talos_machine_configuration_apply" "controlplane" {
         protocol: tcp
       ingress:
         - subnet: ${var.private_network_cidr}
+        - subnet: 10.254.0.0/15
     EOT
     ,
     <<-EOT
