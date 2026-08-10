@@ -266,6 +266,25 @@ resource "netbird_policy" "ci_to_o11y_resource" {
   }
 }
 
+# Same INPUT-path gap as yucca_to_talos above: the resource policy only programs
+# forwarding, so CI hitting the elected router's own vRack IP (operator_endpoint
+# is a fixed CP) would still drop without this peer-level accept.
+resource "netbird_policy" "ci_to_talos" {
+  name    = "o11y-${var.env}-ci-to-talos"
+  enabled = true
+
+  rule {
+    name          = "ci-to-talos"
+    action        = "accept"
+    protocol      = "tcp"
+    enabled       = true
+    bidirectional = false
+    sources       = [netbird_group.ci.id]
+    destinations  = [netbird_group.talos.id]
+    ports         = ["50000", "6443"]
+  }
+}
+
 # Bootstrap-owned group holding the opc resource (live account name — verify if it changes).
 data "netbird_group" "bootstrap_opc" {
   name = "bootstrap-resources"
