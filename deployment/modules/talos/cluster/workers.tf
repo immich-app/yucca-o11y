@@ -1,8 +1,9 @@
 data "talos_machine_configuration" "worker" {
-  cluster_name     = local.cluster_name
-  cluster_endpoint = local.cluster_endpoint
-  machine_type     = "worker"
-  machine_secrets  = talos_machine_secrets.this.machine_secrets
+  cluster_name       = local.cluster_name
+  cluster_endpoint   = local.cluster_endpoint
+  machine_type       = "worker"
+  machine_secrets    = talos_machine_secrets.this.machine_secrets
+  kubernetes_version = var.kubernetes_version != "" ? var.kubernetes_version : null
 }
 
 resource "talos_machine_configuration_apply" "worker" {
