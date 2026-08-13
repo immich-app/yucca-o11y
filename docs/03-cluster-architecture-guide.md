@@ -38,9 +38,9 @@ Default-deny ingress on every node; anything not listed is dropped at the host. 
 
 | Service | Port(s) | Allowed sources |
 |---------|---------|-----------------|
-| apid | 50000/tcp | vRack |
+| apid | 50000/tcp | vRack + NetBird peers `10.254.0.0/15` |
 | trustd | 50001/tcp | vRack |
-| kube-apiserver (CPs) | 6443/tcp | vRack |
+| kube-apiserver (CPs) | 6443/tcp | vRack + NetBird peers `10.254.0.0/15` |
 | etcd (CPs) | 2379–2380/tcp | vRack |
 | kubelet | 10250/tcp | vRack + pod CIDR `10.244.0.0/16` |
 | flannel VXLAN | 4789/udp | vRack |
@@ -51,7 +51,7 @@ Default-deny ingress on every node; anything not listed is dropped at the host. 
 
 Pod CIDR is allowed on `kubelet` and the metrics ports because pod-to-own-node-IP traffic skips flannel masquerade (a same-node scrape keeps its pod-IP source), which the vRack-only rule would otherwise drop.
 
-Operator `talosctl`/`kubectl` traffic needs no rule of its own: it arrives over the NetBird network route masqueraded to a routing peer's vRack IP, so the vRack allow on `apid` and `kube-apiserver` already covers it.
+Operator `talosctl`/`kubectl` traffic forwarded through the NetBird route arrives masqueraded to a routing peer's vRack IP, which the vRack allow covers. Traffic addressed to the elected routing peer's *own* vRack IP never traverses the forward path — it is delivered locally with the operator's NetBird source intact — so `apid` and `kube-apiserver` also allow the NetBird peer range. Without it the elected router is unreachable at its own IP; the matching NetBird-side accept is the `yucca → talos` peer policy, since resource policies only program forwarding.
 
 ## Kubernetes
 

@@ -138,7 +138,10 @@ resource "talos_machine_configuration_apply" "worker" {
           - 50000
         protocol: tcp
       ingress:
+        # Workers can be the elected vRack routing peer too; self-destined operator
+        # traffic skips masquerade (see the controlplane firewall comment).
         - subnet: ${var.private_network_cidr}
+        - subnet: 10.254.0.0/15
     EOT
     ,
     <<-EOT
