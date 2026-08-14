@@ -17,7 +17,7 @@ spec:
               containers:
                 - name: netbird
                   # renovate: datasource=docker depName=netbirdio/netbird
-                  image: netbirdio/netbird:0.76.2@sha256:597a57aaf7d92de724996ccd887c2090eda6eccdf733955eb7986ebb652a2560
+                  image: netbirdio/netbird:0.76.3@sha256:9f0ad6ae354359926adbd40735fc2cb0be75c786759492abb160a1170544970b
       target:
         kind: Deployment
         name: netbird-router
