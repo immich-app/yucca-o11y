@@ -42,7 +42,7 @@ variable "vrack_name" {
 
 variable "talos_version" {
   type    = string
-  default = "v1.13.5"
+  default = "v1.13.8"
 }
 
 # Control-plane (Public Cloud / KVM) schematic: qemu-guest-agent + netbird.

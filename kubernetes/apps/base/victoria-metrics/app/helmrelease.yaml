@@ -35,9 +35,9 @@ spec:
           resources:
             requests:
               cpu: 500m
-              memory: 2Gi
+              memory: 4Gi
             limits:
-              memory: 6Gi
+              memory: 16Gi
           topologySpreadConstraints:
             - maxSkew: 1
               topologyKey: kubernetes.io/hostname
@@ -57,11 +57,12 @@ spec:
           resources:
             requests:
               cpu: 500m
-              memory: 500Mi
-            limits:
               memory: 1Gi
+            limits:
+              memory: 8Gi
           extraArgs:
             dedup.minScrapeInterval: 20s
+            search.maxMemoryPerQuery: 1GB
           topologySpreadConstraints:
             - maxSkew: 1
               topologyKey: kubernetes.io/hostname
@@ -81,9 +82,9 @@ spec:
           resources:
             requests:
               cpu: 500m
-              memory: 200Mi
+              memory: 1Gi
             limits:
-              memory: 500Mi
+              memory: 4Gi
           extraArgs:
             replicationFactor: "2"
           topologySpreadConstraints:

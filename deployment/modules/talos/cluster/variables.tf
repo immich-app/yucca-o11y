@@ -43,6 +43,14 @@ variable "talos_version" {
   default = "v1.13.5"
 }
 
+# Must match what talosctl upgrade-k8s rolled out: an unpinned config renders the
+# provider's bundled default kubelet/control-plane images, so the next apply would
+# silently revert the upgrade. "" keeps the provider default (pre-pin behavior).
+variable "kubernetes_version" {
+  type    = string
+  default = ""
+}
+
 variable "controlplane_vip_offset" {
   type    = number
   default = 5

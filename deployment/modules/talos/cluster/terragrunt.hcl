@@ -73,6 +73,7 @@ dependency "netbird_cluster" {
 }
 
 inputs = {
+  kubernetes_version     = "1.36.2"
   controlplane_nodes     = dependency.ovh.outputs.controlplane_nodes
   worker_nodes           = dependency.ovh.outputs.worker_nodes
   private_network_cidr   = dependency.ovh.outputs.private_network_cidr
