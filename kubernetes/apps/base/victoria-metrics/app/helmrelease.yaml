@@ -59,9 +59,10 @@ spec:
               cpu: 500m
               memory: 500Mi
             limits:
-              memory: 1Gi
+              memory: 2Gi
           extraArgs:
             dedup.minScrapeInterval: 20s
+            search.maxMemoryPerQuery: 512MB
           topologySpreadConstraints:
             - maxSkew: 1
               topologyKey: kubernetes.io/hostname
