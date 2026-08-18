@@ -63,6 +63,7 @@ spec:
           extraArgs:
             dedup.minScrapeInterval: 20s
             search.maxMemoryPerQuery: 1GB
+            search.maxSamplesPerQuery: "1000000000000"
           topologySpreadConstraints:
             - maxSkew: 1
               topologyKey: kubernetes.io/hostname
