@@ -114,6 +114,10 @@ spec:
             - name: grafana-data
               emptyDir: {}
   httpRoute:
+    metadata:
+      annotations:
+        gatus.home-operations.com/endpoint: |-
+          path: /api/health
     spec:
       hostnames:
         - grafana.${CLUSTER_APP_DOMAIN}

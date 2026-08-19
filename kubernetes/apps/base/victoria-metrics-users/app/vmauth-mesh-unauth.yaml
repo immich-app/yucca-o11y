@@ -20,6 +20,9 @@ spec:
           app.kubernetes.io/instance: mesh-unauth
   selectAllByDefault: false
   httpRoute:
+    annotations:
+      gatus.home-operations.com/endpoint: |-
+        path: /health
     hostnames:
       - vmauth.${BOOTSTRAP_MESH_DOMAIN}
     parentRefs:

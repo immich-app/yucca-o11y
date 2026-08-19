@@ -167,6 +167,9 @@ spec:
         unauthorizedUserAccessSpec:
           disabled: true
         httpRoute:
+          annotations:
+            gatus.home-operations.com/endpoint: |-
+              path: /health
           hostnames:
             - vmauth.${CLUSTER_APP_DOMAIN}
           parentRefs:

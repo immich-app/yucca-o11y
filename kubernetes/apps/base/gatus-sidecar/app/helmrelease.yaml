@@ -1,0 +1,49 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: gatus-sidecar
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: gatus-sidecar
+  interval: 1h
+  values:
+    deploymentAnnotations:
+      reloader.stakater.com/auto: "true"
+    strategy:
+      type: RollingUpdate
+    sidecar:
+      gatewayNames:
+        - mesh
+        - envoy
+      kinds:
+        httproute:
+          enable: true
+          auto: true
+        service:
+          enable: false
+    config:
+      existingConfigMap: "{{ .Release.Name }}-configmap"
+      items:
+        - key: config.yaml
+          path: config.yaml
+    monitoring:
+      serviceMonitor:
+        enabled: true
+    httpRoute:
+      enabled: true
+      annotations:
+        gatus.home-operations.com/enabled: "false"
+      hostnames:
+        - gatus.${BOOTSTRAP_MESH_DOMAIN}
+      parentRefs:
+        - name: mesh
+          namespace: envoy-system
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 512Mi
