@@ -19,3 +19,29 @@ spec:
       target:
         kind: OCIRepository
         name: victoria-metrics
+    - patch: |-
+        apiVersion: helm.toolkit.fluxcd.io/v2
+        kind: HelmRelease
+        metadata:
+          name: victoria-metrics
+        spec:
+          values:
+            vmcluster:
+              spec:
+                vmstorage:
+                  resources:
+                    requests:
+                      memory: 8Gi
+                    limits:
+                      memory: 48Gi
+                vmselect:
+                  resources:
+                    requests:
+                      memory: 2Gi
+                    limits:
+                      memory: 16Gi
+                  extraArgs:
+                    search.maxMemoryPerQuery: 2GB
+      target:
+        kind: HelmRelease
+        name: victoria-metrics

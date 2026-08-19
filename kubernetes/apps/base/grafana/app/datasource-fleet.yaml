@@ -17,3 +17,5 @@ spec:
     access: proxy
     isDefault: false
     url: http://vmselect-victoria-metrics.o11y.svc.cluster.local:8481/select/0/prometheus
+    jsonData:
+      timeout: 120
