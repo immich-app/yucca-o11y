@@ -1,0 +1,12 @@
+---
+metrics: true
+
+storage:
+  type: memory
+
+ui:
+  title: Status | o11y
+  header: o11y
+
+web:
+  port: ${GATUS_WEB_PORT}
