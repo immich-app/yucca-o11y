@@ -15,3 +15,5 @@ resources:
   - ./namespace.yaml
 components:
   - ../../../components/replacements
+patches:
+  - path: patches/victoria-metrics.yaml
