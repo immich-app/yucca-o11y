@@ -39,9 +39,9 @@ spec:
                     requests:
                       memory: 2Gi
                     limits:
-                      memory: 16Gi
+                      memory: 32Gi
                   extraArgs:
-                    search.maxMemoryPerQuery: 2GB
+                    search.maxConcurrentRequests: "8"
       target:
         kind: HelmRelease
         name: victoria-metrics
