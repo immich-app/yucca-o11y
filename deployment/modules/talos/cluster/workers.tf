@@ -197,6 +197,21 @@ resource "talos_machine_configuration_apply" "worker" {
         - subnet: 10.108.0.0/14
     EOT
     ,
+    # WireGuard hostPort of the netbird-router pods (51820 is the node peer's).
+    # Mesh peers connect from arbitrary WAN addresses; WireGuard authenticates,
+    # so unmatched packets are dropped by the pod, not the firewall.
+    <<-EOT
+      apiVersion: v1alpha1
+      kind: NetworkRuleConfig
+      name: netbird-router-wg
+      portSelector:
+        ports:
+          - 51821
+        protocol: udp
+      ingress:
+        - subnet: 0.0.0.0/0
+    EOT
+    ,
     # Spegel peer-to-peer registry. Peers fetch image blobs from each other on
     # the registry host port (29999); 30021 is the node-port fallback mirror
     # target. Intra-cluster only — the libp2p router (5001) and metrics ride the
