@@ -55,6 +55,54 @@ spec:
 
 The bundle's CRs carry sane defaults (`instanceSelector: {dashboards: grafana}`, `folderRef: <project>`, `resyncPeriod`), so o11y applies them as-is. The GHCR package must be public (or set `secretRef` on the OCIRepository), and source-controller needs sigstore egress for `verify`.
 
+### Model A from a private registry
+
+yucca's bundle is a public GHCR package, so its `OCIRepository` needs no
+credential. A project publishing to its own forge — fmeet ships to
+`gitlab.futo.org:5050`, where its GitLab project lives — will be pulling from a
+private one, and there is no way around it: GitLab's
+`container_registry_access_level` takes only `disabled` / `private` / `enabled`,
+where `enabled` still means "everyone **with access**". Of all the project
+feature access levels, only `pages_access_level` accepts `public`, so a private
+project cannot expose a publicly-pullable registry. An anonymous pull scope is
+refused at `/jwt/auth` outright.
+
+Two additions, then:
+
+- **A read-only pull credential.** A GitLab *project deploy token* scoped to
+  `read_registry` is the least it can be — pull on that one project's registry,
+  nothing else, revocable without touching an account. Its username and password
+  go into 1Password as **two separate manual secrets**, each holding its value in
+  the item's `password` field — the manual-secrets module only creates
+  password-category items, so a two-part credential is split rather than packed
+  into extra fields on one item.
+- **An ExternalSecret rendering it as a `dockerconfigjson`**, in `flux-system`,
+  because that is where the `OCIRepository` lives and a `secretRef` resolves in
+  its own namespace. It pulls the two items by name and templates the docker
+  config around them. See `base/fmeet-o11y/externalsecret.yaml`.
+
+Both items go in the global `o11y_tf` vault, read through the `onepassword`
+store. Not `shared_tf` — that is for credentials more than one project
+consumes, and this cluster is the only thing that pulls the bundle; and not a
+per-environment o11y vault, because there is one fmeet project registry and so
+one token, the same in every environment. They are declared in core-infra-tf's
+`o11y-manual-secrets` module and filled in by hand in `o11y_tf_manual`.
+
+That `onepassword` ClusterSecretStore is added here: the cluster reached
+`shared_tf` and the per-environment o11y vaults, but nothing had yet needed the
+global o11y one, whose other items are all consumed by terragrunt rather than
+from inside the cluster.
+
+The one detail that bites: the key under `auths` must match the
+`OCIRepository`'s pull host **exactly**, port and all
+(`gitlab.futo.org:5050`, not `gitlab.futo.org`). A mismatch surfaces as an
+authentication failure rather than as anything pointing at the cause.
+
+`verify:` is also omitted for such a bundle unless the publisher signs with a
+key pair. Keyless cosign mints its certificate from public Fulcio against the
+CI's OIDC identity, and Fulcio accepts `gitlab.com` but not a self-hosted
+GitLab — so the keyless block above cannot simply be copied across.
+
 ## Model B: authored in this repo (o11y's own)
 
 For this cluster's own dashboards and alerts, they live under `kubernetes/apps/base/grafana/app/` and deploy with the grafana Flux Kustomization:
