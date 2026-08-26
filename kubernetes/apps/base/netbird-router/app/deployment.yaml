@@ -10,6 +10,11 @@ metadata:
     app.kubernetes.io/name: netbird-router
 spec:
   replicas: 2
+  # A surge pod can never bind hostPort 51821 on a node that still runs an old replica.
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: netbird-router
