@@ -1,7 +1,7 @@
 ---
 # In-cluster NetBird routing peer: routes mesh peers to the Envoy gateway VIP and serves
 # NetBird DNS to the cluster (CoreDNS forwards futo.network to the netbird-dns Service).
-# NET_ADMIN + userspace WireGuard — no tun/privileged.
+# NET_ADMIN + userspace WireGuard, no tun/privileged.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -10,6 +10,11 @@ metadata:
     app.kubernetes.io/name: netbird-router
 spec:
   replicas: 2
+  # A surge pod can never bind hostPort 51821 on a node that still runs an old replica.
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: netbird-router
@@ -18,7 +23,7 @@ spec:
       labels:
         app.kubernetes.io/name: netbird-router
     spec:
-      # Public upstreams: NetBird forwards non-mesh names to the pod's original resolvers —
+      # Public upstreams: NetBird forwards non-mesh names to the pod's original resolvers;
       # with cluster DNS, undistributed futo.network names would loop back through CoreDNS.
       dnsPolicy: None
       dnsConfig:
@@ -36,6 +41,19 @@ spec:
         - name: netbird
           # renovate: datasource=docker depName=netbirdio/netbird
           image: netbirdio/netbird:0.76.3@sha256:9f0ad6ae354359926adbd40735fc2cb0be75c786759492abb160a1170544970b
+          # The flannel masquerade randomizes source ports, so ICE never finds a working
+          # pair and every mesh connection to the routers falls back to NetBird's relays.
+          # Advertise the node's public IP (egress and node IP are the same address;
+          # kubelet nodeIP is vRack-pinned, so the downward API cannot supply it) at the
+          # fixed WireGuard port that hostPort maps in. Discovery failure leaves the map
+          # unset and the peer on the relay path, same as before.
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              ip="$(wget -qO- -T 5 https://one.one.one.one/cdn-cgi/trace | sed -n 's/^ip=//p')" || true
+              [ -n "$ip" ] && export NB_EXTERNAL_IP_MAP="$ip"
+              exec /usr/local/bin/netbird-entrypoint.sh
           env:
             - name: NB_SETUP_KEY
               valueFrom:
@@ -47,6 +65,9 @@ spec:
             # Bind pod-wide (default is the dynamic NetBird IP) so the Service can front it.
             - name: NB_DNS_RESOLVER_ADDRESS
               value: 0.0.0.0:53
+            # 51820 belongs to the node's own NetBird (Talos extension service).
+            - name: NB_WIREGUARD_PORT
+              value: "51821"
           ports:
             - name: dns-udp
               containerPort: 53
@@ -54,6 +75,11 @@ spec:
             - name: dns-tcp
               containerPort: 53
               protocol: TCP
+            # Ingress is allowed by the Talos netbird-router-wg firewall rule (talos module).
+            - name: wireguard
+              containerPort: 51821
+              hostPort: 51821
+              protocol: UDP
           startupProbe:
             exec:
               command: [netbird, status, --check, startup]

@@ -85,6 +85,11 @@
       "matchPackageNames": ["ghcr.io/immich-app/yucca/o11y-manifests"],
       "matchUpdateTypes": ["pinDigest"],
       "enabled": false
+    },
+    {
+      "description": "flate v0.4.13+ deadlocks the Kustomization graph and a mise-only bump skips the Flate matrix that would catch it; see the pin note in .mise/config.toml (#214)",
+      "matchPackageNames": ["/home-operations\\/flate/"],
+      "allowedVersions": "<0.4.13"
     }
   ]
 }
