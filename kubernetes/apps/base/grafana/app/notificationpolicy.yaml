@@ -31,3 +31,6 @@ spec:
       - receiver: discord
         object_matchers:
           - ["grafana_folder", "=", "o11y"]
+      - receiver: discord
+        object_matchers:
+          - ["grafana_folder", "=", "fmeet"]
