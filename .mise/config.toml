@@ -22,7 +22,7 @@ yq = "4.53.6"
 markdownlint-cli2 = "0.23.2"
 # pinned: flate v0.4.13+ infers path-overlap deps across sources; our OCIRepository
 # path ./ gives every Kustomization an edge onto yucca-o11y and cycles the graph (#214)
-"github:home-operations/flate" = "v0.4.12"
+"github:home-operations/flate" = "v0.5.1"
 
 [env]
 TF_VAR_dist_dir = "{{config_root}}/dist"
