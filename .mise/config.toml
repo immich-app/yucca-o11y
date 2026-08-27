@@ -17,7 +17,7 @@ talosctl = "1.13.8"
 helm = "4.2.4"
 "jq" = "1.8.2"
 gh = "2.97.0"
-yq = "4.53.3"
+yq = "4.53.6"
 "kustomize" = "5.8.1"
 markdownlint-cli2 = "0.23.2"
 # pinned: flate v0.4.13+ infers path-overlap deps across sources; our OCIRepository
