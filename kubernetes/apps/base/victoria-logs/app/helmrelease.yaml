@@ -52,6 +52,8 @@ spec:
         enabled: true
 
     vlselect:
+      extraArgs:
+        search.allowPartialResponse: "true"
       resources:
         requests:
           cpu: 100m
