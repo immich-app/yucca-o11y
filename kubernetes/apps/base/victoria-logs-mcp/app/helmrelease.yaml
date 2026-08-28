@@ -1,0 +1,28 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: victoria-logs-mcp
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: victoria-logs-mcp
+  interval: 1h
+  values:
+    vl:
+      entrypoint: http://victoria-logs-vlselect.o11y.svc.cluster.local:9471
+    route:
+      enabled: true
+      parentRefs:
+        - name: mesh
+          namespace: envoy-system
+      hostnames:
+        - vlmcp.${BOOTSTRAP_MESH_DOMAIN}
+    scrape:
+      enabled: true
+    resources:
+      requests:
+        cpu: 10m
+      limits:
+        memory: 1Gi
