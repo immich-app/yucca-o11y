@@ -23,6 +23,15 @@ Prefer the mesh path for clusters already joined to the FUTO NetBird mesh: there
 | Mesh gateway | `vmauth.staging.o11y.futo.network` | `vmauth.o11y.futo.network` |
 | Public gateway | `vmauth.staging.futostatus.com` | `vmauth.futostatus.com` |
 
+Both gateway URLs are also published to the per-environment shared 1Password vault (`shared_tf_staging` / `shared_tf_prod`), alongside the bearer token, so a consuming cluster can pull its endpoint from the vault instead of hardcoding the hostname:
+
+| Item | Value (field `password`) |
+|---|---|
+| `O11Y_VICTORIAMETRICS_VMAUTH_MESH_URL` | `https://vmauth.<mesh-domain>` |
+| `O11Y_VICTORIAMETRICS_VMAUTH_PUBLIC_URL` | `https://vmauth.<app-domain>` |
+
+The items hold the bare origin (scheme and host, no path); append the insert or select path for your shipper. They are Terraform-managed by `deployment/modules/victoria-metrics/cluster`; the token item is managed by hand.
+
 The metrics remote-write path is the same on every host:
 
 ```text
@@ -63,7 +72,7 @@ spec:
 
 ## Option B: over the internet
 
-The public gateway rejects anonymous requests, so a **shared bearer token** is required. It lives in 1Password as item `O11Y_VICTORIAMETRICS_VMAUTH_PASSWORD` (field `password`). Clusters that share the vault can pull it with an ExternalSecret; otherwise create the Secret by hand. Rotating the token for everyone is a single edit to that vault item.
+The public gateway rejects anonymous requests, so a **shared bearer token** is required. It lives in 1Password as item `O11Y_VICTORIAMETRICS_VMAUTH_PASSWORD` (field `password`), in the same vault as the gateway URL items above. Clusters that share the vault can pull it with an ExternalSecret; otherwise create the Secret by hand. Rotating the token for everyone is a single edit to that vault item.
 
 ```yaml
 apiVersion: operator.victoriametrics.com/v1beta1

@@ -1,0 +1,14 @@
+[tasks.init]
+extends = "tg:init"
+
+[tasks.plan]
+extends = "tg:plan"
+
+[tasks.apply]
+extends = "tg:apply"
+
+[tasks.destroy]
+extends = "tg:destroy"
+
+[tasks.output]
+extends = "tg:output"
