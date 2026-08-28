@@ -11,8 +11,10 @@ resources:
   - ../../base/grafana
   - ../../base/victoria-metrics
   - ../../base/victoria-metrics-users
+  - ../../base/victoria-metrics-mcp
   - ../../base/victoria-logs
   - ../../base/victoria-logs-collector
+  - ../../base/victoria-logs-mcp
   - ../../base/gatus-sidecar
   - ./namespace.yaml
 components:

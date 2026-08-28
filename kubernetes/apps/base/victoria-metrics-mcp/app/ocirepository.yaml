@@ -1,0 +1,15 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/source.toolkit.fluxcd.io/ocirepository_v1.json
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: victoria-metrics-mcp
+spec:
+  interval: 15m
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
+  ref:
+    tag: 0.3.0
+    digest: sha256:f71ad15bad58c9dbafb222ad970e24cd5fa4b334dc0dc85b57ca33447e938c10
+  url: oci://ghcr.io/victoriametrics/helm-charts/victoria-metrics-mcp
