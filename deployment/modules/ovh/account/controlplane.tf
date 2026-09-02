@@ -38,6 +38,7 @@ resource "ovh_cloud_project_instance" "controlplane" {
 
   lifecycle {
     # boot_from is consumed at create only; Talos upgrades go via machine.install.image.
-    ignore_changes = [boot_from]
+    ignore_changes  = [boot_from]
+    prevent_destroy = true
   }
 }

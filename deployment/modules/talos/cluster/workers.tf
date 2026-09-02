@@ -12,6 +12,7 @@ resource "talos_machine_configuration_apply" "worker" {
   client_configuration        = talos_machine_secrets.this.client_configuration
   machine_configuration_input = data.talos_machine_configuration.worker.machine_configuration
   node                        = local.worker_endpoint_ips[each.key]
+  apply_mode                  = var.apply_mode
 
   on_destroy = {
     reboot   = true
