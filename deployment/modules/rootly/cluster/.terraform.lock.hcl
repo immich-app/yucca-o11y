@@ -51,5 +51,6 @@ provider "registry.opentofu.org/rootlyhq/rootly" {
     "zh:cecfff40cc8bf4a6fcad9ce57b9d64e28c85071b29d8fb4affbb25048924caf7",
     "zh:d358d1bb4a91503e4bc2e0b1e044253aecf93203e3c1454d03b7cfdeb040d52a",
     "zh:d7f076da3d4fcad6fafecc287b2b2d1755ee25eaadc9b9e100a6560b16b44d3a",
+    "zh:f569b65999264a9416862bca5cd2a6177d94ccb0424f3a4ef424428912b9cb3c",
   ]
 }
