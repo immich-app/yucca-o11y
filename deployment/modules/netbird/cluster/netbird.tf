@@ -173,7 +173,13 @@ resource "netbird_dns_zone" "mesh" {
   distribution_groups = concat(
     [data.netbird_group.yucca.id, netbird_group.k8s_routing_peers.id],
     var.env == "production" ? [data.netbird_group.yucca_ceph[0].id] : [],
+    var.env == "production" ? [data.netbird_group.fip_k8s_routing_peers[0].id] : [],
   )
+}
+
+data "netbird_group" "fip_k8s_routing_peers" {
+  count = var.env == "production" ? 1 : 0
+  name  = "fip-prod-k8s-routing-peers"
 }
 
 # Wildcard A -> the gateway VIP (HA is the >=2 routing Pods, not multiple records).
