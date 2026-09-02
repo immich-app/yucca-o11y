@@ -73,16 +73,18 @@ dependency "netbird_cluster" {
 }
 
 inputs = {
-  kubernetes_version     = "1.36.2"
-  controlplane_nodes     = dependency.ovh.outputs.controlplane_nodes
-  worker_nodes           = dependency.ovh.outputs.worker_nodes
-  private_network_cidr   = dependency.ovh.outputs.private_network_cidr
+  kubernetes_version      = "1.36.2"
+  controlplane_nodes      = dependency.ovh.outputs.controlplane_nodes
+  worker_nodes            = dependency.ovh.outputs.worker_nodes
+  private_network_cidr    = dependency.ovh.outputs.private_network_cidr
   talos_installer_images  = dependency.ovh.outputs.talos_installer_images
   worker_data_disk_match  = local.worker_data_disk_match
   worker_data_disk2_match = local.worker_data_disk2_match
   worker_nics             = local.worker_nics
   netbird_setup_key       = dependency.netbird_cluster.outputs.talos_setup_key
   mesh_dns_zone           = dependency.netbird_cluster.outputs.mesh_dns_zone
+  # CI applies on merge; production never reboots unattended (see variables.tf).
+  apply_mode = local.env == "production" ? "staged_if_needing_reboot" : "auto"
 }
 
 generate "backend" {

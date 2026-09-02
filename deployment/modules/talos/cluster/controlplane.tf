@@ -12,6 +12,7 @@ resource "talos_machine_configuration_apply" "controlplane" {
   client_configuration        = talos_machine_secrets.this.client_configuration
   machine_configuration_input = data.talos_machine_configuration.controlplane.machine_configuration
   node                        = local.controlplane_endpoint_ips[each.key]
+  apply_mode                  = var.apply_mode
 
   on_destroy = {
     reboot   = true

@@ -25,7 +25,11 @@ locals {
   operator_endpoint = "https://${local.bootstrap_node.private_ip}:6443"
 }
 
-resource "talos_machine_secrets" "this" {}
+resource "talos_machine_secrets" "this" {
+  lifecycle {
+    prevent_destroy = true
+  }
+}
 
 data "talos_client_configuration" "this" {
   cluster_name         = local.cluster_name

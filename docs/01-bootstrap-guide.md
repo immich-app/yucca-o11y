@@ -117,6 +117,11 @@ talosctl -n 10.150.200.10 health   # any CP private IP; the talosconfig also lis
 | Lint docs | `mise run //:md:lint` |
 | Fetch kubeconfig / talosconfig | `mise run //deployment/modules/talos/cluster:kubeconfig` / `mise run //deployment/modules/talos/cluster:talosconfig` (see [Cluster access](#cluster-access)) |
 
+## Apply guardrails
+
+* **Production never reboots unattended.** The production Talos module applies with `staged_if_needing_reboot`: a machine-config change that needs a reboot is written to the node but stays inactive until the node reboots (the plan shows `resolved_apply_mode = "staged"` for those nodes). Roll them yourself, one at a time, checking `talosctl health` between nodes and doing the elected NetBird routing peer last (rebooting it drops the vRack route until another peer is elected). Staging applies with `auto`, so it reboots on its own and proves the change first.
+* **Servers cannot be destroyed by an apply.** The OVH control-plane instances, the bare-metal workers, and the Talos machine secrets carry `prevent_destroy`; a plan that would replace or delete one fails instead. Tearing one down deliberately means removing that lifecycle rule in the same change.
+
 ## Tooling
 
 * **OpenTofu** + **Terragrunt** for IaC; **mise** drives tool versions and task wrappers. Version pins live in `.mise/config.toml` and each module's lock file.

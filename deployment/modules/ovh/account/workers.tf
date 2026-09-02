@@ -79,5 +79,6 @@ resource "ovh_dedicated_server" "worker" {
       efi_bootloader_path,
       customizations,
     ]
+    prevent_destroy = true
   }
 }

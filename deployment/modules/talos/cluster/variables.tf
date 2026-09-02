@@ -92,6 +92,17 @@ variable "worker_nics" {
   }))
 }
 
+# How machine-config changes reach the nodes. "auto" lets the provider reboot a
+# node whenever the change needs it: every node at once, since the applies are
+# not ordered. "staged_if_needing_reboot" dry-runs first and stages any
+# reboot-requiring change instead, so the node keeps its running config until an
+# operator reboots it; the dry-run needs the node reachable at plan time and
+# falls back to "auto" when it isn't.
+variable "apply_mode" {
+  type    = string
+  default = "auto"
+}
+
 # True only during initial bring-up of a brand-new env, before the Netbird
 # extension has registered any node. Drop back to false once each node is on
 # the netbird mesh, so future applies go via the vRack and the ingress firewall
