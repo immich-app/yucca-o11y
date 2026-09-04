@@ -1,4 +1,17 @@
 ---
+# Public half of the key harbor-o11y signs with; from that repo's cosign.pub.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: harbor-o11y-cosign
+  namespace: flux-system
+stringData:
+  cosign.pub: |
+    -----BEGIN PUBLIC KEY-----
+    MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEVBC6kOWJTR2oEeDWF1VeoH1nlXhb
+    ipMDc2F6HXR5U0dpA8IdRsoXy9EibuDzf/yQd8Q2ThgLgi5WFsQZV5GYtQ==
+    -----END PUBLIC KEY-----
+---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/source.toolkit.fluxcd.io/ocirepository_v1.json
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
