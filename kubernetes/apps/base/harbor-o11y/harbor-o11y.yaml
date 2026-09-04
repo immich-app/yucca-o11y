@@ -1,0 +1,33 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/source.toolkit.fluxcd.io/ocirepository_v1.json
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: harbor-o11y
+  namespace: flux-system
+spec:
+  interval: 1m
+  url: oci://gitlab.futo.org:5050/harbor/harbor-o11y/o11y-manifests
+  ref:
+    tag: master
+  verify:
+    provider: cosign
+    secretRef:
+      name: harbor-o11y-cosign
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: harbor-o11y
+  namespace: flux-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: OCIRepository
+    name: harbor-o11y
+  path: ./
+  patches: []
+  prune: true
+  dependsOn:
+    - name: grafana-operator
