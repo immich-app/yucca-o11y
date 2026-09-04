@@ -1,0 +1,20 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: grafana
+  namespace: flux-system
+spec:
+  patches:
+    - patch: |-
+        apiVersion: grafana.integreatly.org/v1beta1
+        kind: Grafana
+        metadata:
+          name: grafana
+        spec:
+          config:
+            auth.generic_oauth:
+              role_attribute_path: role || 'Editor'
+      target:
+        kind: Grafana
+        name: grafana
