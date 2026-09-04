@@ -21,4 +21,5 @@ resources:
 components:
   - ../../../components/replacements
 patches:
+  - path: patches/grafana.yaml
   - path: patches/victoria-metrics.yaml
