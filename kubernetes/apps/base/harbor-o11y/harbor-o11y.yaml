@@ -23,6 +23,7 @@ spec:
   url: oci://gitlab.futo.org:5050/harbor/harbor-o11y/o11y-manifests
   ref:
     tag: master
+    digest: sha256:3f412cf2fc89d8bfe53bfd9549c14d09877d2fb7a7bd804e65b68b3706b66160
   verify:
     provider: cosign
     secretRef:
