@@ -1,0 +1,34 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/source.toolkit.fluxcd.io/ocirepository_v1.json
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: fip-o11y
+  namespace: flux-system
+spec:
+  interval: 1m
+  url: oci://ghcr.io/immich-app/futo-internal-platform/o11y-manifests
+  ref:
+    tag: main
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://token\\.actions\\.githubusercontent\\.com$"
+        subject: "^https://github\\.com/immich-app/futo-internal-platform/\\.github/workflows/o11y\\.yml@refs/heads/main$"
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: fip-o11y
+  namespace: flux-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: OCIRepository
+    name: fip-o11y
+  path: ./
+  patches: []
+  prune: true
+  dependsOn:
+    - name: grafana-operator
