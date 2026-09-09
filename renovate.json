@@ -90,12 +90,13 @@
       "enabled": false
     },
     {
-      "description": "Automerge flate updates",
+      "description": "Group the flate mise dep and GitHub Action into one PR; both release together, so wait until both updates are pending",
       "matchPackageNames": [
         "home-operations/flate",
         "github:home-operations/flate"
       ],
-      "automerge": true
+      "groupName": "flate",
+      "minimumGroupSize": 2
     }
   ]
 }
