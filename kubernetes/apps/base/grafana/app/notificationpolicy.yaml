@@ -37,3 +37,6 @@ spec:
       - receiver: discord
         object_matchers:
           - ["grafana_folder", "=", "harbor"]
+      - receiver: discord
+        object_matchers:
+          - ["grafana_folder", "=", "fip"]

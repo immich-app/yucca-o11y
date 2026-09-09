@@ -6,6 +6,7 @@ resources:
   - ../../base/yucca-o11y
   - ../../base/fmeet-o11y
   - ../../base/harbor-o11y
+  - ../../base/fip-o11y
   - ../../base/prometheus-operator-crds
   - ../../base/grafana-operator
   - ../../base/grafana-postgres

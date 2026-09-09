@@ -11,6 +11,7 @@ Each project gets a Grafana **folder** named for it, and both its dashboards and
 | `yucca` | the yucca cluster/product | yucca's signed OCI bundle (Model A) |
 | `o11y` | this cluster's own dashboards/alerts | authored in this repo (Model B) |
 | `harbor` | the Harbor clusters (harbor-infra-prod/staging) | harbor-o11y's key-signed OCI bundle (Model A, public GitLab project) |
+| `fip` | the FUTO internal platform cluster (azad) | futo-internal-platform's signed OCI bundle (Model A) |
 
 Add a project, add a folder. That folder is the unit you scope dashboards, alerts, and (eventually) permissions to.
 
