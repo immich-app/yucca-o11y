@@ -220,29 +220,29 @@ url = "https://github.com/opentofu/opentofu/releases/download/v1.12.6/tofu_1.12.
 url_api = "https://api.github.com/repos/opentofu/opentofu/releases/assets/520762655"
 
 [[tools.pipx]]
-version = "1.16.7"
+version = "1.17.2"
 backend = "aqua:pypa/pipx"
-specifiers = ["1.16.7"]
+specifiers = ["1.17.2"]
 
 [tools.pipx."platforms.linux-arm64"]
-checksum = "sha256:302633d0061e0ab4269257501cbe1338cde5f00f22f121543706624aada0145e"
-url = "https://github.com/pypa/pipx/releases/download/1.16.7/pipx.pyz"
-url_api = "https://api.github.com/repos/pypa/pipx/releases/assets/513588802"
+checksum = "sha256:31d517b7afebf55d3b597d613c735389068a973a54712a50641845cf2cb2bb1d"
+url = "https://github.com/pypa/pipx/releases/download/1.17.2/pipx.pyz"
+url_api = "https://api.github.com/repos/pypa/pipx/releases/assets/540192956"
 
 [tools.pipx."platforms.linux-x64"]
-checksum = "sha256:302633d0061e0ab4269257501cbe1338cde5f00f22f121543706624aada0145e"
-url = "https://github.com/pypa/pipx/releases/download/1.16.7/pipx.pyz"
-url_api = "https://api.github.com/repos/pypa/pipx/releases/assets/513588802"
+checksum = "sha256:31d517b7afebf55d3b597d613c735389068a973a54712a50641845cf2cb2bb1d"
+url = "https://github.com/pypa/pipx/releases/download/1.17.2/pipx.pyz"
+url_api = "https://api.github.com/repos/pypa/pipx/releases/assets/540192956"
 
 [tools.pipx."platforms.macos-arm64"]
-checksum = "sha256:302633d0061e0ab4269257501cbe1338cde5f00f22f121543706624aada0145e"
-url = "https://github.com/pypa/pipx/releases/download/1.16.7/pipx.pyz"
-url_api = "https://api.github.com/repos/pypa/pipx/releases/assets/513588802"
+checksum = "sha256:31d517b7afebf55d3b597d613c735389068a973a54712a50641845cf2cb2bb1d"
+url = "https://github.com/pypa/pipx/releases/download/1.17.2/pipx.pyz"
+url_api = "https://api.github.com/repos/pypa/pipx/releases/assets/540192956"
 
 [tools.pipx."platforms.macos-x64"]
-checksum = "sha256:302633d0061e0ab4269257501cbe1338cde5f00f22f121543706624aada0145e"
-url = "https://github.com/pypa/pipx/releases/download/1.16.7/pipx.pyz"
-url_api = "https://api.github.com/repos/pypa/pipx/releases/assets/513588802"
+checksum = "sha256:31d517b7afebf55d3b597d613c735389068a973a54712a50641845cf2cb2bb1d"
+url = "https://github.com/pypa/pipx/releases/download/1.17.2/pipx.pyz"
+url_api = "https://api.github.com/repos/pypa/pipx/releases/assets/540192956"
 
 [[tools."pipx:python-openstackclient"]]
 version = "10.3.0"
