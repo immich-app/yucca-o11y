@@ -14,8 +14,8 @@ spec:
         spec:
           ref:
             # renovate: datasource=docker depName=ghcr.io/openebs/charts/openebs
-            tag: 4.5.1
-            digest: sha256:b74c651822ed1811360936bec24d2ee0fc073c1def1098e2399fd7de76c63dca
+            tag: 4.6.1
+            digest: sha256:7e22babd055db1058f4325e6e13230eb75945f3623ceb71b4d2060ffab4ba379
       target:
         kind: OCIRepository
         name: openebs
