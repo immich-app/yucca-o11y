@@ -85,7 +85,7 @@
       "matchPackageNames": [
         "ghcr.io/immich-app/yucca/o11y-manifests",
         "ghcr.io/immich-app/futo-internal-platform/o11y-manifests",
-        "gitlab.futo.org:5050/harbor/harbor-o11y/o11y-manifests"
+        "registry.futo.org/harbor/o11y-manifests"
       ],
       "matchUpdateTypes": ["pinDigest"],
       "enabled": false
