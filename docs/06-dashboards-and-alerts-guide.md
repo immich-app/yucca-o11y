@@ -10,7 +10,7 @@ Each project gets a Grafana **folder** named for it, and both its dashboards and
 | --- | --- | --- |
 | `yucca` | the yucca cluster/product | yucca's signed OCI bundle (Model A) |
 | `o11y` | this cluster's own dashboards/alerts | authored in this repo (Model B) |
-| `harbor` | the Harbor clusters (harbor-infra-prod/staging) | harbor-o11y's key-signed OCI bundle (Model A, public GitLab project) |
+| `harbor` | the Harbor clusters (harbor-infra-prod/staging) | harbor-o11y's key-signed OCI bundle (Model A, anonymous-pull registry) |
 | `fip` | the FUTO internal platform cluster (azad) | futo-internal-platform's signed OCI bundle (Model A) |
 
 Add a project, add a folder. That folder is the unit you scope dashboards, alerts, and (eventually) permissions to.
@@ -100,8 +100,10 @@ The one detail that bites: the key under `auths` must match the
 (`gitlab.futo.org:5050`, not `gitlab.futo.org`). A mismatch surfaces as an
 authentication failure rather than as anything pointing at the cause.
 
-A *public* GitLab project sidesteps all of this: its registry is anonymously
-pullable, so the `OCIRepository` needs no `secretRef` (harbor-o11y does this).
+An anonymously pullable registry sidesteps all of this, so the
+`OCIRepository` needs no `secretRef` (harbor-o11y does this: its bundle lives
+at `registry.futo.org/harbor/o11y-manifests`, where `harbor/` allows
+anonymous reads).
 
 `verify:` is also omitted for such a bundle unless the publisher signs with a
 key pair, as harbor-o11y does: its CI signs the digest with a key its
@@ -109,7 +111,7 @@ infrastructure terraform mints, the public half is committed in that repo as
 `cosign.pub`, and `base/harbor-o11y` carries it as the `harbor-o11y-cosign`
 Secret referenced from `verify.secretRef`. Keyless cosign mints its certificate from public Fulcio against the
 CI's OIDC identity, and Fulcio accepts `gitlab.com` but not a self-hosted
-GitLab — so the keyless block above cannot simply be copied across.
+forge — so the keyless block above cannot simply be copied across.
 
 ## Model B: authored in this repo (o11y's own)
 
