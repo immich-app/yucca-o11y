@@ -14,8 +14,8 @@ spec:
         spec:
           ref:
             # renovate: datasource=docker depName=ghcr.io/victoriametrics/helm-charts/victoria-metrics-k8s-stack
-            tag: 0.90.2
-            digest: sha256:c8891917df7d3605f5930ba657560e9bdaf818a997fcd567286e06eb2cdd25fd
+            tag: 0.92.1
+            digest: sha256:c3284c7424216db704a9fb3bc92411aab2be487b2db93bbe61f9e31558f8cab7
       target:
         kind: OCIRepository
         name: victoria-metrics
