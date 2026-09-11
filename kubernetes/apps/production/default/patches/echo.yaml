@@ -14,8 +14,8 @@ spec:
         spec:
           ref:
             # renovate: datasource=docker depName=ghcr.io/home-operations/charts/echo
-            tag: 0.2.2
-            digest: sha256:d9459d98127252635791dd85fdfb0479d64b8501c4c9dd935a47dc41d141c4fd
+            tag: 0.2.5
+            digest: sha256:571a560118ecccbabf4ecedbb5feda549423405a54f759f9511163dec2825454
       target:
         kind: OCIRepository
         name: echo
