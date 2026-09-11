@@ -14,8 +14,8 @@ spec:
         spec:
           ref:
             # renovate: datasource=docker depName=mirror.gcr.io/envoyproxy/gateway-helm
-            tag: v1.8.3
-            digest: sha256:cfb34ff4266c87a394cd6be5c13607a2dd47083aef771368302eaeaa99c4a0a9
+            tag: v1.9.1
+            digest: sha256:91bae9aedb91ab34731e987afe01a3ccf454393015abeca705eea8ee15553e86
       target:
         kind: OCIRepository
         name: envoy-gateway
