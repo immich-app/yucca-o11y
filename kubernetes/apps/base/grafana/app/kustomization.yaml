@@ -13,4 +13,4 @@ resources:
   - ./servicemonitor.yaml
   - ./alerts-o11y.yaml
   - ./alerts-fleet.yaml
-  - ./dashboards
+  - ./dashboards.yaml
