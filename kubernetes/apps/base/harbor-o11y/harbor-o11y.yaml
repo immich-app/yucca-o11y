@@ -1,5 +1,6 @@
 ---
-# Public half of the key harbor-o11y signs with; from that repo's cosign.pub.
+# Public half of the key harbor-o11y signs with (shared with harbor/harbor's
+# images and charts); from that repo's cosign.pub.
 apiVersion: v1
 kind: Secret
 metadata:
@@ -8,8 +9,8 @@ metadata:
 stringData:
   cosign.pub: |
     -----BEGIN PUBLIC KEY-----
-    MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEVBC6kOWJTR2oEeDWF1VeoH1nlXhb
-    ipMDc2F6HXR5U0dpA8IdRsoXy9EibuDzf/yQd8Q2ThgLgi5WFsQZV5GYtQ==
+    MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEj+mHYnznJLicUdv/Dm/cBptEl4AS
+    10Fyp4Tqmq6BIkqR6+MSz6Ca1GGe8/zAZSAmd8CXRb4dmwoOwMM129YDFg==
     -----END PUBLIC KEY-----
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/source.toolkit.fluxcd.io/ocirepository_v1.json
@@ -20,7 +21,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 1m
-  url: oci://gitlab.futo.org:5050/harbor/harbor-o11y/o11y-manifests
+  url: oci://registry.futo.org/harbor/o11y-manifests
   ref:
     tag: master
   verify:
