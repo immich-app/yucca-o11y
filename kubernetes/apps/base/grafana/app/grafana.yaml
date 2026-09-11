@@ -29,7 +29,7 @@ spec:
       auth_url: https://auth.internal.futo.org/oauth/v2/authorize
       token_url: https://auth.internal.futo.org/oauth/v2/token
       api_url: https://auth.internal.futo.org/oidc/v1/userinfo
-      role_attribute_path: role
+      role_attribute_path: role || 'Editor'
       allow_assign_grafana_admin: "true"
       auto_login: "true"
     log:

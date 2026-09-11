@@ -28,7 +28,19 @@ spec:
     kind: OCIRepository
     name: yucca-o11y
   path: ./
-  patches: []
+  patches:
+    - target:
+        kind: GrafanaFolder
+      patch: |-
+        - op: add
+          path: /spec/permissions
+          value: |
+            {
+              "items": [
+                {"role": "Viewer", "permission": 1},
+                {"role": "Editor", "permission": 1}
+              ]
+            }
   prune: true
   dependsOn:
     - name: grafana-operator
