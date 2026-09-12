@@ -38,7 +38,7 @@ The metrics remote-write path is the same on every host:
 /insert/0/prometheus/api/v1/write
 ```
 
-(`0` is the VictoriaMetrics tenant; everything lands in a single tenant, see Labels below.)
+(The `0` in the path is nominal: the central `vmauth` rewrites it onto the multitenant insert endpoint and the store assigns the real tenant from the `project` and `cluster` labels, see Tenants below.)
 
 ## Prerequisites (both paths)
 

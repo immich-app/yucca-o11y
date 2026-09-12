@@ -8,13 +8,15 @@ Commands are fish. The `vmctl` image tag in the Job must match the store's Victo
 set -x D docs/runbooks/vm-tenant-migration
 set -x VMQ https://vmetrics.staging.o11y.futo.network
 function apply_ks
-    flux -n flux-system build kustomization $argv[1] --path ./kubernetes/apps/base/$argv[1]/app | kubectl apply --server-side --force-conflicts -f -
+    flux -n flux-system build kustomization $argv[1] --path ./kubernetes/apps/base/$argv[1]/app | kubectl apply --server-side --field-manager=kustomize-controller --force-conflicts -f -
 end
 ```
 
+`apply_ks` applies as Flux's own field manager on purpose. A server-side apply under any other manager can add and change fields but cannot remove a field Flux owns, so a value the branch deletes (the chart's `defaultRules` params, for example) would survive live and show up as drift in `flux diff` later.
+
 ## Part A: staging rehearsal
 
-Run from the repo root on the branch with the staging kube context selected. Flux stays suspended for these four Kustomizations until Part B merges, which also holds any Renovate change to them; keep the window short.
+Run from the repo root on the branch with the staging kube context selected. Flux stays suspended for the root and these four app Kustomizations until Part B merges, which also holds any Renovate change to them; keep the window short.
 
 ### A0. Settings keys first
 
@@ -39,7 +41,7 @@ flux -n flux-system suspend kustomization victoria-metrics victoria-metrics-user
 Must land before any writer moves, or `o11y cluster stopped reporting` fires for a day. Only the Fleet datasource is applied here; the default datasource changes in A3 together with the vmauth that serves it.
 
 ```fish
-flux -n flux-system build kustomization grafana --path ./kubernetes/apps/base/grafana/app | yq 'select(.metadata.name == "victoria-metrics-fleet")' | kubectl apply --server-side --force-conflicts -f -
+flux -n flux-system build kustomization grafana --path ./kubernetes/apps/base/grafana/app | yq 'select(.metadata.name == "victoria-metrics-fleet")' | kubectl apply --server-side --field-manager=kustomize-controller --force-conflicts -f -
 curl -s $VMQ/select/multitenant/prometheus/api/v1/query --data-urlencode 'query=count by (cluster) (up)' | jq -c '.data.result[] | [.metric.cluster, .value[1]]'
 ```
 
@@ -146,6 +148,8 @@ Expected: staleness of a few seconds for every remote, the same per-cluster coun
 
 ## Part B: commit as two PRs
 
+Done on 2026-09-12 as #318 (plumbing) and #319 (cutover); kept here as the procedure.
+
 The branch splits into a behaviour-preserving PR and the cutover PR, so production never has the fleet view and the writers change in the same reconcile. Production's grafana Kustomization does not depend on victoria-metrics, so a single merge would leave their order to chance.
 
 **PR 1, multitenant plumbing, a no-op while everything is in tenant 0.** The `CLUSTER_VMETRICS_*` and `QUOTE` settings keys in both environments, so the live ConfigMap carries them before any render needs them (a child Kustomization can reconcile a new revision before the root has updated the ConfigMap, which renders empty IDs once); the Fleet datasource and the vmui redirect onto `/select/multitenant`; the shared-token VMUser and the mesh-unauth VMAuth rewrites of `/insert/0/` and `/select/0/` onto multitenant; the vmagent and vmalert `remoteWrite` URLs onto `/insert/multitenant/`. Without registry rules the multitenant path stores everything in tenant 0 and multitenant reads return it, so nothing observable changes.
@@ -169,6 +173,8 @@ flux -n flux-system resume kustomization victoria-metrics victoria-metrics-users
 ```
 
 ## Part C: production cutover
+
+Run on 2026-09-12; production o11y moved to `1:1` at 23:34:48Z when #319 reconciled.
 
 Merging PR 2 is the production cutover: Flux moves o11y's writers, registry and readers together. Only o11y is backfilled on production, and only 30 days: it is the one cluster with tenant-scoped readers (the default Grafana datasource, vmalert's remoteRead and MCP, all pinned to `1:1`), and a month covers what operational dashboards look at. Older o11y history stays in tenant 0, visible through the Fleet datasource, until the 120-day retention expires it. Staging measured this at about four hours for 30 days of o11y; run it off-peak.
 
