@@ -20,7 +20,7 @@ spec:
           requestRedirect:
             path:
               type: ReplaceFullPath
-              replaceFullPath: /select/0/vmui/
+              replaceFullPath: /select/multitenant/vmui/
             statusCode: 302
     - backendRefs:
         - name: vmselect-victoria-metrics
