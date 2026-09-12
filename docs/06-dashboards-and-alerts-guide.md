@@ -26,7 +26,7 @@ A folder files a dashboard under exactly one project; a **tag** is the orthogona
 
 This is how yucca ships (immich-app/yucca#315, see that repo's `o11y/README.md`). The project's CI renders each dashboard into a self-contained `GrafanaDashboard` CR (JSON embedded as `spec.gzipJson`) plus any `GrafanaAlertRuleGroup` CRs and a `GrafanaFolder`, pushes them as **one signed OCI artifact** (`flux push artifact` + cosign keyless), and o11y consumes the whole thing with a single Flux `OCIRepository` + `Kustomization`. New dashboards/alerts flow automatically on the next artifact.
 
-o11y's consumer side lives once in `kubernetes/apps/base/yucca-o11y/` and is pulled into each env's `o11y` overlay:
+o11y's consumer side lives once in `kubernetes/apps/base/tenants/yucca/bundle.yaml`, one file per tenant listed by `base/tenants/kustomization.yaml`, which each env's `o11y` overlay pulls in:
 
 ```yaml
 apiVersion: source.toolkit.fluxcd.io/v1
@@ -81,7 +81,7 @@ Two additions, then:
 - **An ExternalSecret rendering it as a `dockerconfigjson`**, in `flux-system`,
   because that is where the `OCIRepository` lives and a `secretRef` resolves in
   its own namespace. It pulls the two items by name and templates the docker
-  config around them. See `base/fmeet-o11y/externalsecret.yaml`.
+  config around them. See the `ExternalSecret` in `base/tenants/fmeet/bundle.yaml`.
 
 Both items go in the global `o11y_tf` vault, read through the `onepassword`
 store. Not `shared_tf` — that is for credentials more than one project
@@ -108,7 +108,7 @@ anonymous reads).
 `verify:` is also omitted for such a bundle unless the publisher signs with a
 key pair, as harbor-o11y does: its CI signs the digest with a key its
 infrastructure terraform mints, the public half is committed in that repo as
-`cosign.pub`, and `base/harbor-o11y` carries it as the `harbor-o11y-cosign`
+`cosign.pub`, and `base/tenants/harbor` carries it as the `harbor-o11y-cosign`
 Secret referenced from `verify.secretRef`. Keyless cosign mints its certificate from public Fulcio against the
 CI's OIDC identity, and Fulcio accepts `gitlab.com` but not a self-hosted
 forge — so the keyless block above cannot simply be copied across.
