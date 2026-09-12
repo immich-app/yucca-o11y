@@ -32,9 +32,10 @@ spec:
   unauthorizedUserAccessSpec:
     targetRefs:
       - static:
-          url: http://vminsert-victoria-metrics.o11y.svc.cluster.local:8480
+          url: http://vminsert-victoria-metrics.o11y.svc.cluster.local:8480/insert/multitenant
         paths:
           - /insert/0/.*
+        drop_src_path_prefix_parts: 2
       - static:
           url: http://victoria-logs-vlinsert.o11y.svc.cluster.local:9481
         paths:
@@ -44,9 +45,10 @@ spec:
           - /insert/loki/.*
           - /insert/opentelemetry/.*
       - static:
-          url: http://vmselect-victoria-metrics.o11y.svc.cluster.local:8481
+          url: http://vmselect-victoria-metrics.o11y.svc.cluster.local:8481/select/multitenant
         paths:
           - /select/0/.*
+        drop_src_path_prefix_parts: 2
       - static:
           url: http://victoria-logs-vlselect.o11y.svc.cluster.local:9471
         paths:

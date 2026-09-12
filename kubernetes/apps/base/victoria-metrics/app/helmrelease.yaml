@@ -121,7 +121,7 @@ spec:
                 requests:
                   storage: 10Gi
         remoteWrite:
-          - url: http://vminsert-victoria-metrics.o11y.svc.cluster.local:8480/insert/0/prometheus/api/v1/write
+          - url: http://vminsert-victoria-metrics.o11y.svc.cluster.local:8480/insert/multitenant/prometheus/api/v1/write
         extraArgs:
           promscrape.streamParse: "true"
           promscrape.dropOriginalLabels: "true"
@@ -146,7 +146,7 @@ spec:
         extraArgs:
           notifier.blackhole: "true"
         remoteWrite:
-          url: http://vminsert-victoria-metrics.o11y.svc.cluster.local:8480/insert/0/prometheus/api/v1/write
+          url: http://vminsert-victoria-metrics.o11y.svc.cluster.local:8480/insert/multitenant/prometheus/api/v1/write
         remoteRead:
           url: http://vmselect-victoria-metrics.o11y.svc.cluster.local:8481/select/0/prometheus/
 

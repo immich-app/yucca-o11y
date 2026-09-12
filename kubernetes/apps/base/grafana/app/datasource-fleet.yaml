@@ -9,13 +9,14 @@ spec:
     matchLabels:
       dashboards: grafana
   datasource:
-    # Unscoped view of the whole multi-tenant store: explicit opt-in for
-    # cross-cluster dashboards (the yucca folder) and fleet-wide alerts.
+    # Unscoped view of the whole store across every tenant, tenant 0 included:
+    # explicit opt-in for cross-cluster dashboards (the yucca folder) and
+    # fleet-wide alerts.
     name: VictoriaMetrics Fleet
     uid: VictoriaMetricsFleet
     type: prometheus
     access: proxy
     isDefault: false
-    url: http://vmselect-victoria-metrics.o11y.svc.cluster.local:8481/select/0/prometheus
+    url: http://vmselect-victoria-metrics.o11y.svc.cluster.local:8481/select/multitenant/prometheus
     jsonData:
       timeout: 120
