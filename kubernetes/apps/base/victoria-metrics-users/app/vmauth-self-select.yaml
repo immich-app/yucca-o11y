@@ -5,11 +5,10 @@ kind: VMAuth
 metadata:
   name: self-select
 spec:
-  # In-cluster only: backs Grafana's default datasource. The appended
-  # extra_label is enforced by vmselect on every request (queries and
-  # label/series metadata alike), pinning anything that queries through
-  # here to this cluster's own series. Cross-cluster reads go through the
-  # explicit VictoriaMetrics Fleet datasource instead.
+  # In-cluster only: backs Grafana's default datasource. Only this cluster's
+  # own tenant path is routed, so nothing that queries through here can reach
+  # another tenant. Cross-cluster reads go through the explicit VictoriaMetrics
+  # Fleet datasource instead.
   port: "8427"
   replicaCount: 2
   podDisruptionBudget:
@@ -28,5 +27,4 @@ spec:
       - static:
           url: http://vmselect-victoria-metrics.o11y.svc.cluster.local:8481
         paths:
-          - /select/0/.*
-        target_path_suffix: "?extra_label=cluster=${CLUSTER_NAME}"
+          - /select/${CLUSTER_VMETRICS_ACCOUNT_ID}:${CLUSTER_VMETRICS_PROJECT_ID}/.*

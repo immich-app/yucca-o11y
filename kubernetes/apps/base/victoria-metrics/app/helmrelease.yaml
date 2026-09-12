@@ -19,12 +19,6 @@ spec:
       operator:
         gateway_support: true
 
-    defaultRules:
-      group:
-        spec:
-          params:
-            extra_label: ["cluster=${CLUSTER_NAME}"]
-
     vmcluster:
       enabled: true
       spec:
@@ -91,8 +85,12 @@ spec:
               memory: 1Gi
             limits:
               memory: 4Gi
+          configMaps:
+            - vminsert-relabel
           extraArgs:
             replicationFactor: "2"
+            relabelConfig: /etc/vm/configs/vminsert-relabel/relabel.yaml
+            relabelConfigCheckInterval: 1m
           topologySpreadConstraints:
             - maxSkew: 1
               topologyKey: kubernetes.io/hostname
@@ -131,7 +129,7 @@ spec:
       enabled: true
       spec:
         datasource:
-          url: http://vmselect-victoria-metrics.o11y.svc.cluster.local:8481/select/0/prometheus?extra_label=cluster=${CLUSTER_NAME}
+          url: http://vmselect-victoria-metrics.o11y.svc.cluster.local:8481/select/${CLUSTER_VMETRICS_ACCOUNT_ID}:${CLUSTER_VMETRICS_PROJECT_ID}/prometheus
         # No `cluster` here: rule results already carry it from the chart's
         # group-by, and an external label of the same name displaces theirs
         # to exported_cluster.
@@ -148,7 +146,7 @@ spec:
         remoteWrite:
           url: http://vminsert-victoria-metrics.o11y.svc.cluster.local:8480/insert/multitenant/prometheus/api/v1/write
         remoteRead:
-          url: http://vmselect-victoria-metrics.o11y.svc.cluster.local:8481/select/0/prometheus/
+          url: http://vmselect-victoria-metrics.o11y.svc.cluster.local:8481/select/${CLUSTER_VMETRICS_ACCOUNT_ID}:${CLUSTER_VMETRICS_PROJECT_ID}/prometheus/
 
     alertmanager:
       enabled: false

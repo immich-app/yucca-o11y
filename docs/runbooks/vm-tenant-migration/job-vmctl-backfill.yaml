@@ -1,0 +1,42 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vmctl-backfill-CLUSTER
+  namespace: o11y
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 604800
+  template:
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: vmctl
+          image: victoriametrics/vmctl:v1.151.0
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          args:
+            - vm-native
+            - -s
+            - --disable-progress-bar
+            - --vm-native-src-addr=http://vmselect-victoria-metrics.o11y.svc.cluster.local:8481/select/0/prometheus
+            - --vm-native-dst-addr=http://vminsert-victoria-metrics.o11y.svc.cluster.local:8480/insert/multitenant/prometheus
+            - --vm-native-filter-match={project="PROJECT",cluster=~"CLUSTER_RE"}
+            - --vm-native-filter-time-start=CUTOVER_MINUS_30D
+            - --vm-native-filter-time-end=CUTOVER
+            - --vm-native-step-interval=day
+            - --vm-native-filter-time-reverse
+            - --vm-concurrency=2
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              memory: 2Gi

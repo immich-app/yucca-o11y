@@ -127,9 +127,44 @@ The value sets are open - these are the conventions, not a closed enumeration; t
 
 `externalLabels` only tags *scraped* series; if the shipper also forwards pushed data (e.g. OTLP app metrics through a `vmagent`), apply the same labels with a relabel config instead so ingested series are tagged too.
 
+## Tenants
+
+Metrics are also keyed by VictoriaMetrics tenant (`accountID:projectID`): `accountID` is the project, `projectID` is the cluster within it. Shippers never see tenant IDs. They write to the `/insert/0/...` URL with the shared token as shown above, the central `vmauth` rewrites that onto the multitenant insert endpoint, and `vminsert` assigns the tenant from the `project` and `cluster` labels using the relabel rules in `kubernetes/apps/base/victoria-metrics/app/configmap-vminsert-relabel.yaml`, which is the tenant registry. A cluster with no rule lands in tenant 0.
+
+IDs are unique within a store, and an environment pair (a prod cluster and its staging twin, each shipping to its own store) shares the same tenant so tenant-scoped config carries across environments unchanged; clusters with no twin take the next free number in their project. `accountID` 0 and `projectID` 0 are never assigned: any cluster without a rule pair lands in `0:0`, whatever its project. Rules are keyed on `project;cluster` for both labels, never on the project alone, so each cluster migrates independently and a new cluster in a known project cannot be moved by accident. This table records the assignments; a cluster is live on its tenant exactly when its rule pair is in the ConfigMap, so add the row and the rule in the same change.
+
+| Project | accountID | Cluster | Env | Store | Tenant |
+|---|---|---|---|---|---|
+| o11y | 1 | o11y | staging, prod | both | `1:1` |
+| yucca | 2 | father | prod | production | `2:1` |
+| yucca | 2 | netops | prod | production | `2:2` |
+| yucca | 2 | spice | prod | production | `2:3` |
+| yucca | 2 | luke | staging | staging | `2:4` |
+| harbor | 3 | harbor-infra-prod | prod | production | `3:1` |
+| harbor | 3 | harbor-infra-staging | staging | staging | `3:1` |
+| fip | 4 | azad | prod | production | `4:1` |
+| fmeet | 5 | serverless | staging, prod | both | `5:1` |
+
+Onboarding a cluster onto its own tenant is a central-side change only: add its rule pair, for example
+
+```yaml
+- source_labels: [project, cluster]
+  regex: yucca;father
+  target_label: vm_account_id
+  replacement: "2"
+- source_labels: [project, cluster]
+  regex: yucca;father
+  target_label: vm_project_id
+  replacement: "1"
+```
+
+`vminsert` reloads the file without a restart. No backfill is needed: the cluster's older history stays in tenant 0, where the Fleet datasource still reads it alongside the new tenant, and ages out with retention. The o11y rules also match samples with `project=o11y` and no `cluster` label, which is what its own `vmalert` writes. The o11y cluster's own IDs come from `CLUSTER_VMETRICS_ACCOUNT_ID` and `CLUSTER_VMETRICS_PROJECT_ID` in `kubernetes/clusters/<env>/cluster-settings.yaml`, which also drive its tenant-scoped reads (the default Grafana datasource, `vmalert` and the MCP server).
+
+Fleet-wide reads use the `/select/multitenant/prometheus` endpoint, which spans every tenant including tenant 0, so cross-cluster dashboards and alerts keep working while clusters migrate. Logs stay in a single tenant and are distinguished by labels only.
+
 ## Verify data is arriving
 
-From the central side, query for the remote's series. Over the mesh (no token), the browsable UI is at `https://vmetrics.<mesh-domain>/select/0/vmui/`, or query the API directly:
+From the central side, query for the remote's series. Over the mesh (no token), the browsable UI is at `https://vmetrics.<mesh-domain>/select/multitenant/vmui/`, or query the API directly:
 
 ```bash
 curl -s 'https://vmauth.o11y.futo.network/select/0/prometheus/api/v1/query' \
