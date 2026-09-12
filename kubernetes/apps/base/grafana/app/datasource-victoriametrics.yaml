@@ -9,13 +9,13 @@ spec:
     matchLabels:
       dashboards: grafana
   datasource:
-    # The default datasource: routed through vmauth-self-select, which forces
-    # extra_label=cluster onto every request, so anything that doesn't pick a
-    # datasource explicitly only sees this cluster's own series. Same uid the
-    # chart used, so existing dashboards and alerts resolve unchanged.
+    # The default datasource: reads this cluster's own tenant through
+    # vmauth-self-select, which routes nothing else, so anything that doesn't
+    # pick a datasource explicitly only sees this cluster's own series. Same
+    # uid the chart used, so existing dashboards and alerts resolve unchanged.
     name: VictoriaMetrics
     uid: VictoriaMetrics
     type: prometheus
     access: proxy
     isDefault: true
-    url: http://vmauth-self-select.o11y.svc.cluster.local:8427/select/0/prometheus
+    url: http://vmauth-self-select.o11y.svc.cluster.local:8427/select/${CLUSTER_VMETRICS_ACCOUNT_ID}:${CLUSTER_VMETRICS_PROJECT_ID}/prometheus

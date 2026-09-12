@@ -21,13 +21,13 @@ cert-manager issues short-lived ECDSA P-256 wildcard certificates with always-ro
 This cluster's VictoriaMetrics is the **central metrics store for all FUTO clusters**. Other Kubernetes clusters each run their own `vmagent` and remote-write into this cluster; it is the ingestion target plus the query and alerting brain for everyone.
 
 * **Storage** — VMCluster mode with `replicationFactor=2`, `vmstorage` spread one-per-worker across the three DCs on `openebs-spare-disk`; retention is set per environment via `CLUSTER_VMETRICS_RETENTION` (30d staging, 120d production). The `vmstorage`, `vminsert`, and `vmselect` tiers scale independently.
-* **Local collection** — a `vmagent` (with a persistent disk buffer) scrapes this cluster and remote-writes to the local `vminsert`. It tags series with the cluster's identity.
+* **Local collection**: a `vmagent` (with a persistent disk buffer) scrapes this cluster and remote-writes to the local `vminsert`'s multitenant endpoint. It tags series with the cluster's identity, from which `vminsert` derives the tenant.
 * **Alerting** — `vmalert` evaluates rules; notifications are blackholed for now (no Alertmanager yet), so rules still evaluate and recording rules still write.
 * **Ingestion gateway** — a locked-down `vmauth` (no anonymous access, run as an HA pair) fronts `vminsert` and is exposed publicly at `vmauth.<CLUSTER_APP_DOMAIN>` through the Envoy Gateway and IPLB with cert-manager TLS.
 
 ### Tenancy and auth
 
-Everything lands in a **single tenant**, distinguished by mandatory identity labels rather than VictoriaMetrics multitenancy — one organization, mutual trust, everything queryable together. A **single shared bearer token** authenticates all remote clusters; it is stored in 1Password and injected via ExternalSecret into a `VMUser` that grants write-only access. Because the operator installs the `VMUser` CRD, those resources live in a separate Flux Kustomization that depends on the VictoriaMetrics release and external-secrets, so they don't race CRD registration.
+Each cluster lands in its **own VictoriaMetrics tenant** (`accountID` = project, `projectID` = cluster; the registry lives in the [shipping guide](05-shipping-metrics-guide.md#tenants)), and every series also carries the mandatory identity labels: one organization, mutual trust, everything queryable together through the multitenant read endpoint. Tenancy is derived centrally rather than declared by shippers: a **single shared bearer token** authenticates all remote clusters, the `VMUser` it is bound to rewrites writes onto the multitenant insert endpoint, and `vminsert` relabeling maps each sample's `project`/`cluster` labels to a tenant. Remotes ship only the five identity labels. Per-tenant enforcement is available later by splitting a remote onto its own token pinned to its tenant path. The token is stored in 1Password and injected via ExternalSecret into that `VMUser`. Because the operator installs the `VMUser` CRD, those resources live in a separate Flux Kustomization that depends on the VictoriaMetrics release and external-secrets, so they don't race CRD registration.
 
 ### Label convention
 
@@ -35,7 +35,7 @@ Every shipper — metrics and logs, remote and local — stamps the same five id
 
 ### Onboarding a remote cluster
 
-Nothing changes on the central side. On the remote cluster: pull the shared token from the same vault item into a Secret, then configure its `vmagent` with a persistent disk buffer (so a central outage doesn't lose data — it replays on recovery), the mandatory external labels, and a remote-write to the public `vmauth` endpoint authenticated with the bearer token. To rotate access for everyone, change the vault item; ExternalSecrets re-sync on both sides. Per-cluster revocation, if ever needed, means splitting into per-cluster vault items and `VMUser`s.
+On the central side, add the cluster to the tenant registry (until then it lands in tenant 0). On the remote cluster: pull the shared token from the same vault item into a Secret, then configure its `vmagent` with a persistent disk buffer (so a central outage doesn't lose data; it replays on recovery), the mandatory external labels, and a remote-write to the public `vmauth` endpoint authenticated with the bearer token. To rotate access for everyone, change the vault item; ExternalSecrets re-sync on both sides. Per-cluster revocation, if ever needed, means splitting into per-cluster vault items and `VMUser`s.
 
 ### Operating notes
 

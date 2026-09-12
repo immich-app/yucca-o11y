@@ -14,6 +14,7 @@ Built for geographic resilience with single-cluster operational simplicity: thre
 | [02 — Infrastructure architecture](./docs/02-infrastructure-architecture-guide.md) | OVH compute, hardware specs, vRack networking, IPLB ingress, cost |
 | [03 — Cluster architecture](./docs/03-cluster-architecture-guide.md) | Talos, Kubernetes, host firewall, and Flux GitOps |
 | [04 — Application architecture](./docs/04-application-architecture-guide.md) | Envoy ingress, VictoriaMetrics central store, Grafana, CloudNativePG, supporting operators |
+| [Runbook: tenant cutover](./docs/runbooks/vm-tenant-migration/README.md) | Moving a store's metrics from tenant 0 onto per-cluster tenants, staging first |
 
 ## Repository layout
 

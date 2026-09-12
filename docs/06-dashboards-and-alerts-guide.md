@@ -138,6 +138,8 @@ route:
 
 So **routing follows the folder automatically** - no per-rule label to set or keep in sync. (Existing rules still carry a `project` *rule* label; it is legacy and unused for routing — distinct from the `project` *series* label every shipper stamps, see the [shipping guide](05-shipping-metrics-guide.md#labels).) Notifications additionally group by `cluster` (alongside `grafana_folder` and `alertname`), so the same rule firing in two clusters arrives as two grouped notifications rather than one blended message.
 
+**Datasources and tenants.** Two Prometheus-type datasources front the same store. `VictoriaMetrics` (uid `VictoriaMetrics`, the default) carries this cluster's own tenant in its URL and goes through the `self-select` vmauth, which routes only that path, so anything that does not pick a datasource explicitly sees only o11y's series. `VictoriaMetrics Fleet` (uid `VictoriaMetricsFleet`) reads the multitenant endpoint across every tenant, including tenant 0 where unmigrated remotes still land; it is the explicit opt-in for cross-cluster dashboards and rules (`alerts-fleet.yaml`). Tenancy is carried by the datasource URL, never by dashboard JSON or rule queries: both keep filtering and grouping on the `cluster` label, which survives the tenant split unchanged.
+
 **Alert rule anatomy.** A `GrafanaAlertRuleGroup` (`folderRef: <project>`, an `interval`) with `rules[]`; each rule is a query stage on the `VictoriaMetrics` datasource (uid `VictoriaMetrics`) feeding a `__expr__` threshold stage, plus `labels` (at least `severity`) and `annotations`. See `base/grafana/app/alerts-o11y.yaml` for the pattern (a heartbeat plus target-down and ingestion-stalled rules). Rules that span clusters aggregate `by (cluster)` so each cluster raises its own instance and carries its `cluster` label into notification grouping; store-local rules (the heartbeat, ingestion-stalled) don't.
 
 ## If you ship metrics to this cluster and want dashboards/alerts
@@ -145,7 +147,7 @@ So **routing follows the folder automatically** - no per-rule label to set or ke
 1. Pick a delivery model: **Model A** (recommended for a separate repo/cluster - you own a signed bundle, o11y adds one OCIRepository) or **Model B** (PR the CRs into `base/grafana`).
 2. Everything you ship files under **your project's folder**; ask for one if it does not exist.
 3. Routing follows your folder automatically; add a route matching your `grafana_folder` (and, if you want your own channel, a contact point).
-4. Dashboards use a `$datasource` variable and map `DS_PROMETHEUS` to `VictoriaMetrics`; alerts query the `VictoriaMetrics` datasource.
+4. Dashboards use a `$datasource` variable and map `DS_PROMETHEUS` to `VictoriaMetrics`; alerts query the `VictoriaMetrics` datasource. Anything that must see other clusters' series uses `VictoriaMetrics Fleet` instead (see Datasources and tenants).
 5. Tag dashboards by signal/layer in the JSON (`metrics`, `logs`, `infra`, ...) so they stay filterable across folders (see Tags). Alerts that compare across clusters aggregate `by (cluster)`; stamp the five identity labels on your series (see the [shipping guide](05-shipping-metrics-guide.md#labels)) so per-cluster alerting works.
 
 ## How updates flow

@@ -1,0 +1,39 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vminsert-relabel
+data:
+  relabel.yaml: |
+    - source_labels: [project, cluster]
+      regex: o11y;(${CLUSTER_NAME})?
+      target_label: vm_account_id
+      replacement: "${CLUSTER_VMETRICS_ACCOUNT_ID}"
+    - source_labels: [project, cluster]
+      regex: o11y;(${CLUSTER_NAME})?
+      target_label: vm_project_id
+      replacement: "${CLUSTER_VMETRICS_PROJECT_ID}"
+    - source_labels: [project, cluster]
+      regex: yucca;luke
+      target_label: vm_account_id
+      replacement: "2"
+    - source_labels: [project, cluster]
+      regex: yucca;luke
+      target_label: vm_project_id
+      replacement: "4"
+    - source_labels: [project, cluster]
+      regex: harbor;harbor-infra-staging
+      target_label: vm_account_id
+      replacement: "3"
+    - source_labels: [project, cluster]
+      regex: harbor;harbor-infra-staging
+      target_label: vm_project_id
+      replacement: "1"
+    - source_labels: [project, cluster]
+      regex: fmeet;serverless
+      target_label: vm_account_id
+      replacement: "5"
+    - source_labels: [project, cluster]
+      regex: fmeet;serverless
+      target_label: vm_project_id
+      replacement: "1"

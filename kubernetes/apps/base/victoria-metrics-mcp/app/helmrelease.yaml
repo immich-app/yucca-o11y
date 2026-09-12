@@ -13,6 +13,9 @@ spec:
     vm:
       type: cluster
       entrypoint: http://vmselect-victoria-metrics.o11y.svc.cluster.local:8481
+    env:
+      - name: VM_DEFAULT_TENANT_ID
+        value: ${QUOTE}${CLUSTER_VMETRICS_ACCOUNT_ID}:${CLUSTER_VMETRICS_PROJECT_ID}${QUOTE}
     route:
       enabled: true
       parentRefs:
