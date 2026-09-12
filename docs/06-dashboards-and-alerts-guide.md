@@ -81,7 +81,7 @@ Two additions, then:
 - **An ExternalSecret rendering it as a `dockerconfigjson`**, in `flux-system`,
   because that is where the `OCIRepository` lives and a `secretRef` resolves in
   its own namespace. It pulls the two items by name and templates the docker
-  config around them. See `base/tenants/fmeet/externalsecret.yaml`.
+  config around them. See the `ExternalSecret` in `base/tenants/fmeet/bundle.yaml`.
 
 Both items go in the global `o11y_tf` vault, read through the `onepassword`
 store. Not `shared_tf` — that is for credentials more than one project
