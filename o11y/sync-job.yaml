@@ -33,6 +33,32 @@ dashboards:
       clusterMetric: kube_node_info
     flux-control-plane:
       clusterMetric: kube_node_info
+    spegel-stateless-cluster-local-oci-registry-mirror:
+      clusterMetric: spegel_mirror_requests_total
+    cloudnativepg:
+      clusterMetric: cnpg_collector_up
+    prometheus:
+      enabled: false
+    prometheus-remote-write:
+      enabled: false
+    alertmanager-overview:
+      enabled: false
+    grafana-overview:
+      enabled: false
+    k8s-resources-windows-cluster:
+      enabled: false
+    k8s-resources-windows-namespace:
+      enabled: false
+    k8s-resources-windows-pod:
+      enabled: false
+    k8s-windows-cluster-rsrc-use:
+      enabled: false
+    k8s-windows-node-rsrc-use:
+      enabled: false
+    nodes-aix:
+      enabled: false
+    nodes-darwin:
+      enabled: false
   sources:
     - url: https://raw.githubusercontent.com/dotdc/grafana-dashboards-kubernetes/master/dashboards/k8s-views-global.json
     - url: https://raw.githubusercontent.com/dotdc/grafana-dashboards-kubernetes/master/dashboards/k8s-views-namespaces.json
@@ -47,6 +73,10 @@ dashboards:
     - url: https://raw.githubusercontent.com/cilium/cilium/v1.20.1/install/kubernetes/cilium/files/hubble/dashboards/hubble-dashboard.json
     - url: https://raw.githubusercontent.com/fluxcd/flux2-monitoring-example/7ab65dc8b90f/monitoring/configs/dashboards/cluster.json
     - url: https://raw.githubusercontent.com/fluxcd/flux2-monitoring-example/7ab65dc8b90f/monitoring/configs/dashboards/control-plane.json
+    - url: https://raw.githubusercontent.com/spegel-org/spegel/v0.7.4/charts/spegel/monitoring/grafana-dashboard.json
+    - url: https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/grafana-dashboardDefinitions.yaml
+    - url: https://raw.githubusercontent.com/monitoring-mixins/website/master/assets/etcd/dashboards/etcd.json
+    - url: /config/vendor/cloudnativepg.json
 rules:
   common: {}
   sources: []

@@ -11,6 +11,10 @@ mise run //:o11y:render   # refresh manifests/dashboards.yaml from upstream
 mise run //:o11y:check    # fail if the committed render is stale
 ```
 
+Both tasks first run `o11y:vendor`, which fetches boards that need a rewrite the sync-job cannot express and writes them to `vendor/` as local sources. Today that is CloudNativePG only: upstream uses `cluster` to mean the Postgres cluster, while the fleet keeps that name under `pg_cluster` and reserves `cluster` for the Kubernetes cluster, so the vendor step renames the label and variable before the sync-job adds the fleet's `$cluster`. A cluster's CNPG series must carry `pg_cluster` for the board to list its databases; the shipping guide's identity-label section shows the relabel rule, which o11y, azad and harbor apply.
+
+The set is everything at least two clusters run: the dotdc Kubernetes views and system boards, the kube-prometheus mixin boards (kubelet, scheduler, controller manager, proxy, API server, compute resources, networking, persistent volumes, node exporter USE method), Node Exporter Full, etcd, vmagent, Cilium and Hubble, Flux, Spegel and CloudNativePG. Windows, AIX, macOS, Prometheus, Alertmanager and Grafana-overview boards from the mixin bundle are disabled. Documents are sorted by name so re-renders diff cleanly.
+
 Upstream sources are pinned where the upstream moves (Cilium by release tag, Flux by commit) and tracked at `master` where the VictoriaMetrics chart does the same.
 
 ## Adding a dashboard
