@@ -1,8 +1,9 @@
 ---
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-# Validates the shared dashboards render on PRs and publishes o11y/manifests
-# from main as a signed OCI artifact (ghcr.io/<repo>/o11y-manifests:main), the
-# same shape the tenant bundles use. See o11y/README.md.
+# Renders the shared dashboards with the mise tasks (nothing generated is
+# committed), validates the bundle on PRs, and publishes it from main as a signed
+# OCI artifact (ghcr.io/<repo>/o11y-manifests:main), the same shape the tenant
+# bundles use. See o11y/README.md.
 name: o11y
 
 on:
@@ -48,8 +49,8 @@ jobs:
           install_args: --locked yq sd kustomize
           cache: false
 
-      - name: Committed render is current
-        run: mise run //:o11y:check
+      - name: Render
+        run: mise run //:o11y:render
 
       - name: Bundle builds
         run: kustomize build o11y/manifests > /dev/null
@@ -74,8 +75,11 @@ jobs:
       - name: Set up mise
         uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
         with:
-          install_args: --locked jq flux2 github:sigstore/cosign
+          install_args: --locked yq sd jq flux2 github:sigstore/cosign
           cache: false
+
+      - name: Render
+        run: mise run //:o11y:render
 
       - name: Log in to GHCR
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0

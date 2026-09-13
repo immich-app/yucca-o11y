@@ -41,3 +41,7 @@ tmp/
 mise.local.toml
 
 .claude/
+
+# Rendered by `mise run //:o11y:render`; CI renders and publishes, nothing generated is committed
+o11y/manifests/dashboards.yaml
+o11y/vendor/
