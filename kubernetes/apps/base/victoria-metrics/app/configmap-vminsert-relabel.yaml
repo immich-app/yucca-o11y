@@ -37,3 +37,43 @@ data:
       regex: fmeet;serverless
       target_label: vm_project_id
       replacement: "1"
+    - source_labels: [project, cluster]
+      regex: yucca;father
+      target_label: vm_account_id
+      replacement: "2"
+    - source_labels: [project, cluster]
+      regex: yucca;father
+      target_label: vm_project_id
+      replacement: "1"
+    - source_labels: [project, cluster]
+      regex: yucca;netops
+      target_label: vm_account_id
+      replacement: "2"
+    - source_labels: [project, cluster]
+      regex: yucca;netops
+      target_label: vm_project_id
+      replacement: "2"
+    - source_labels: [project, cluster]
+      regex: yucca;spice
+      target_label: vm_account_id
+      replacement: "2"
+    - source_labels: [project, cluster]
+      regex: yucca;spice
+      target_label: vm_project_id
+      replacement: "3"
+    - source_labels: [project, cluster]
+      regex: harbor;harbor-infra-prod
+      target_label: vm_account_id
+      replacement: "3"
+    - source_labels: [project, cluster]
+      regex: harbor;harbor-infra-prod
+      target_label: vm_project_id
+      replacement: "1"
+    - source_labels: [project, cluster]
+      regex: fip;azad
+      target_label: vm_account_id
+      replacement: "4"
+    - source_labels: [project, cluster]
+      regex: fip;azad
+      target_label: vm_project_id
+      replacement: "1"
