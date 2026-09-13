@@ -41,7 +41,8 @@ sync_job = "docker run --rm -e OUTPUT=- -e CONFIG=/config/sync-job.yaml -e NAMES
 # sync-job leaves them free, and Grafana would otherwise open a shared board
 # on the default (tenant-scoped) datasource and show only this cluster.
 pin_fleet = "yq '(select(.kind == \"GrafanaDashboard\") | .spec.json) |= (fromjson | .templating.list[] |= (select(.type == \"datasource\") |= (.regex = \"/^VictoriaMetrics Fleet$/\" | .current = {\"text\": \"VictoriaMetrics Fleet\", \"value\": \"VictoriaMetricsFleet\"})) | tojson)'"
-# The sync-job emits the kube-prometheus bundle in map order; sort documents so re-renders diff cleanly.
+# The sync-job emits the kube-prometheus bundle in map order; sort documents so an unchanged
+# upstream renders byte-identical and the published artifact keeps its digest.
 sort_docs = "yq eval-all '[.] | sort_by(.metadata.name) | .[] | splitDoc'"
 tg = "op run {% if get_env(name='OP_SERVICE_ACCOUNT_TOKEN', default='') == '' %}--account 'team-futo.1password.com' {% endif %}'--env-file={{config_root}}/deployment/.env' -- terragrunt"
 
@@ -100,12 +101,7 @@ curl -fsSL https://raw.githubusercontent.com/cloudnative-pg/grafana-dashboards/c
 [tasks."o11y:render"]
 depends = ["o11y:vendor"]
 run = "{{vars.sync_job}} | {{vars.pin_fleet}} | {{vars.sort_docs}} > {{config_root}}/o11y/manifests/dashboards.yaml"
-description = "Re-render o11y/manifests/dashboards.yaml from the upstream sources in o11y/sync-job.yaml"
-
-[tasks."o11y:check"]
-depends = ["o11y:vendor"]
-run = "{{vars.sync_job}} | {{vars.pin_fleet}} | {{vars.sort_docs}} | diff -u {{config_root}}/o11y/manifests/dashboards.yaml - && echo 'dashboards.yaml is up to date'"
-description = "Fail if o11y/manifests/dashboards.yaml differs from a fresh render"
+description = "Render o11y/manifests/dashboards.yaml (git-ignored) from the upstream sources in o11y/sync-job.yaml"
 
 [settings]
 experimental = true
