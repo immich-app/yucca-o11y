@@ -39,6 +39,7 @@ spec:
               ]
             }
   prune: true
+  targetNamespace: o11y
   dependsOn:
     - name: grafana-operator
 ---
