@@ -129,19 +129,29 @@ The value sets are open - these are the conventions, not a closed enumeration; t
 
 ### Make the identity labels win
 
-External labels are only added to series that lack the label. Some exporters emit their own `cluster` (CloudNativePG names its Cluster CR that way, the Ceph exporter names the Ceph cluster), and those series then reach the store carrying the exporter's value instead of yours: they fall out of your dashboards and alerts, and land in tenant 0 because the registry does not know that cluster. The store cannot repair this, since the real value is gone by the time it arrives. Apply the identity labels so they take precedence and keep the exporter's value under another name. In `vmagent`, one remote-write relabel rule pair does it for scraped and pushed data alike:
+External labels are only added to series that lack the label, and under `honor_labels` a scraped label wins outright. Some exporters emit their own `cluster`: CloudNativePG stamps its Cluster CR name, and Rook's generated ServiceMonitors set `honor_labels` plus `cluster=<CephCluster namespace>`. Those series then reach the store carrying the exporter's value instead of yours, fall out of your dashboards and alerts, and land in tenant 0 because the registry does not know that cluster. The store cannot repair this: the real value is gone by the time the sample arrives.
+
+Fix it in the shipper's remote-write relabeling, which sees scraped and pushed data alike: keep each exporter's value under a dedicated label, then set `cluster` unconditionally. This is what azad ships (immich-app/futo-internal-platform#89), in its `VMAgent`:
 
 ```yaml
 spec:
   inlineRelabelConfig:
-    - source_labels: [cluster]
-      regex: (.+)
-      target_label: exported_cluster
-    - target_label: cluster
-      replacement: father
+    - if: '{job=~"rook-ceph-(mgr|exporter)"}'
+      sourceLabels: [cluster]
+      targetLabel: ceph_cluster
+    - if: '{__name__=~"cnpg_.*"}'
+      sourceLabels: [exported_cluster]
+      targetLabel: pg_cluster
+    - if: '{__name__=~"cnpg_.*"}'
+      action: labeldrop
+      regex: exported_cluster
+    - targetLabel: cluster
+      replacement: azad
 ```
 
-Prometheus users get the same effect by setting `cluster` as a target label in `relabel_configs` for every scrape job: with the default `honor_labels: false` a conflicting scraped label is renamed to `exported_cluster` automatically.
+Rook's value survives as `ceph_cluster`; CNPG's, which the scrape had already parked in `exported_cluster`, becomes `pg_cluster`, the name harbor's CNPG series use as well, so one CNPG dashboard serves both. The last rule is the identity override. vmagent's `/metric-relabel-debug` page lets you paste sample series and see the result before shipping it.
+
+Prometheus users get the same effect by setting `cluster` as a target label in `relabel_configs` for every scrape job: with the default `honor_labels: false` a conflicting scraped label is renamed to `exported_cluster` automatically, and a `metric_relabel_configs` rule can move it under a dedicated name as above.
 
 ### Shippers that push instead of scrape
 
