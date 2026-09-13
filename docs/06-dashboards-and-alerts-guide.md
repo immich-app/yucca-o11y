@@ -120,6 +120,10 @@ For this cluster's own dashboards and alerts, they live under `kubernetes/apps/b
 - **Dashboards** - `base/grafana/app/dashboards/*.yaml`, one `GrafanaDashboard` per file, `folderRef: o11y`. Source the JSON however fits: `spec.url` to a raw/grafana.com dashboard (the envoy and cnpg dashboards), `spec.gzipJson`, etc. Map dashboard `__inputs` (e.g. `DS_PROMETHEUS`) to `datasourceName: VictoriaMetrics`.
 - **Alerts** - `base/grafana/app/alerts-*.yaml`, a `GrafanaAlertRuleGroup` with `folderRef: o11y`.
 
+## Shared dashboards
+
+Cluster-generic boards (Kubernetes views and system, node exporter, vmagent, Cilium, Flux) live once in the **`Shared`** folder rather than in every tenant bundle. They are rendered from their upstream sources by the VictoriaMetrics sync-job in generate mode, filtered on a multi-select `$cluster` variable and pinned to the `VictoriaMetrics Fleet` datasource, so one copy serves every cluster; see [`o11y/README.md`](../o11y/README.md) for how to add one. A tenant bundle should not ship its own copy of a board that exists in `Shared`.
+
 ## Alerting
 
 **Contact points.** A `GrafanaContactPoint` per destination. Secrets (like a Discord webhook) come from a Secret via `receivers[].valuesFrom`, populated by an ExternalSecret from 1Password - never in git. Contact points live in the shared Grafana Postgres, so with the HA replica gossip cluster a firing alert notifies **once**, not once per replica.

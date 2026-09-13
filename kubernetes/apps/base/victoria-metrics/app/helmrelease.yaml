@@ -120,6 +120,13 @@ spec:
                   storage: 10Gi
         remoteWrite:
           - url: http://vminsert-victoria-metrics.o11y.svc.cluster.local:8480/insert/multitenant/prometheus/api/v1/write
+        inlineRelabelConfig:
+          - if: '{__name__=~"cnpg_.*"}'
+            sourceLabels: [exported_cluster]
+            targetLabel: pg_cluster
+          - if: '{__name__=~"cnpg_.*"}'
+            action: labeldrop
+            regex: exported_cluster
         extraArgs:
           promscrape.streamParse: "true"
           promscrape.dropOriginalLabels: "true"
@@ -183,6 +190,27 @@ spec:
       forceDeployDatasource: true
 
     defaultDashboards:
+      sources:
+        kubernetes-views-global:
+          enabled: false
+        kubernetes-views-namespaces:
+          enabled: false
+        kubernetes-views-nodes:
+          enabled: false
+        kubernetes-views-pods:
+          enabled: false
+        kubernetes-system-api-server:
+          enabled: false
+        kubernetes-system-coredns:
+          enabled: false
+        node-exporter-full:
+          enabled: false
+        victoriametrics-vmagent:
+          enabled: false
+        kube-prometheus:
+          enabled: false
+        etcd:
+          enabled: false
       grafanaOperator:
         enabled: true
         spec:
