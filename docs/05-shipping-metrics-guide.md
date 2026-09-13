@@ -127,6 +127,36 @@ The value sets are open - these are the conventions, not a closed enumeration; t
 
 `externalLabels` only tags *scraped* series; if the shipper also forwards pushed data (e.g. OTLP app metrics through a `vmagent`), apply the same labels with a relabel config instead so ingested series are tagged too.
 
+### Make the identity labels win
+
+External labels are only added to series that lack the label, and under `honor_labels` a scraped label wins outright. Some exporters emit their own `cluster`: CloudNativePG stamps its Cluster CR name, and Rook's generated ServiceMonitors set `honor_labels` plus `cluster=<CephCluster namespace>`. Those series then reach the store carrying the exporter's value instead of yours, fall out of your dashboards and alerts, and land in tenant 0 because the registry does not know that cluster. The store cannot repair this: the real value is gone by the time the sample arrives.
+
+Fix it in the shipper's remote-write relabeling, which sees scraped and pushed data alike: keep each exporter's value under a dedicated label, then set `cluster` unconditionally. This is what azad ships (immich-app/futo-internal-platform#89), in its `VMAgent`:
+
+```yaml
+spec:
+  inlineRelabelConfig:
+    - if: '{job=~"rook-ceph-(mgr|exporter)"}'
+      sourceLabels: [cluster]
+      targetLabel: ceph_cluster
+    - if: '{__name__=~"cnpg_.*"}'
+      sourceLabels: [exported_cluster]
+      targetLabel: pg_cluster
+    - if: '{__name__=~"cnpg_.*"}'
+      action: labeldrop
+      regex: exported_cluster
+    - targetLabel: cluster
+      replacement: azad
+```
+
+Rook's value survives as `ceph_cluster`; CNPG's, which the scrape had already parked in `exported_cluster`, becomes `pg_cluster`, the name harbor's CNPG series use as well, so one CNPG dashboard serves both. The last rule is the identity override. vmagent's `/metric-relabel-debug` page lets you paste sample series and see the result before shipping it.
+
+Prometheus users get the same effect by setting `cluster` as a target label in `relabel_configs` for every scrape job: with the default `honor_labels: false` a conflicting scraped label is renamed to `exported_cluster` automatically, and a `metric_relabel_configs` rule can move it under a dedicated name as above.
+
+### Shippers that push instead of scrape
+
+The fleet-wide `o11y cluster stopped reporting` alert keys on `up`, which only scrapers emit. A pusher such as a serverless worker never produces `up` and often ships in bursts, so it can go dark without anyone noticing. Such a shipper should emit one steady heartbeat metric and own an `absent_over_time` alert on it in its project folder, with a window matched to its push cadence.
+
 ## Tenants
 
 Metrics are also keyed by VictoriaMetrics tenant (`accountID:projectID`): `accountID` is the project, `projectID` is the cluster within it. Shippers never see tenant IDs. They write to the `/insert/0/...` URL with the shared token as shown above, the central `vmauth` rewrites that onto the multitenant insert endpoint, and `vminsert` assigns the tenant from the `project` and `cluster` labels using the relabel rules in `kubernetes/apps/base/victoria-metrics/app/configmap-vminsert-relabel.yaml`, which is the tenant registry. A cluster with no rule lands in tenant 0.
