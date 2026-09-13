@@ -89,6 +89,7 @@ description = "Auto-fix markdown lint issues where possible"
 [tasks."o11y:vendor"]
 description = "Fetch upstream boards that need a rewrite before the sync-job sees them (CloudNativePG: its `cluster` means the Postgres cluster; the fleet keeps that under `pg_cluster`)"
 run = """
+mkdir -p {{config_root}}/o11y/vendor
 curl -fsSL https://raw.githubusercontent.com/cloudnative-pg/grafana-dashboards/cluster-v0.0.5/charts/cluster/grafana-dashboard.json \\
   | sd '\\$cluster\\b' '$$pg_cluster' \\
   | sd '\\bcluster(\\s*(?:=~|!~|!=|=)\\s*)' 'pg_cluster$1' \\
