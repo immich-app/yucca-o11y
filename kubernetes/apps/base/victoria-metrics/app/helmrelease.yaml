@@ -183,6 +183,23 @@ spec:
       forceDeployDatasource: true
 
     defaultDashboards:
+      sources:
+        kubernetes-views-global:
+          enabled: false
+        kubernetes-views-namespaces:
+          enabled: false
+        kubernetes-views-nodes:
+          enabled: false
+        kubernetes-views-pods:
+          enabled: false
+        kubernetes-system-api-server:
+          enabled: false
+        kubernetes-system-coredns:
+          enabled: false
+        node-exporter-full:
+          enabled: false
+        victoriametrics-vmagent:
+          enabled: false
       grafanaOperator:
         enabled: true
         spec:

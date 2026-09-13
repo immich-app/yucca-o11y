@@ -32,6 +32,14 @@ ENVIRONMENT_SHORT = "{% set e = get_env(name='ENVIRONMENT', default='development
 # CI authenticates with a service-account token, which op rejects alongside --account.
 # Rendered at the root, so {{config_root}} here is the repo root from any subproject.
 [vars]
+# Shared Grafana dashboards: fetched from upstream and patched for the fleet
+# (cluster variable + filters, Fleet datasource, shared folder) by the
+# VictoriaMetrics sync-job in generate mode; the output is committed.
+sync_job = "docker run --rm -e OUTPUT=- -e CONFIG=/config/sync-job.yaml -e NAMESPACE=o11y -e RELEASE=shared -e OWNER_REFERENCES=false -v {{config_root}}/o11y/sync-job.yaml:/config/sync-job.yaml:ro ghcr.io/victoriametrics/sync-job:v0.0.17"
+# Pin every datasource-type template variable to the Fleet datasource: the
+# sync-job leaves them free, and Grafana would otherwise open a shared board
+# on the default (tenant-scoped) datasource and show only this cluster.
+pin_fleet = "yq '(select(.kind == \"GrafanaDashboard\") | .spec.json) |= (fromjson | .templating.list[] |= (select(.type == \"datasource\") |= (.regex = \"/^VictoriaMetrics Fleet$/\" | .current = {\"text\": \"VictoriaMetrics Fleet\", \"value\": \"VictoriaMetricsFleet\"})) | tojson)'"
 tg = "op run {% if get_env(name='OP_SERVICE_ACCOUNT_TOKEN', default='') == '' %}--account 'team-futo.1password.com' {% endif %}'--env-file={{config_root}}/deployment/.env' -- terragrunt"
 
 # Escape hatch for terragrunt subcommands the tasks below don't cover
@@ -73,6 +81,14 @@ description = "Lint markdown docs"
 [tasks."md:fix"]
 run = "markdownlint-cli2 --fix 'docs/**/*.md' 'README.md'"
 description = "Auto-fix markdown lint issues where possible"
+
+[tasks."o11y:render"]
+run = "{{vars.sync_job}} | {{vars.pin_fleet}} > {{config_root}}/o11y/manifests/dashboards.yaml"
+description = "Re-render o11y/manifests/dashboards.yaml from the upstream sources in o11y/sync-job.yaml"
+
+[tasks."o11y:check"]
+run = "{{vars.sync_job}} | {{vars.pin_fleet}} | diff -u {{config_root}}/o11y/manifests/dashboards.yaml - && echo 'dashboards.yaml is up to date'"
+description = "Fail if o11y/manifests/dashboards.yaml differs from a fresh render"
 
 [settings]
 experimental = true

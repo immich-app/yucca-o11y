@@ -1,0 +1,52 @@
+common:
+  clusterLabel: cluster
+  multicluster: true
+dashboards:
+  common:
+    grafana:
+      labelName: grafana_dashboard
+      labelValue: "1"
+      datasource: prometheus
+      datasourceUID: VictoriaMetricsFleet
+      operator:
+        spec:
+          folderRef: shared
+          resyncPeriod: 10m
+          allowCrossNamespaceImport: true
+          instanceSelector:
+            matchLabels:
+              dashboards: grafana
+    annotations:
+      kustomize.toolkit.fluxcd.io/substitute: disabled
+  dashboards:
+    node-exporter-full:
+      clusterMetric: node_uname_info
+    victoriametrics-vmagent:
+      clusterMetric: vm_app_version
+    cilium-metrics:
+      clusterMetric: kube_node_info
+    cilium-operator:
+      clusterMetric: kube_node_info
+    hubble-metrics-and-monitoring:
+      clusterMetric: kube_node_info
+    flux-cluster-stats:
+      clusterMetric: kube_node_info
+    flux-control-plane:
+      clusterMetric: kube_node_info
+  sources:
+    - url: https://raw.githubusercontent.com/dotdc/grafana-dashboards-kubernetes/master/dashboards/k8s-views-global.json
+    - url: https://raw.githubusercontent.com/dotdc/grafana-dashboards-kubernetes/master/dashboards/k8s-views-namespaces.json
+    - url: https://raw.githubusercontent.com/dotdc/grafana-dashboards-kubernetes/master/dashboards/k8s-views-nodes.json
+    - url: https://raw.githubusercontent.com/dotdc/grafana-dashboards-kubernetes/master/dashboards/k8s-views-pods.json
+    - url: https://raw.githubusercontent.com/dotdc/grafana-dashboards-kubernetes/master/dashboards/k8s-system-api-server.json
+    - url: https://raw.githubusercontent.com/dotdc/grafana-dashboards-kubernetes/master/dashboards/k8s-system-coredns.json
+    - url: https://raw.githubusercontent.com/rfmoz/grafana-dashboards/master/prometheus/node-exporter-full.json
+    - url: https://raw.githubusercontent.com/VictoriaMetrics/VictoriaMetrics/master/dashboards/vmagent.json
+    - url: https://raw.githubusercontent.com/cilium/cilium/v1.20.1/install/kubernetes/cilium/files/cilium-agent/dashboards/cilium-dashboard.json
+    - url: https://raw.githubusercontent.com/cilium/cilium/v1.20.1/install/kubernetes/cilium/files/cilium-operator/dashboards/cilium-operator-dashboard.json
+    - url: https://raw.githubusercontent.com/cilium/cilium/v1.20.1/install/kubernetes/cilium/files/hubble/dashboards/hubble-dashboard.json
+    - url: https://raw.githubusercontent.com/fluxcd/flux2-monitoring-example/7ab65dc8b90f/monitoring/configs/dashboards/cluster.json
+    - url: https://raw.githubusercontent.com/fluxcd/flux2-monitoring-example/7ab65dc8b90f/monitoring/configs/dashboards/control-plane.json
+rules:
+  common: {}
+  sources: []
