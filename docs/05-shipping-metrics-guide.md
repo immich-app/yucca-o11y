@@ -127,6 +127,26 @@ The value sets are open - these are the conventions, not a closed enumeration; t
 
 `externalLabels` only tags *scraped* series; if the shipper also forwards pushed data (e.g. OTLP app metrics through a `vmagent`), apply the same labels with a relabel config instead so ingested series are tagged too.
 
+### Make the identity labels win
+
+External labels are only added to series that lack the label. Some exporters emit their own `cluster` (CloudNativePG names its Cluster CR that way, the Ceph exporter names the Ceph cluster), and those series then reach the store carrying the exporter's value instead of yours: they fall out of your dashboards and alerts, and land in tenant 0 because the registry does not know that cluster. The store cannot repair this, since the real value is gone by the time it arrives. Apply the identity labels so they take precedence and keep the exporter's value under another name. In `vmagent`, one remote-write relabel rule pair does it for scraped and pushed data alike:
+
+```yaml
+spec:
+  inlineRelabelConfig:
+    - source_labels: [cluster]
+      regex: (.+)
+      target_label: exported_cluster
+    - target_label: cluster
+      replacement: father
+```
+
+Prometheus users get the same effect by setting `cluster` as a target label in `relabel_configs` for every scrape job: with the default `honor_labels: false` a conflicting scraped label is renamed to `exported_cluster` automatically.
+
+### Shippers that push instead of scrape
+
+The fleet-wide `o11y cluster stopped reporting` alert keys on `up`, which only scrapers emit. A pusher such as a serverless worker never produces `up` and often ships in bursts, so it can go dark without anyone noticing. Such a shipper should emit one steady heartbeat metric and own an `absent_over_time` alert on it in its project folder, with a window matched to its push cadence.
+
 ## Tenants
 
 Metrics are also keyed by VictoriaMetrics tenant (`accountID:projectID`): `accountID` is the project, `projectID` is the cluster within it. Shippers never see tenant IDs. They write to the `/insert/0/...` URL with the shared token as shown above, the central `vmauth` rewrites that onto the multitenant insert endpoint, and `vminsert` assigns the tenant from the `project` and `cluster` labels using the relabel rules in `kubernetes/apps/base/victoria-metrics/app/configmap-vminsert-relabel.yaml`, which is the tenant registry. A cluster with no rule lands in tenant 0.
