@@ -42,7 +42,7 @@ sync_job = "docker run --rm -e OUTPUT=- -e CONFIG=/config/sync-job.yaml -e NAMES
 # on the default (tenant-scoped) datasource and show only this cluster.
 pin_fleet = "yq '(select(.kind == \"GrafanaDashboard\") | .spec.json) |= (fromjson | .templating.list[] |= (select(.type == \"datasource\") |= (.regex = \"/^VictoriaMetrics Fleet$/\" | .current = {\"text\": \"VictoriaMetrics Fleet\", \"value\": \"VictoriaMetricsFleet\"})) | tojson)'"
 # The sync-job emits the kube-prometheus bundle in map order; sort documents so an unchanged
-# upstream renders byte-identical and the published artifact keeps its digest.
+# upstream renders byte-identical and the artifact's content layer keeps its digest.
 sort_docs = "yq eval-all '[.] | sort_by(.metadata.name) | .[] | splitDoc'"
 tg = "op run {% if get_env(name='OP_SERVICE_ACCOUNT_TOKEN', default='') == '' %}--account 'team-futo.1password.com' {% endif %}'--env-file={{config_root}}/deployment/.env' -- terragrunt"
 
