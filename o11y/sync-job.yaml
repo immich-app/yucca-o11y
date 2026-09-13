@@ -77,6 +77,9 @@ dashboards:
     - url: https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/grafana-dashboardDefinitions.yaml
     - url: https://raw.githubusercontent.com/monitoring-mixins/website/master/assets/etcd/dashboards/etcd.json
     - url: /config/vendor/cloudnativepg.json
+    - url: https://grafana.com/api/dashboards/24459/revisions/3/download
+    - url: https://grafana.com/api/dashboards/24457/revisions/4/download
+    - url: https://grafana.com/api/dashboards/24458/revisions/3/download
 rules:
   common: {}
   sources: []

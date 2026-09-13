@@ -20,7 +20,7 @@ Add a project, add a folder. That folder is the unit you scope dashboards, alert
 A folder files a dashboard under exactly one project; a **tag** is the orthogonal axis - signal type (`metrics`, `logs`), layer (`infra`, `k8s`, `app`) - that Grafana's dashboard browser filters on across every folder at once. Grafana stores tags inside the dashboard JSON model and `grafana-operator` exposes no field to inject them, so tags can only be set where the JSON is authored:
 
 - **Bundle (Model A) and first-party (Model B) dashboards you write:** set `tags` in the dashboard JSON before shipping. Folder is your project; tags are the signal/layer cross-cut.
-- **Dashboards pulled from grafana.com or a raw URL** (`spec.grafanaCom` / `spec.url`, e.g. the envoy and cnpg dashboards): they carry whatever tags upstream set. o11y cannot add or normalize them without vendoring the JSON inline, which forfeits the live reference and `resyncPeriod` auto-updates - so leave them as-is.
+- **Dashboards pulled from grafana.com or a raw URL** (`spec.grafanaCom` / `spec.url`, e.g. the grafana-operator dashboard): they carry whatever tags upstream set. o11y cannot add or normalize them without vendoring the JSON inline, which forfeits the live reference and `resyncPeriod` auto-updates - so leave them as-is.
 
 ## Model A: a project ships a signed OCI manifest bundle
 
@@ -117,12 +117,12 @@ forge — so the keyless block above cannot simply be copied across.
 
 For this cluster's own dashboards and alerts, they live under `kubernetes/apps/base/grafana/app/` and deploy with the grafana Flux Kustomization:
 
-- **Dashboards** - `base/grafana/app/dashboards/*.yaml`, one `GrafanaDashboard` per file, `folderRef: o11y`. Source the JSON however fits: `spec.url` to a raw/grafana.com dashboard (the envoy and cnpg dashboards), `spec.gzipJson`, etc. Map dashboard `__inputs` (e.g. `DS_PROMETHEUS`) to `datasourceName: VictoriaMetrics`.
+- **Dashboards** - `base/grafana/app/dashboards/*.yaml`, one `GrafanaDashboard` per file, `folderRef: o11y`. Source the JSON however fits: `spec.grafanaCom` or `spec.url` to a grafana.com or raw dashboard (the grafana-operator dashboard), `spec.gzipJson`, etc. Map dashboard `__inputs` (e.g. `DS_PROMETHEUS`) to `datasourceName: VictoriaMetrics`.
 - **Alerts** - `base/grafana/app/alerts-*.yaml`, a `GrafanaAlertRuleGroup` with `folderRef: o11y`.
 
 ## Shared dashboards
 
-Cluster-generic boards (Kubernetes views and system, node exporter, vmagent, Cilium, Flux) live once in the **`Shared`** folder rather than in every tenant bundle. They are rendered from their upstream sources by the VictoriaMetrics sync-job in generate mode, filtered on a multi-select `$cluster` variable and pinned to the `VictoriaMetrics Fleet` datasource, so one copy serves every cluster; see [`o11y/README.md`](../o11y/README.md) for how to add one. A tenant bundle should not ship its own copy of a board that exists in `Shared`.
+Cluster-generic boards (Kubernetes views and system, node exporter, vmagent, Cilium, Flux, Envoy Gateway, CloudNativePG) live once in the **`Shared`** folder rather than in every tenant bundle. They are rendered from their upstream sources by the VictoriaMetrics sync-job in generate mode, filtered on a multi-select `$cluster` variable and pinned to the `VictoriaMetrics Fleet` datasource, so one copy serves every cluster; see [`o11y/README.md`](../o11y/README.md) for how to add one. A tenant bundle should not ship its own copy of a board that exists in `Shared`.
 
 ## Alerting
 
