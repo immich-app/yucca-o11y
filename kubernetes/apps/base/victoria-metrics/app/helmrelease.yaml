@@ -32,6 +32,8 @@ spec:
               memory: 4Gi
             limits:
               memory: 16Gi
+          extraArgs:
+            dedup.minScrapeInterval: 20s
           topologySpreadConstraints:
             - maxSkew: 1
               topologyKey: kubernetes.io/hostname
