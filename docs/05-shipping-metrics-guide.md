@@ -157,6 +157,30 @@ Prometheus users get the same effect by setting `cluster` as a target label in `
 
 The fleet-wide `o11y cluster stopped reporting` alert keys on `up`, which only scrapers emit. A pusher such as a serverless worker never produces `up` and often ships in bursts, so it can go dark without anyone noticing. Such a shipper should emit one steady heartbeat metric and own an `absent_over_time` alert on it in its project folder, with a window matched to its push cadence.
 
+## Sample cadence
+
+The store deduplicates at 20s: `vmselect` runs `-dedup.minScrapeInterval=20s`, which keeps the sample with the largest timestamp in each discrete 20s window and discards the rest on read, and `vmstorage` applies the same interval during its background merges. A query therefore never sees more than one sample per 20s per series, however fast the sample arrived. Anything sent faster costs mesh bandwidth, `vminsert` CPU and two copies on disk (the cluster runs `replicationFactor: 2`) for data nobody can read back, and the merge only reclaims the disk part, after the wire has already been paid for.
+
+So scrape at 20s or slower, and deduplicate anything pushed. The usual offender is an OTLP exporter with cumulative temporality: an unchanged instrument re-sends an identical point every interval, so a 1s export interval from 75k instruments is 75k samples/sec of which the store keeps one in twenty. Raise the exporter's interval to 10s or more, and collapse whatever is left in the shipper's remote write:
+
+```yaml
+spec:
+  remoteWrite:
+    - url: https://vmauth.futostatus.com/insert/0/prometheus/api/v1/write
+      streamAggrConfig:
+        dedupInterval: 20s
+```
+
+`dedupInterval` leaves only the last sample per series per interval, applied after relabeling and before the block is sent, so it drops repeats rather than the shape of the data: a series that is genuinely moving still arrives with its latest value. Match it to the store's 20s rather than picking a shorter one, otherwise aggregation results computed in the shipper disagree with the same query run against the store. `vm_streamaggr_dedup_dropped_samples_total` on the shipper counts what it removed.
+
+To check a cluster's cadence, divide the series it holds by the rows it sends. The send rate comes from its own `vmagent`:
+
+```promql
+sum(rate(vmagent_remotewrite_block_size_rows_sum{cluster="father"}[10m]))
+```
+
+and the series count from its tenant's `totalSeries` in `/select/<tenant>/prometheus/api/v1/status/tsdb`. A result under 20s means the cluster is shipping samples the store will throw away.
+
 ## Tenants
 
 Metrics are also keyed by VictoriaMetrics tenant (`accountID:projectID`): `accountID` is the project, `projectID` is the cluster within it. Shippers never see tenant IDs. They write to the `/insert/0/...` URL with the shared token as shown above, the central `vmauth` rewrites that onto the multitenant insert endpoint, and `vminsert` assigns the tenant from the `project` and `cluster` labels using the relabel rules in `kubernetes/apps/base/victoria-metrics/app/configmap-vminsert-relabel.yaml`, which is the tenant registry. A cluster with no rule lands in tenant 0.
