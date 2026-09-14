@@ -23,6 +23,21 @@ resource "talos_machine_configuration_apply" "worker" {
   config_patches = concat([
     yamlencode({
       machine = {
+        # Same set as futo-internal-platform's workers. Pre-1.14 field (1.14+: SysctlConfig).
+        sysctls = {
+          # Kernel default 0 refuses every user namespace; pods with hostUsers: false
+          # need a budget before they can start.
+          "user.max_user_namespaces" = "11255"
+          # New network namespaces inherit the congestion control, so pods (Envoy's
+          # public TLS above all) get BBR; fq provides the pacing it expects. BBR is
+          # built into the Talos kernel.
+          "net.core.default_qdisc"          = "fq"
+          "net.ipv4.tcp_congestion_control" = "bbr"
+          # Global ceiling for SO_RCVBUF/SO_SNDBUF, for UDP bursts on NetBird's
+          # WireGuard tunnel.
+          "net.core.rmem_max" = "16777216"
+          "net.core.wmem_max" = "16777216"
+        }
         # Install disk isn't pinned: OVH's BYOI provisioning picks the disk and
         # Talos keeps that install, so pinning here has no effect on production.
         # worker_disk is the real install target on staging (uniform hardware).
