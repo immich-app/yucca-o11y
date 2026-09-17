@@ -185,7 +185,7 @@ spec:
         project: o11y
         severity: warning
       annotations:
-        summary: VictoriaLogs ingestion in the o11y cluster is under 1 row/s for 10m; the logs pipeline may be stalled.
+        summary: A VictoriaLogs zone in the o11y cluster is ingesting under 1 row/s, or fewer than two zones are reporting, for 10m; a zone may be stalled, down, or no longer receiving the vlagent fan-out.
       execErrState: Error
       noDataState: NoData
       data:
@@ -200,7 +200,7 @@ spec:
             datasource:
               type: prometheus
               uid: VictoriaMetrics
-            expr: sum(rate(vl_rows_ingested_total{cluster="${CLUSTER_NAME}"}[5m]))
+            expr: min(sum by (job) (rate(vl_rows_ingested_total{cluster="${CLUSTER_NAME}", job=~"vlstorage-victoria-logs-.*"}[5m]))) * (count(sum by (job) (rate(vl_rows_ingested_total{cluster="${CLUSTER_NAME}", job=~"vlstorage-victoria-logs-.*"}[5m]))) >= bool 2)
             instant: true
             range: false
             intervalMs: 1000

@@ -104,6 +104,98 @@ spec:
     vmsingle:
       enabled: false
 
+    vldistributed:
+      enabled: true
+      name: victoria-logs
+      spec:
+        backendType: VLCluster
+        vmauth:
+          spec:
+            port: "8427"
+            replicaCount: 2
+            podDisruptionBudget:
+              minAvailable: 1
+            topologySpreadConstraints:
+              - maxSkew: 1
+                topologyKey: kubernetes.io/hostname
+                whenUnsatisfiable: ScheduleAnyway
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: vmauth
+                    app.kubernetes.io/instance: victoria-logs
+            unauthorizedUserAccessSpec:
+              targetRefs:
+                - name: read
+                - name: write
+        zoneCommon:
+          vlagent:
+            spec:
+              replicaCount: 1
+              storage:
+                volumeClaimTemplate:
+                  spec:
+                    storageClassName: ${CLUSTER_VMLOGS_STORAGE_CLASS}
+                    resources:
+                      requests:
+                        storage: 20Gi
+              resources:
+                requests:
+                  cpu: 200m
+                  memory: 512Mi
+                limits:
+                  memory: 4Gi
+              topologySpreadConstraints:
+                - maxSkew: 1
+                  topologyKey: kubernetes.io/hostname
+                  whenUnsatisfiable: DoNotSchedule
+                  labelSelector:
+                    matchLabels:
+                      app.kubernetes.io/name: vlagent
+          vlcluster:
+            spec:
+              vlstorage:
+                replicaCount: 1
+                retentionPeriod: ${CLUSTER_VMLOGS_RETENTION}
+                storage:
+                  volumeClaimTemplate:
+                    spec:
+                      storageClassName: ${CLUSTER_VMLOGS_STORAGE_CLASS}
+                      resources:
+                        requests:
+                          storage: ${CLUSTER_VMLOGS_SIZE}
+                resources:
+                  requests:
+                    cpu: 500m
+                    memory: 2Gi
+                  limits:
+                    memory: 16Gi
+                topologySpreadConstraints:
+                  - maxSkew: 1
+                    topologyKey: kubernetes.io/hostname
+                    whenUnsatisfiable: DoNotSchedule
+                    labelSelector:
+                      matchLabels:
+                        app.kubernetes.io/name: vlstorage
+              vlselect:
+                replicaCount: 1
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 512Mi
+                  limits:
+                    memory: 6Gi
+              vlinsert:
+                replicaCount: 1
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 512Mi
+                  limits:
+                    memory: 6Gi
+        zones:
+          - name: a
+          - name: b
+
     vmagent:
       spec:
         externalLabels:

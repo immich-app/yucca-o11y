@@ -20,7 +20,7 @@ spec:
         memory: 2Gi
 
     remoteWrite:
-      - url: http://victoria-logs-vlinsert.o11y.svc.cluster.local:9481/insert/native
+      - url: http://vmauth-victoria-logs.o11y.svc.cluster.local:8427/insert/native
         maxDiskUsagePerURL: 10GB
 
     extraArgs:

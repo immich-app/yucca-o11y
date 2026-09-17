@@ -11,7 +11,7 @@ spec:
   interval: 1h
   values:
     vl:
-      entrypoint: http://victoria-logs-vlselect.o11y.svc.cluster.local:9471
+      entrypoint: http://vmauth-victoria-logs.o11y.svc.cluster.local:8427
     route:
       enabled: true
       parentRefs:

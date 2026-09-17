@@ -35,21 +35,7 @@ spec:
         enabled: true
 
     vlinsert:
-      resources:
-        requests:
-          cpu: 100m
-          memory: 512Mi
-        limits:
-          memory: 6Gi
-      topologySpreadConstraints:
-        - maxSkew: 1
-          topologyKey: kubernetes.io/hostname
-          whenUnsatisfiable: ScheduleAnyway
-          labelSelector:
-            matchLabels:
-              app.kubernetes.io/component: vlinsert
-      vmServiceScrape:
-        enabled: true
+      enabled: false
 
     vlselect:
       extraArgs:
