@@ -198,6 +198,7 @@ IDs are unique within a store, and an environment pair (a prod cluster and its s
 | harbor | 3 | harbor-infra-staging | staging | staging | `3:1` |
 | fip | 4 | azad | prod | production | `4:1` |
 | fmeet | 5 | serverless | staging, prod | both | `5:1` |
+| immich | 6 | pokedex | prod | production | `6:1` |
 
 Onboarding a cluster onto its own tenant is a central-side change only: add its rule pair, for example
 
