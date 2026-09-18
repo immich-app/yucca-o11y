@@ -5,6 +5,7 @@ resources:
   - ./externalsecret.yaml
   - ./grafana.yaml
   - ./datasource.yaml
+  - ./datasource-victoria-logs-legacy.yaml
   - ./datasource-fleet.yaml
   - ./datasource-victoriametrics.yaml
   - ./contactpoint-discord.yaml

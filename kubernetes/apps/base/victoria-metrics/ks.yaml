@@ -13,6 +13,16 @@ spec:
       kind: HelmRelease
       name: victoria-metrics
       namespace: o11y
+    - apiVersion: operator.victoriametrics.com/v1alpha1
+      kind: VLDistributed
+      name: victoria-logs
+      namespace: o11y
+  healthCheckExprs:
+    - apiVersion: operator.victoriametrics.com/v1alpha1
+      kind: VLDistributed
+      current: status.updateStatus == 'operational'
+      inProgress: status.updateStatus == 'expanding'
+      failed: status.updateStatus == 'failed'
   interval: 1h
   path: ./kubernetes/apps/base/victoria-metrics/app
   patches: []

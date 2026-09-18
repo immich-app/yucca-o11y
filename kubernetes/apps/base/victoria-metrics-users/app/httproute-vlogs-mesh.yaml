@@ -23,5 +23,5 @@ spec:
               replaceFullPath: /select/vmui/
             statusCode: 302
     - backendRefs:
-        - name: victoria-logs-vlselect
-          port: 9471
+        - name: vmauth-victoria-logs
+          port: 8427

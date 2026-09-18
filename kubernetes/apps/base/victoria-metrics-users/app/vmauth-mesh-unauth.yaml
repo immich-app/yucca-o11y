@@ -37,7 +37,7 @@ spec:
           - /insert/0/.*
         drop_src_path_prefix_parts: 2
       - static:
-          url: http://victoria-logs-vlinsert.o11y.svc.cluster.local:9481
+          url: http://vmauth-victoria-logs.o11y.svc.cluster.local:8427
         paths:
           - /insert/jsonline
           - /insert/native
@@ -50,6 +50,6 @@ spec:
           - /select/0/.*
         drop_src_path_prefix_parts: 2
       - static:
-          url: http://victoria-logs-vlselect.o11y.svc.cluster.local:9471
+          url: http://vmauth-victoria-logs.o11y.svc.cluster.local:8427
         paths:
           - /select/logsql/.*

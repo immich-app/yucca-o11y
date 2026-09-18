@@ -3,16 +3,14 @@
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDatasource
 metadata:
-  name: victoria-logs
+  name: victoria-logs-legacy
 spec:
   instanceSelector:
     matchLabels:
       dashboards: grafana
   datasource:
-    name: VictoriaLogs
+    name: VictoriaLogs Legacy
+    uid: VictoriaLogsLegacy
     type: victoriametrics-logs-datasource
     access: proxy
-    url: http://vmauth-victoria-logs.o11y.svc.cluster.local:8427
-  plugins:
-    - name: victoriametrics-logs-datasource
-      version: 0.29.0
+    url: http://victoria-logs-vlselect.o11y.svc.cluster.local:9471
