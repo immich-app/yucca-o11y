@@ -27,3 +27,21 @@ resource "onepassword_item" "heartbeat_ping_secret" {
   category = "password"
   password = rootly_heartbeat.grafana_alerting.secret
 }
+
+# Per-project Grafana alert source credentials, consumed by the rootly-alerts-*
+# ExternalSecrets that feed the rootly-<project> contact points.
+resource "onepassword_item" "grafana_alerts_url" {
+  for_each = local.projects
+  vault    = data.onepassword_vault.env.uuid
+  title    = "ROOTLY_ALERTS_${upper(each.key)}_URL"
+  category = "password"
+  password = "${local.grafana_webhooks_base}/notify/Service/${local.project_service_ids[each.key]}"
+}
+
+resource "onepassword_item" "grafana_alerts_secret" {
+  for_each = local.projects
+  vault    = data.onepassword_vault.env.uuid
+  title    = "ROOTLY_ALERTS_${upper(each.key)}_SECRET"
+  category = "password"
+  password = rootly_alerts_source.grafana[each.key].secret
+}
