@@ -22,6 +22,7 @@ Built for geographic resilience with single-cluster operational simplicity: thre
 deployment/modules/
 ├── ovh/account/          # cloud project, vRack, private network, CPs, workers, IPLB, DNS
 ├── netbird/cluster/      # per-env mesh: vRack route, mesh-gateway VIP + DNS, pod egress, policies
+├── grafana/cluster/      # Grafana service account for the Rootly integration
 ├── netbox/cluster/       # IPAM registration of the ranges the other modules allocate
 ├── talos/cluster/        # machine secrets, CP + worker configs, bootstrap, ingress firewall
 └── kubernetes/helm/      # CoreDNS, Flux Operator + Instance, bootstrap-settings, env secrets

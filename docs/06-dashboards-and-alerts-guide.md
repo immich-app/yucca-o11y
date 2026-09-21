@@ -126,18 +126,20 @@ Cluster-generic boards (Kubernetes views and system, node exporter, vmagent, Cil
 
 ## Alerting
 
-**Contact points.** A `GrafanaContactPoint` per destination. Secrets (like a Discord webhook) come from a Secret via `receivers[].valuesFrom`, populated by an ExternalSecret from 1Password - never in git. Contact points live in the shared Grafana Postgres, so with the HA replica gossip cluster a firing alert notifies **once**, not once per replica.
+**Contact points.** A `GrafanaContactPoint` per destination. Alerts go to [Rootly](https://rootly.com): one webhook contact point per project (`rootly-<project>` in `base/grafana/app/contactpoint-rootly-alerts.yaml`), each posting to that project's Rootly alert source with the source's own bearer secret, plus `rootly-heartbeat` for the dead man's switch. The alert sources, per-project services and their credentials are managed by the `deployment/modules/rootly/cluster` Terraform module, which writes each source's URL and secret into the env 1Password vault (`ROOTLY_ALERTS_<PROJECT>_URL` / `_SECRET`); an ExternalSecret materializes them into the Secret the contact point reads via `receivers[].valuesFrom` - never in git. Rootly derives alert urgency from the `severity` label (`critical` -> High, `warning` -> Medium, otherwise Low) and, until escalation policies exist, forwards fired and resolved alerts to Discord from its own cloud. Contact points live in the shared Grafana Postgres, so with the HA replica gossip cluster a firing alert notifies **once**, not once per replica.
+
+**Rootly's Grafana integration.** Besides the alert sources, Rootly has an account-level Grafana integration (Integrations > Grafana) that takes this cluster's Grafana URL and an Admin service account token; it is what lets Rootly deep-link rules and snapshot dashboards into incidents. Rootly exposes no API or Terraform surface for it, so it is installed by hand once per env. The `deployment/modules/grafana/cluster` module owns the `rootly` service account and its token and writes the token to the env vault as `ROOTLY_GRAFANA_SERVICE_ACCOUNT_TOKEN`; paste that and `https://grafana.<env domain>` into Rootly. It is a separate module from `rootly/cluster` so the latter stays plannable while Grafana is down.
 
 **Routing.** One `GrafanaNotificationPolicy` routes by the **`grafana_folder`** label - which Grafana adds automatically from the folder each rule files into, so routing follows the folder (the project boundary) with no label to maintain:
 
 ```yaml
 route:
-  receiver: discord           # default / catch-all
+  receiver: rootly-o11y       # default / catch-all for folders without a source of their own
   routes:
     - object_matchers: [["grafana_folder", "=", "yucca"]]
-      receiver: discord
+      receiver: rootly-yucca
     - object_matchers: [["grafana_folder", "=", "o11y"]]
-      receiver: discord        # point at an o11y-specific contact point when one exists
+      receiver: rootly-o11y
 ```
 
 So **routing follows the folder automatically** - no per-rule label to set or keep in sync. (Existing rules still carry a `project` *rule* label; it is legacy and unused for routing — distinct from the `project` *series* label every shipper stamps, see the [shipping guide](05-shipping-metrics-guide.md#labels).) Notifications additionally group by `cluster` (alongside `grafana_folder` and `alertname`), so the same rule firing in two clusters arrives as two grouped notifications rather than one blended message.
@@ -150,7 +152,7 @@ So **routing follows the folder automatically** - no per-rule label to set or ke
 
 1. Pick a delivery model: **Model A** (recommended for a separate repo/cluster - you own a signed bundle, o11y adds one OCIRepository) or **Model B** (PR the CRs into `base/grafana`).
 2. Everything you ship files under **your project's folder**; ask for one if it does not exist.
-3. Routing follows your folder automatically; add a route matching your `grafana_folder` (and, if you want your own channel, a contact point).
+3. Routing follows your folder automatically; ask for your project to be added to the Rootly module's `projects` list, which gives you a Rootly alert source, a service, and the `rootly-<project>` contact point and route in `base/grafana/app`.
 4. Dashboards use a `$datasource` variable and map `DS_PROMETHEUS` to `VictoriaMetrics`; alerts query the `VictoriaMetrics` datasource. Anything that must see other clusters' series uses `VictoriaMetrics Fleet` instead (see Datasources and tenants).
 5. Tag dashboards by signal/layer in the JSON (`metrics`, `logs`, `infra`, ...) so they stay filterable across folders (see Tags). Alerts that compare across clusters aggregate `by (cluster)`; stamp the five identity labels on your series (see the [shipping guide](05-shipping-metrics-guide.md#labels)) so per-cluster alerting works.
 

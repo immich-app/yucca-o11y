@@ -28,14 +28,15 @@ resource "rootly_heartbeat" "grafana_alerting" {
   enabled                  = true
 }
 
-# Deliver Rootly alerts for this service to the env's Discord channel. Interim
-# receiver until escalation policies exist; Rootly cloud -> Discord, independent
-# of the cluster whose death the heartbeat reports.
+# Deliver Rootly alerts on every project service (heartbeat and Grafana alert
+# sources alike) to the env's Discord channel. Interim receiver until
+# escalation policies exist; Rootly cloud -> Discord, independent of the
+# cluster whose death the heartbeat reports.
 resource "rootly_workflow_alert" "discord_fired" {
   name        = "o11y-${var.env}-alert-fired-to-discord"
-  description = "Posts new alerts on the o11y-${var.env} service to the ${var.env} Discord channel."
+  description = "Posts new alerts on the ${var.env} project services to the ${var.env} Discord channel."
   enabled     = true
-  service_ids = [rootly_service.o11y.id]
+  service_ids = values(local.project_service_ids)
   trigger_params {
     triggers = ["alert_created"]
   }
@@ -51,7 +52,7 @@ resource "rootly_workflow_task_http_client" "discord_fired" {
     body = jsonencode({
       username   = "Rootly"
       avatar_url = "https://avatars.githubusercontent.com/u/78240982"
-      content    = "🔴 **Rootly** (o11y-${var.env}): {{ alert.summary }}"
+      content    = "🔴 **Rootly** (${var.env}): {{ alert.summary }}"
     })
     succeed_on_status = "200|204"
     retry_count       = "4"
@@ -61,9 +62,9 @@ resource "rootly_workflow_task_http_client" "discord_fired" {
 
 resource "rootly_workflow_alert" "discord_resolved" {
   name        = "o11y-${var.env}-alert-resolved-to-discord"
-  description = "Posts alert resolutions on the o11y-${var.env} service to the ${var.env} Discord channel."
+  description = "Posts alert resolutions on the ${var.env} project services to the ${var.env} Discord channel."
   enabled     = true
-  service_ids = [rootly_service.o11y.id]
+  service_ids = values(local.project_service_ids)
   trigger_params {
     triggers               = ["alert_status_updated"]
     alert_condition_status = "IS"
@@ -81,7 +82,7 @@ resource "rootly_workflow_task_http_client" "discord_resolved" {
     body = jsonencode({
       username   = "Rootly"
       avatar_url = "https://avatars.githubusercontent.com/u/78240982"
-      content    = "🟢 **Rootly** (o11y-${var.env}): resolved — {{ alert.summary }}"
+      content    = "🟢 **Rootly** (${var.env}): resolved — {{ alert.summary }}"
     })
     succeed_on_status = "200|204"
     retry_count       = "4"

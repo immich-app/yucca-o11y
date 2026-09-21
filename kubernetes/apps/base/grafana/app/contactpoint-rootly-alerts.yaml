@@ -1,0 +1,154 @@
+---
+# One webhook contact point per Grafana folder, each posting to that project's
+# Rootly alert source (its own secret) on the project's service. The
+# notification title becomes the Rootly alert summary, so it stays stable
+# between the firing and resolved notifications of the same group.
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/grafana.integreatly.org/grafanacontactpoint_v1beta1.json
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaContactPoint
+metadata:
+  name: rootly-o11y
+spec:
+  resyncPeriod: 1h
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
+  name: rootly-o11y
+  receivers:
+    - type: webhook
+      settings:
+        httpMethod: POST
+        authorization_scheme: Bearer
+        title: |-
+          {{ .CommonLabels.grafana_folder }} · {{ .CommonLabels.alertname }}{{ if .CommonLabels.cluster }} · {{ .CommonLabels.cluster }}{{ end }}
+      valuesFrom:
+        - targetPath: url
+          valueFrom:
+            secretKeyRef:
+              name: rootly-alerts-o11y
+              key: url
+        - targetPath: authorization_credentials
+          valueFrom:
+            secretKeyRef:
+              name: rootly-alerts-o11y
+              key: token
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/grafana.integreatly.org/grafanacontactpoint_v1beta1.json
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaContactPoint
+metadata:
+  name: rootly-yucca
+spec:
+  resyncPeriod: 1h
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
+  name: rootly-yucca
+  receivers:
+    - type: webhook
+      settings:
+        httpMethod: POST
+        authorization_scheme: Bearer
+        title: |-
+          {{ .CommonLabels.grafana_folder }} · {{ .CommonLabels.alertname }}{{ if .CommonLabels.cluster }} · {{ .CommonLabels.cluster }}{{ end }}
+      valuesFrom:
+        - targetPath: url
+          valueFrom:
+            secretKeyRef:
+              name: rootly-alerts-yucca
+              key: url
+        - targetPath: authorization_credentials
+          valueFrom:
+            secretKeyRef:
+              name: rootly-alerts-yucca
+              key: token
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/grafana.integreatly.org/grafanacontactpoint_v1beta1.json
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaContactPoint
+metadata:
+  name: rootly-fmeet
+spec:
+  resyncPeriod: 1h
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
+  name: rootly-fmeet
+  receivers:
+    - type: webhook
+      settings:
+        httpMethod: POST
+        authorization_scheme: Bearer
+        title: |-
+          {{ .CommonLabels.grafana_folder }} · {{ .CommonLabels.alertname }}{{ if .CommonLabels.cluster }} · {{ .CommonLabels.cluster }}{{ end }}
+      valuesFrom:
+        - targetPath: url
+          valueFrom:
+            secretKeyRef:
+              name: rootly-alerts-fmeet
+              key: url
+        - targetPath: authorization_credentials
+          valueFrom:
+            secretKeyRef:
+              name: rootly-alerts-fmeet
+              key: token
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/grafana.integreatly.org/grafanacontactpoint_v1beta1.json
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaContactPoint
+metadata:
+  name: rootly-harbor
+spec:
+  resyncPeriod: 1h
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
+  name: rootly-harbor
+  receivers:
+    - type: webhook
+      settings:
+        httpMethod: POST
+        authorization_scheme: Bearer
+        title: |-
+          {{ .CommonLabels.grafana_folder }} · {{ .CommonLabels.alertname }}{{ if .CommonLabels.cluster }} · {{ .CommonLabels.cluster }}{{ end }}
+      valuesFrom:
+        - targetPath: url
+          valueFrom:
+            secretKeyRef:
+              name: rootly-alerts-harbor
+              key: url
+        - targetPath: authorization_credentials
+          valueFrom:
+            secretKeyRef:
+              name: rootly-alerts-harbor
+              key: token
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/grafana.integreatly.org/grafanacontactpoint_v1beta1.json
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaContactPoint
+metadata:
+  name: rootly-fip
+spec:
+  resyncPeriod: 1h
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
+  name: rootly-fip
+  receivers:
+    - type: webhook
+      settings:
+        httpMethod: POST
+        authorization_scheme: Bearer
+        title: |-
+          {{ .CommonLabels.grafana_folder }} · {{ .CommonLabels.alertname }}{{ if .CommonLabels.cluster }} · {{ .CommonLabels.cluster }}{{ end }}
+      valuesFrom:
+        - targetPath: url
+          valueFrom:
+            secretKeyRef:
+              name: rootly-alerts-fip
+              key: url
+        - targetPath: authorization_credentials
+          valueFrom:
+            secretKeyRef:
+              name: rootly-alerts-fip
+              key: token

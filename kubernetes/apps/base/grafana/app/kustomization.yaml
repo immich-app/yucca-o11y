@@ -8,8 +8,8 @@ resources:
   - ./datasource-victoria-logs-legacy.yaml
   - ./datasource-fleet.yaml
   - ./datasource-victoriametrics.yaml
-  - ./contactpoint-discord.yaml
   - ./contactpoint-rootly.yaml
+  - ./contactpoint-rootly-alerts.yaml
   - ./notificationpolicy.yaml
   - ./servicemonitor.yaml
   - ./alerts-o11y.yaml
