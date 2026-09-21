@@ -35,9 +35,11 @@ spec:
       - receiver: rootly-fmeet
         object_matchers:
           - ["grafana_folder", "=", "fmeet"]
+      # The harbor bundle titles its folder "Harbor"; grafana_folder carries the
+      # title, so match it case-insensitively rather than by the CR name.
       - receiver: rootly-harbor
         object_matchers:
-          - ["grafana_folder", "=", "harbor"]
+          - ["grafana_folder", "=~", "(?i)^harbor$"]
       - receiver: rootly-fip
         object_matchers:
           - ["grafana_folder", "=", "fip"]
