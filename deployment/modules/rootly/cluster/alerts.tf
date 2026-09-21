@@ -4,8 +4,9 @@
 # status-page items. The o11y folder reuses the service the heartbeat targets.
 #
 # Grafana posts each grouped notification to the source's /notify/Service/<id>
-# endpoint with the secret as a bearer token; the notification title becomes
-# the alert summary and commonLabels become alert labels.
+# endpoint with the source secret as a query parameter; the notification title
+# becomes the alert summary, commonLabels become alert labels, and a resolved
+# notification resolves the alert.
 locals {
   projects = toset(["o11y", "yucca", "fmeet", "harbor", "fip"])
 
