@@ -12,7 +12,6 @@ pipx = "1.17.3"
 "pipx:python-openstackclient" = "10.3.0"
 kubectl = "1.37.0"
 flux2 = "2.9.5"
-"sd" = "1.1.0"
 talosctl = "1.14.1"
 helm = "4.3.0"
 "jq" = "1.8.2"
@@ -39,8 +38,11 @@ ENVIRONMENT_SHORT = "{% set e = get_env(name='ENVIRONMENT', default='development
 sync_job = "docker run --rm -e OUTPUT=- -e CONFIG=/config/sync-job.yaml -e NAMESPACE=o11y -e RELEASE=shared -e OWNER_REFERENCES=false -v {{config_root}}/o11y:/config:ro ghcr.io/victoriametrics/sync-job:v0.0.17"
 # Pin every datasource-type template variable to the Fleet datasource: the
 # sync-job leaves them free, and Grafana would otherwise open a shared board
-# on the default (tenant-scoped) datasource and show only this cluster.
-pin_fleet = "yq '(select(.kind == \"GrafanaDashboard\") | .spec.json) |= (fromjson | .templating.list[] |= (select(.type == \"datasource\") |= (.regex = \"/^VictoriaMetrics Fleet$/\" | .current = {\"text\": \"VictoriaMetrics Fleet\", \"value\": \"VictoriaMetricsFleet\"})) | tojson)'"
+# on the default (tenant-scoped) datasource and show only this cluster. Query
+# variables the sync-job emits without a datasource (its `cluster` picker on
+# boards whose datasource variable is not named `datasource`) get the same
+# treatment, or their dropdown lists only this cluster's values.
+pin_fleet = "yq '(select(.kind == \"GrafanaDashboard\") | .spec.json) |= (fromjson | .templating.list[] |= (select(.type == \"datasource\") |= (.regex = \"/^VictoriaMetrics Fleet$/\" | .current = {\"text\": \"VictoriaMetrics Fleet\", \"value\": \"VictoriaMetricsFleet\"})) | .templating.list[] |= (select(.type == \"query\" and .datasource == null) |= .datasource = {\"type\": \"prometheus\", \"uid\": \"VictoriaMetricsFleet\"}) | tojson)'"
 # The sync-job emits the kube-prometheus bundle in map order; sort documents so an unchanged
 # upstream renders byte-identical and the artifact's content layer keeps its digest.
 sort_docs = "yq eval-all '[.] | sort_by(.metadata.name) | .[] | splitDoc'"
@@ -87,21 +89,8 @@ run = "markdownlint-cli2 --fix 'docs/**/*.md' 'README.md'"
 description = "Auto-fix markdown lint issues where possible"
 
 [tasks."o11y:vendor"]
-description = "Fetch upstream boards that need a rewrite before the sync-job sees them (CloudNativePG: its `cluster` means the Postgres cluster, kept as `pg_cluster`; etcd: its `cluster` variable holds job names, kept as `job`)"
-run = """
-mkdir -p {{config_root}}/o11y/vendor
-curl -fsSL https://raw.githubusercontent.com/cloudnative-pg/grafana-dashboards/cluster-v0.0.5/charts/cluster/grafana-dashboard.json \\
-  | sd '\\$cluster\\b' '$$pg_cluster' \\
-  | sd '\\bcluster(\\s*(?:=~|!~|!=|=)\\s*)' 'pg_cluster$1' \\
-  | sd '([(,]\\s*)cluster(\\s*[,)])' '${1}pg_cluster$2' \\
-  | sd '"name":\\s*"cluster"' '"name": "pg_cluster"' \\
-  | sd -s '\\\\bcluster\\\\b=' '\\\\bpg_cluster\\\\b=' \\
-  > {{config_root}}/o11y/vendor/cloudnativepg.json
-curl -fsSL https://raw.githubusercontent.com/monitoring-mixins/website/master/assets/etcd/dashboards/etcd.json \\
-  | sd '\\$cluster\\b' '$$job' \\
-  | sd '"name":\\s*"cluster"' '"name": "job"' \\
-  > {{config_root}}/o11y/vendor/etcd.json
-"""
+description = "Fetch upstream boards that need a rewrite before the sync-job sees them (o11y/scripts/vendor.py)"
+run = "python3 {{config_root}}/o11y/scripts/vendor.py"
 
 [tasks."o11y:render"]
 depends = ["o11y:vendor"]
