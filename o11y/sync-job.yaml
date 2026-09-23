@@ -37,6 +37,8 @@ dashboards:
       clusterMetric: spegel_mirror_requests_total
     cloudnativepg:
       clusterMetric: cnpg_collector_up
+    etcd:
+      clusterMetric: etcd_server_has_leader
     prometheus:
       enabled: false
     prometheus-remote-write:
@@ -75,7 +77,7 @@ dashboards:
     - url: https://raw.githubusercontent.com/fluxcd/flux2-monitoring-example/7ab65dc8b90f/monitoring/configs/dashboards/control-plane.json
     - url: https://raw.githubusercontent.com/spegel-org/spegel/v0.7.4/charts/spegel/monitoring/grafana-dashboard.json
     - url: https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/grafana-dashboardDefinitions.yaml
-    - url: https://raw.githubusercontent.com/monitoring-mixins/website/master/assets/etcd/dashboards/etcd.json
+    - url: /config/vendor/etcd.json
     - url: /config/vendor/cloudnativepg.json
     - url: https://grafana.com/api/dashboards/24459/revisions/3/download
     - url: https://grafana.com/api/dashboards/24457/revisions/4/download
