@@ -87,7 +87,7 @@ run = "markdownlint-cli2 --fix 'docs/**/*.md' 'README.md'"
 description = "Auto-fix markdown lint issues where possible"
 
 [tasks."o11y:vendor"]
-description = "Fetch upstream boards that need a rewrite before the sync-job sees them (CloudNativePG: its `cluster` means the Postgres cluster; the fleet keeps that under `pg_cluster`)"
+description = "Fetch upstream boards that need a rewrite before the sync-job sees them (CloudNativePG: its `cluster` means the Postgres cluster, kept as `pg_cluster`; etcd: its `cluster` variable holds job names, kept as `job`)"
 run = """
 mkdir -p {{config_root}}/o11y/vendor
 curl -fsSL https://raw.githubusercontent.com/cloudnative-pg/grafana-dashboards/cluster-v0.0.5/charts/cluster/grafana-dashboard.json \\
@@ -97,6 +97,10 @@ curl -fsSL https://raw.githubusercontent.com/cloudnative-pg/grafana-dashboards/c
   | sd '"name":\\s*"cluster"' '"name": "pg_cluster"' \\
   | sd -s '\\\\bcluster\\\\b=' '\\\\bpg_cluster\\\\b=' \\
   > {{config_root}}/o11y/vendor/cloudnativepg.json
+curl -fsSL https://raw.githubusercontent.com/monitoring-mixins/website/master/assets/etcd/dashboards/etcd.json \\
+  | sd '\\$cluster\\b' '$$job' \\
+  | sd '"name":\\s*"cluster"' '"name": "job"' \\
+  > {{config_root}}/o11y/vendor/etcd.json
 """
 
 [tasks."o11y:render"]
