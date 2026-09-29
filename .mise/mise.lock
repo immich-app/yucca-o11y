@@ -215,9 +215,9 @@ url = "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/
 url_api = "https://api.github.com/repos/kubernetes-sigs/kustomize/releases/assets/353160974"
 
 [[tools.markdownlint-cli2]]
-version = "0.23.2"
+version = "0.23.3"
 backend = "npm:markdownlint-cli2"
-specifiers = ["0.23.2"]
+specifiers = ["0.23.3"]
 
 [[tools.opentofu]]
 version = "1.12.6"
