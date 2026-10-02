@@ -9,11 +9,6 @@ data "onepassword_vault" "env" {
   name = "o11y_tf_${local.env_short}"
 }
 
-data "onepassword_item" "discord_webhook" {
-  vault = data.onepassword_vault.env.uuid
-  title = "ROOTLY_DISCORD_WEBHOOK"
-}
-
 resource "onepassword_item" "heartbeat_ping_url" {
   vault    = data.onepassword_vault.env.uuid
   title    = "ROOTLY_HEARTBEAT_PING_URL"

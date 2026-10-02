@@ -5,6 +5,11 @@ variable "rootly_api_token" {
   sensitive = true
 }
 
+variable "rootly_zulip_webhook" {
+  type      = string
+  sensitive = true
+}
+
 variable "op_connect_host" {
   type    = string
   default = "https://opc.o11y.futo.network"
