@@ -111,3 +111,44 @@ resource "rootly_workflow_task_http_client" "zulip_resolved" {
     retry_wait_time   = "15"
   }
 }
+
+# Stopgap until escalation policies page someone: a high-urgency alert that is
+# still open and unacknowledged a day after it fired gets a daily reminder in
+# its topic. Rootly re-checks the conditions before every run, so reminders
+# stop once the alert is acknowledged or resolved.
+resource "rootly_workflow_alert" "zulip_reminder" {
+  for_each              = local.zulip_channels
+  name                  = "${each.key}-${var.env}-alert-reminder-to-zulip"
+  description           = "Reminds the ${each.value} Zulip channel daily about high-urgency ${each.key} ${var.env} alerts that are still open and unacknowledged."
+  enabled               = true
+  service_ids           = [local.project_service_ids[each.key]]
+  wait                  = "1 day"
+  repeat_every_duration = "1 day"
+  trigger_params {
+    triggers                = ["alert_created"]
+    alert_condition_status  = "IS"
+    alert_statuses          = ["open", "triggered"]
+    alert_condition_urgency = "IS"
+    alert_urgency_ids       = [data.rootly_alert_urgency.high.id]
+    alert_condition_payload = "IS"
+    alert_query_payload     = "$.rootly.notification_target.id"
+    alert_payload           = [local.project_service_ids[each.key]]
+  }
+}
+
+resource "rootly_workflow_task_http_client" "zulip_reminder" {
+  for_each    = local.zulip_channels
+  workflow_id = rootly_workflow_alert.zulip_reminder[each.key].id
+  name        = "Post to Zulip"
+  task_params {
+    url     = local.zulip_webhook_urls[each.key]
+    method  = "POST"
+    headers = jsonencode({ "Content-Type" = "application/json" })
+    body = jsonencode({
+      text = "⏰ *Rootly* (${var.env}): still open and unacknowledged <{{ alert.url }}|{{ alert.summary }}>"
+    })
+    succeed_on_status = "200"
+    retry_count       = "4"
+    retry_wait_time   = "15"
+  }
+}
