@@ -33,6 +33,9 @@ resource "rootly_heartbeat" "grafana_alerting" {
 # its own channel; every other project shares yucca-alerts. The topic is
 # <project>-<env>, so each project and env threads apart within the
 # channel. Bodies are Slack mrkdwn, which Zulip rewrites to its own markdown.
+# Rootly ignores service_ids on alert workflows, so each one matches the
+# alert's notification target instead: the service its alert source posts
+# to, which Rootly records in the payload.
 locals {
   zulip_channels = {
     for project in local.projects :
@@ -52,7 +55,10 @@ resource "rootly_workflow_alert" "zulip_fired" {
   enabled     = true
   service_ids = [local.project_service_ids[each.key]]
   trigger_params {
-    triggers = ["alert_created"]
+    triggers                = ["alert_created"]
+    alert_condition_payload = "IS"
+    alert_query_payload     = "$.rootly.notification_target.id"
+    alert_payload           = [local.project_service_ids[each.key]]
   }
 }
 
@@ -80,9 +86,12 @@ resource "rootly_workflow_alert" "zulip_resolved" {
   enabled     = true
   service_ids = [local.project_service_ids[each.key]]
   trigger_params {
-    triggers               = ["alert_status_updated"]
-    alert_condition_status = "IS"
-    alert_statuses         = ["resolved"]
+    triggers                = ["alert_status_updated"]
+    alert_condition_status  = "IS"
+    alert_statuses          = ["resolved"]
+    alert_condition_payload = "IS"
+    alert_query_payload     = "$.rootly.notification_target.id"
+    alert_payload           = [local.project_service_ids[each.key]]
   }
 }
 
