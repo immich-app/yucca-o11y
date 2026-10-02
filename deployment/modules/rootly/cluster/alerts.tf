@@ -6,7 +6,10 @@
 # Grafana posts each grouped notification to the source's /notify/Service/<id>
 # endpoint with the source secret as a query parameter; the notification title
 # becomes the alert summary, commonLabels become alert labels, and a resolved
-# notification resolves the alert.
+# notification resolves the alert. Repeat notifications for a group whose
+# alert is still open fold into that alert by groupKey instead of opening a
+# new one, so each group posts to Zulip once when it fires and once when it
+# resolves.
 locals {
   projects = toset(["o11y", "yucca", "fmeet", "harbor", "fip"])
 
@@ -40,6 +43,10 @@ resource "rootly_alerts_source" "grafana" {
   name             = "${each.key}-${var.env}-grafana"
   source_type      = "grafana"
   alert_urgency_id = data.rootly_alert_urgency.low.id
+
+  deduplicate_alerts_by_key = true
+  deduplication_key_kind    = "payload"
+  deduplication_key_path    = "$.groupKey"
 
   alert_source_urgency_rules_attributes {
     kind             = "payload"
