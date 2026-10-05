@@ -13,22 +13,26 @@ concurrency:
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
   filter:
     name: Flate - Filter
     runs-on: ubuntu-latest
     outputs:
-      changed-files: ${{ steps.changed-files.outputs.changed_files }}
+      any-modified: ${{ steps.changed-files.outputs.any_modified }}
     steps:
       - name: Get Changed Files
         id: changed-files
-        uses: bjw-s-labs/action-changed-files@147be9638332cf68fd60714a610509d7a9360d60 # v0.7.0
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         with:
-          patterns: kubernetes/**/*
+          files: |
+            kubernetes/**
+            .mise/config.toml
+            .github/workflows/flate.yaml
 
   flate:
-    if: ${{ needs.filter.outputs.changed-files != '[]' }}
+    if: ${{ needs.filter.outputs.any-modified == 'true' }}
     needs: filter
     name: Flate - ${{ matrix.cluster }} - ${{ matrix.resource }}
     runs-on: ubuntu-latest
@@ -45,13 +49,24 @@ jobs:
           persist-credentials: false
 
       - name: Install Flate
-        uses: home-operations/flate/action@631b76b69c4e58c6f4d1cb01e23616fa61aebafa # v0.6.5
+        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
         with:
-          cache: true
+          install_args: --locked github:home-operations/flate
 
+      - name: Restore Flate Cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/flate
+          key: flate-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            flate-${{ runner.os }}-${{ runner.arch }}-
+
+      # Full tree on purpose: changed-only mode (FLATE_BASE) only renders resources
+      # whose manifests changed, so flate bumps and edits here would test nothing.
       - name: Run Flate
         env:
           FLATE_PATH: ./kubernetes/clusters/${{ matrix.cluster }}
+          FLATE_CACHE_DIR: ${{ runner.temp }}/flate
           KIND: ${{ matrix.resource }}
         run: flate test $KIND
 
