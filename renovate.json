@@ -87,6 +87,12 @@
       "enabled": false
     },
     {
+      "description": "Group mise tool updates into one PR. opentofu and terragrunt run every plan, so they stay separate to keep a plan diff attributable to one bump; flate keeps its own group below",
+      "matchManagers": ["mise"],
+      "matchDepNames": ["!opentofu", "!terragrunt", "!github:home-operations/flate"],
+      "groupName": "mise tools"
+    },
+    {
       "description": "Group the flate mise dep and GitHub Action into one PR; both release together, so wait until both updates are pending",
       "matchPackageNames": [
         "home-operations/flate",
