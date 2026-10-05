@@ -21,6 +21,8 @@ spec:
         httpMethod: POST
         title: |-
           {{ .CommonLabels.grafana_folder }} · {{ .CommonLabels.alertname }}{{ if .CommonLabels.cluster }} · {{ .CommonLabels.cluster }}{{ end }}
+        message: |-
+          {{ template "rootly.message" . }}
       valuesFrom:
         - targetPath: url
           valueFrom:
@@ -45,6 +47,8 @@ spec:
         httpMethod: POST
         title: |-
           {{ .CommonLabels.grafana_folder }} · {{ .CommonLabels.alertname }}{{ if .CommonLabels.cluster }} · {{ .CommonLabels.cluster }}{{ end }}
+        message: |-
+          {{ template "rootly.message" . }}
       valuesFrom:
         - targetPath: url
           valueFrom:
@@ -69,6 +73,8 @@ spec:
         httpMethod: POST
         title: |-
           {{ .CommonLabels.grafana_folder }} · {{ .CommonLabels.alertname }}{{ if .CommonLabels.cluster }} · {{ .CommonLabels.cluster }}{{ end }}
+        message: |-
+          {{ template "rootly.message" . }}
       valuesFrom:
         - targetPath: url
           valueFrom:
@@ -93,6 +99,8 @@ spec:
         httpMethod: POST
         title: |-
           {{ .CommonLabels.grafana_folder }} · {{ .CommonLabels.alertname }}{{ if .CommonLabels.cluster }} · {{ .CommonLabels.cluster }}{{ end }}
+        message: |-
+          {{ template "rootly.message" . }}
       valuesFrom:
         - targetPath: url
           valueFrom:
@@ -117,6 +125,8 @@ spec:
         httpMethod: POST
         title: |-
           {{ .CommonLabels.grafana_folder }} · {{ .CommonLabels.alertname }}{{ if .CommonLabels.cluster }} · {{ .CommonLabels.cluster }}{{ end }}
+        message: |-
+          {{ template "rootly.message" . }}
       valuesFrom:
         - targetPath: url
           valueFrom:

@@ -33,6 +33,9 @@ resource "rootly_heartbeat" "grafana_alerting" {
 # its own channel; every other project shares yucca-alerts. The topic is
 # <project>-<env>, so each project and env threads apart within the
 # channel. Bodies are Slack mrkdwn, which Zulip rewrites to its own markdown.
+# Fired posts and reminders carry the alert description under the title line;
+# Rootly substitutes it as raw text, so the whole message goes through to_json
+# to keep its newlines and quotes from breaking the JSON body.
 # Rootly ignores service_ids on alert workflows, so each one matches the
 # alert's notification target instead: the service its alert source posts
 # to, which Rootly records in the payload.
@@ -67,12 +70,13 @@ resource "rootly_workflow_task_http_client" "zulip_fired" {
   workflow_id = rootly_workflow_alert.zulip_fired[each.key].id
   name        = "Post to Zulip"
   task_params {
-    url     = local.zulip_webhook_urls[each.key]
-    method  = "POST"
-    headers = jsonencode({ "Content-Type" = "application/json" })
-    body = jsonencode({
-      text = "🔴 *Rootly* (${var.env}): <{{ alert.url }}|{{ alert.summary }}>"
-    })
+    url               = local.zulip_webhook_urls[each.key]
+    method            = "POST"
+    headers           = jsonencode({ "Content-Type" = "application/json" })
+    body              = <<-EOT
+      {% capture text %}🔴 *Rootly* (${var.env}): <{{ alert.url }}|{{ alert.summary }}>
+      {{ alert.description }}{% endcapture %}{"text": {{ text | to_json }}}
+    EOT
     succeed_on_status = "200"
     retry_count       = "4"
     retry_wait_time   = "15"
@@ -141,12 +145,13 @@ resource "rootly_workflow_task_http_client" "zulip_reminder" {
   workflow_id = rootly_workflow_alert.zulip_reminder[each.key].id
   name        = "Post to Zulip"
   task_params {
-    url     = local.zulip_webhook_urls[each.key]
-    method  = "POST"
-    headers = jsonencode({ "Content-Type" = "application/json" })
-    body = jsonencode({
-      text = "⏰ *Rootly* (${var.env}): still open and unacknowledged <{{ alert.url }}|{{ alert.summary }}>"
-    })
+    url               = local.zulip_webhook_urls[each.key]
+    method            = "POST"
+    headers           = jsonencode({ "Content-Type" = "application/json" })
+    body              = <<-EOT
+      {% capture text %}⏰ *Rootly* (${var.env}): still open and unacknowledged <{{ alert.url }}|{{ alert.summary }}>
+      {{ alert.description }}{% endcapture %}{"text": {{ text | to_json }}}
+    EOT
     succeed_on_status = "200"
     retry_count       = "4"
     retry_wait_time   = "15"
