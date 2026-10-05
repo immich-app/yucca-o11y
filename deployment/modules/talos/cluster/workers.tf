@@ -4,6 +4,8 @@ data "talos_machine_configuration" "worker" {
   machine_type       = "worker"
   machine_secrets    = talos_machine_secrets.this.machine_secrets
   kubernetes_version = var.kubernetes_version != "" ? var.kubernetes_version : null
+  # Config contract; see controlplane.tf.
+  talos_version = "v1.13"
 }
 
 resource "talos_machine_configuration_apply" "worker" {
