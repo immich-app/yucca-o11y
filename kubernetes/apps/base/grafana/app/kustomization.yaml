@@ -10,6 +10,7 @@ resources:
   - ./datasource-victoriametrics.yaml
   - ./contactpoint-rootly.yaml
   - ./contactpoint-rootly-alerts.yaml
+  - ./notificationtemplate-rootly.yaml
   - ./notificationpolicy.yaml
   - ./servicemonitor.yaml
   - ./alerts-o11y.yaml

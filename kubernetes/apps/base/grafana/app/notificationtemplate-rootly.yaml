@@ -1,0 +1,34 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/grafana.integreatly.org/grafananotificationtemplate_v1beta1.json
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaNotificationTemplate
+metadata:
+  name: rootly
+spec:
+  resyncPeriod: 1h
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
+  name: rootly
+  template: |-
+    {{ define "rootly.message" -}}
+    {{ range $i, $a := .Alerts.Firing -}}
+    {{ if lt $i 5 -}}
+    {{ if $i }}
+
+    {{ end -}}
+    {{ or $a.Annotations.summary $a.Labels.alertname }}
+    {{- with $a.Annotations.description }}
+    {{ . }}
+    {{- end }}
+    [Rule]({{ $a.GeneratorURL }})
+    {{- with $a.DashboardURL }} · [Dashboard]({{ . }}){{ end }}
+    {{- with $a.Annotations.runbook_url }} · [Runbook]({{ . }}){{ end }} · [Silence]({{ $a.SilenceURL }})
+    {{- end }}
+    {{- end }}
+    {{- if gt (len .Alerts.Firing) 5 }}
+
+    {{ len .Alerts.Firing }} alerts are firing in this group; the first five are shown.
+    {{- end }}
+    {{- if not .Alerts.Firing }}Resolved.{{ end }}
+    {{- end }}
