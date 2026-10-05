@@ -4,6 +4,10 @@ data "talos_machine_configuration" "controlplane" {
   machine_type       = "controlplane"
   machine_secrets    = talos_machine_secrets.this.machine_secrets
   kubernetes_version = var.kubernetes_version != "" ? var.kubernetes_version : null
+  # The config contract (schema and defaults), independent of the installed Talos
+  # version. Unset, it tracks the provider's bundled SDK, so a provider bump
+  # regenerates every node's config. Never set it above the nodes' Talos minor.
+  talos_version = "v1.13"
 }
 
 resource "talos_machine_configuration_apply" "controlplane" {
