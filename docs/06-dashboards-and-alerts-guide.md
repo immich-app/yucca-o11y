@@ -13,6 +13,7 @@ Each project gets a Grafana **folder** named for it, and both its dashboards and
 | `harbor` | the Harbor clusters (harbor-infra-prod/staging) | harbor-o11y's key-signed OCI bundle (Model A, anonymous-pull registry) |
 | `fip` | the FUTO internal platform cluster (azad) | futo-internal-platform's signed OCI bundle (Model A) |
 | `version` | the Immich version worker (Cloudflare) | immich-app/version's signed OCI bundle (Model A), including recording rules |
+| `bootstrap` | the bootstrap DOKS cluster (palpatine) | bootstrap's key-signed GitLab OCI bundle (Model A, anonymous-pull registry: infra/bootstrap is a public project) |
 
 Add a project, add a folder. That folder is the unit you scope dashboards, alerts, and (eventually) permissions to.
 

@@ -1,0 +1,60 @@
+---
+# Public half of the key infra/bootstrap's CI signs its bundle with (private
+# half in 1Password futo_bootstrap_tf); from that repo's o11y/cosign.pub.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: bootstrap-o11y-cosign
+  namespace: flux-system
+stringData:
+  cosign.pub: |
+    -----BEGIN PUBLIC KEY-----
+    MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEzHqF/oAGwnaGfEwZjDURs4bOTpsC
+    sa4Md43WkO+RwKp3doSDxOoBaz/hFw4ORGcWP7zpgjKIcr2j7rpbsXCV/g==
+    -----END PUBLIC KEY-----
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/source.toolkit.fluxcd.io/ocirepository_v1.json
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: bootstrap-o11y
+  namespace: flux-system
+spec:
+  interval: 1m
+  url: oci://gitlab.futo.org:5050/infra/bootstrap/o11y-manifests
+  ref:
+    tag: main
+  verify:
+    provider: cosign
+    secretRef:
+      name: bootstrap-o11y-cosign
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: bootstrap-o11y
+  namespace: flux-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: OCIRepository
+    name: bootstrap-o11y
+  path: ./
+  patches:
+    - target:
+        kind: GrafanaFolder
+      patch: |-
+        - op: add
+          path: /spec/permissions
+          value: |
+            {
+              "items": [
+                {"role": "Viewer", "permission": 1},
+                {"role": "Editor", "permission": 1}
+              ]
+            }
+  prune: true
+  targetNamespace: o11y
+  dependsOn:
+    - name: grafana-operator
