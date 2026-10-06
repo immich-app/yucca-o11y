@@ -6,8 +6,8 @@ metadata:
   namespace: flux-system
 spec:
   patches:
-    # immich-app/version's dev deployment (main only; PR stages don't ship)
-    # reports env=dev; the base uses CLUSTER_ENV, which is staging on this cluster.
+    # This cluster receives immich-app/version's dev deployment (main only; PR
+    # stages ship nothing), which reports env=dev.
     - patch: |-
         apiVersion: operator.victoriametrics.com/v1beta1
         kind: VMAlert

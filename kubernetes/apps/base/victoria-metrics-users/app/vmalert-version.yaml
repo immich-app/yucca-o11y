@@ -1,20 +1,17 @@
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/operator.victoriametrics.com/vmalert_v1beta1.json
 #
-# Evaluates the version:* recording rules that immich-app/version ships in its
-# bundle (base/tenants/version), against the version tenant only. o11y's own
-# vmalert skips VMRules labelled o11y.futo.org/tenant (docs/06, "Recording
-# rules in a bundle").
+# Evaluates the VMRules immich-app/version ships in its bundle, against the
+# version tenant only (docs/06, "Recording rules in a bundle").
 apiVersion: operator.victoriametrics.com/v1beta1
 kind: VMAlert
 metadata:
   name: version
 spec:
   selectAllByDefault: false
-  # Without a namespace selector this looks in the o11y namespace only, where
-  # the bundle's targetNamespace puts its VMRules. The second label is set by
-  # kustomize-controller on everything version-o11y applies, so another bundle
-  # cannot feed rules into this tenant.
+  # No namespace selector, so this matches in the o11y namespace only. The
+  # kustomize-controller label is set on everything version-o11y applies, so no
+  # other bundle can feed rules into this tenant.
   ruleSelector:
     matchLabels:
       o11y.futo.org/tenant: version
@@ -22,26 +19,23 @@ spec:
   evaluationInterval: 1m
   datasource:
     url: http://vmselect-victoria-metrics.o11y.svc.cluster.local:8481/select/7:1/prometheus
-  # The results go back through the tenant registry (configmap-vminsert-relabel),
-  # which files project=version,cluster=version under 7:1. External labels
-  # override a same-named label from the query result (kept as exported_<name>),
-  # but a group's or rule's own `labels:` override them. The bundle must not set
-  # identity labels there (immich-app/version's render script rejects them).
+  # Multitenant rather than /insert/7:1: the tenant registry in
+  # configmap-vminsert-relabel derives 7:1 from the identity labels below.
   remoteWrite:
     url: http://vminsert-victoria-metrics.o11y.svc.cluster.local:8480/insert/multitenant/prometheus/api/v1/write
-  # version's identity labels (immich-app/version worker.tf). Its dev
-  # deployment reports env=dev, which the staging overlay sets.
+  # The version worker's own identity labels (immich-app/version worker.tf).
+  # `env` names version's deployment, not this cluster's: prod here, dev on the
+  # staging overlay.
   externalLabels:
     project: version
     cluster: version
-    env: ${CLUSTER_ENV}
+    env: prod
     provider: cloudflare
     region: world
   extraArgs:
     # The chart sets this for its own vmalert; a bare VMAlert does not, and
     # vmalert would append a second /api/v1/write to the URL above.
     remoteWrite.disablePathAppend: "true"
-    # Recording rules only, as on o11y's own vmalert.
     notifier.blackhole: "true"
   resources:
     requests:
