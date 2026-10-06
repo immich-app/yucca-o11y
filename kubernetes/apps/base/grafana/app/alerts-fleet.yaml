@@ -69,3 +69,58 @@ spec:
                 reducer:
                   type: last
                   params: []
+    - uid: o11y-external-secret-not-ready
+      title: ExternalSecret not ready
+      condition: B
+      for: 15m
+      labels:
+        severity: warning
+      annotations:
+        summary: ExternalSecret {{ $labels.exported_namespace }}/{{ $labels.name }} in {{ $labels.cluster }} has not synced for 15m.
+        description: Workloads keep the last synced copy, but rotated or new values stop arriving. When every ExternalSecret in a cluster fails together, its secret store is unreachable (on o11y, 1Password Connect at opc.o11y.futo.network over NetBird). A single failure usually means a missing or renamed 1Password item; kubectl describe the ExternalSecret for the error.
+      execErrState: Error
+      noDataState: OK
+      data:
+        - refId: A
+          datasourceUid: VictoriaMetricsFleet
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: A
+            datasource:
+              type: prometheus
+              uid: VictoriaMetricsFleet
+            expr: max by (project, env, cluster, exported_namespace, name) (externalsecret_status_condition{condition="Ready",status="False"}) > 0
+            instant: true
+            range: false
+            intervalMs: 1000
+            maxDataPoints: 43200
+        - refId: B
+          datasourceUid: __expr__
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: B
+            type: threshold
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: A
+            intervalMs: 1000
+            maxDataPoints: 43200
+            conditions:
+              - type: query
+                evaluator:
+                  type: gt
+                  params: [0]
+                operator:
+                  type: and
+                query:
+                  params: [A]
+                reducer:
+                  type: last
+                  params: []
