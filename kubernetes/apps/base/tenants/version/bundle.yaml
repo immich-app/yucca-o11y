@@ -1,0 +1,56 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/source.toolkit.fluxcd.io/ocirepository_v1.json
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: version-o11y
+  namespace: flux-system
+spec:
+  interval: 1m
+  url: oci://ghcr.io/immich-app/version/o11y-manifests
+  ref:
+    tag: main
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://token\\.actions\\.githubusercontent\\.com$"
+        subject: "^https://github\\.com/immich-app/version/\\.github/workflows/o11y\\.yml@refs/heads/main$"
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: version-o11y
+  namespace: flux-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: OCIRepository
+    name: version-o11y
+  path: ./
+  # Routes this bundle's VMRules to the version VMAlert instead of o11y's own.
+  # Flux overrides any value the bundle sets for this key, so a bundle cannot
+  # claim another tenant.
+  commonMetadata:
+    labels:
+      o11y.futo.org/tenant: version
+  patches:
+    - target:
+        kind: GrafanaFolder
+      patch: |-
+        - op: add
+          path: /spec/permissions
+          value: |
+            {
+              "items": [
+                {"role": "Viewer", "permission": 1},
+                {"role": "Editor", "permission": 1}
+              ]
+            }
+  prune: true
+  targetNamespace: o11y
+  # Deliberately not on victoria-metrics, which would hold the dashboards and
+  # alerts back whenever VictoriaMetrics or VictoriaLogs is unhealthy. Only a
+  # fresh bootstrap lacks the VMRule CRD, and Flux retries the failed dry-run.
+  dependsOn:
+    - name: grafana-operator

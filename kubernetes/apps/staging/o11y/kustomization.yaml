@@ -20,3 +20,4 @@ components:
   - ../../../components/replacements
 patches:
   - path: patches/victoria-metrics.yaml
+  - path: patches/victoria-metrics-users.yaml

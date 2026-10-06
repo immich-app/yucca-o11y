@@ -1,0 +1,45 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/operator.victoriametrics.com/vmalert_v1beta1.json
+#
+# Evaluates the VMRules immich-app/version ships in its bundle, against the
+# version tenant only (docs/06, "Recording rules in a bundle").
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMAlert
+metadata:
+  name: version
+spec:
+  selectAllByDefault: false
+  # No namespace selector, so this matches in the o11y namespace only. The
+  # kustomize-controller label is set on everything version-o11y applies, so no
+  # other bundle can feed rules into this tenant.
+  ruleSelector:
+    matchLabels:
+      o11y.futo.org/tenant: version
+      kustomize.toolkit.fluxcd.io/name: version-o11y
+  evaluationInterval: 1m
+  datasource:
+    url: http://vmselect-victoria-metrics.o11y.svc.cluster.local:8481/select/7:1/prometheus
+  # Multitenant rather than /insert/7:1: the tenant registry in
+  # configmap-vminsert-relabel derives 7:1 from the identity labels below.
+  remoteWrite:
+    url: http://vminsert-victoria-metrics.o11y.svc.cluster.local:8480/insert/multitenant/prometheus/api/v1/write
+  # The version worker's own identity labels (immich-app/version worker.tf).
+  # `env` names version's deployment, not this cluster's: prod here, dev on the
+  # staging overlay.
+  externalLabels:
+    project: version
+    cluster: version
+    env: prod
+    provider: cloudflare
+    region: world
+  extraArgs:
+    # The chart sets this for its own vmalert; a bare VMAlert does not, and
+    # vmalert would append a second /api/v1/write to the URL above.
+    remoteWrite.disablePathAppend: "true"
+    notifier.blackhole: "true"
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 512Mi

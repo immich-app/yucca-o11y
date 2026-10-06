@@ -6,4 +6,5 @@ resources:
   - ./fmeet/bundle.yaml
   - ./harbor/bundle.yaml
   - ./fip/bundle.yaml
+  - ./version/bundle.yaml
   - ./shared/bundle.yaml

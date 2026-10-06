@@ -1,0 +1,21 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: victoria-metrics-users
+  namespace: flux-system
+spec:
+  patches:
+    # This cluster receives immich-app/version's dev deployment (main only; PR
+    # stages ship nothing), which reports env=dev.
+    - patch: |-
+        apiVersion: operator.victoriametrics.com/v1beta1
+        kind: VMAlert
+        metadata:
+          name: version
+        spec:
+          externalLabels:
+            env: dev
+      target:
+        kind: VMAlert
+        name: version

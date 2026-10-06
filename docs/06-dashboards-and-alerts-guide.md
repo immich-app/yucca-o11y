@@ -12,6 +12,7 @@ Each project gets a Grafana **folder** named for it, and both its dashboards and
 | `o11y` | this cluster's own dashboards/alerts | authored in this repo (Model B) |
 | `harbor` | the Harbor clusters (harbor-infra-prod/staging) | harbor-o11y's key-signed OCI bundle (Model A, anonymous-pull registry) |
 | `fip` | the FUTO internal platform cluster (azad) | futo-internal-platform's signed OCI bundle (Model A) |
+| `version` | the Immich version worker (Cloudflare) | immich-app/version's signed OCI bundle (Model A), including recording rules |
 
 Add a project, add a folder. That folder is the unit you scope dashboards, alerts, and (eventually) permissions to.
 
@@ -26,7 +27,7 @@ A folder files a dashboard under exactly one project; a **tag** is the orthogona
 
 This is how yucca ships (immich-app/yucca#315, see that repo's `o11y/README.md`). The project's CI renders each dashboard into a self-contained `GrafanaDashboard` CR (JSON embedded as `spec.gzipJson`) plus any `GrafanaAlertRuleGroup` CRs and a `GrafanaFolder`, pushes them as **one signed OCI artifact** (`flux push artifact` + cosign keyless), and o11y consumes the whole thing with a single Flux `OCIRepository` + `Kustomization`. New dashboards/alerts flow automatically on the next artifact.
 
-o11y's consumer side lives once in `kubernetes/apps/base/tenants/yucca/bundle.yaml`, one file per tenant listed by `base/tenants/kustomization.yaml`, which each env's `o11y` overlay pulls in:
+o11y's consumer side lives once in `kubernetes/apps/base/tenants/yucca/bundle.yaml`, one file per tenant listed by `base/tenants/kustomization.yaml`, which each env's `o11y` overlay pulls in. A bundle applies with kustomize-controller's own cluster-wide rights (no `serviceAccountName`), and the signature check pins it to its repo's workflow; this is accepted while each bundle repo's writers are also yucca-o11y's:
 
 ```yaml
 apiVersion: source.toolkit.fluxcd.io/v1
@@ -112,6 +113,18 @@ infrastructure terraform mints, the public half is committed in that repo as
 Secret referenced from `verify.secretRef`. Keyless cosign mints its certificate from public Fulcio against the
 CI's OIDC identity, and Fulcio accepts `gitlab.com` but not a self-hosted
 forge — so the keyless block above cannot simply be copied across.
+
+### Recording rules in a bundle
+
+A bundle may also ship `VMRule`s when its project records its own series, as immich-app/version does. o11y's `vmalert` reads only o11y's tenant and writes under o11y's identity labels, so it must not evaluate them. The setup has three parts:
+
+- **The tenant's Kustomization** in `base/tenants/<tenant>/bundle.yaml` sets `commonMetadata.labels` `o11y.futo.org/tenant: <tenant>` on everything it applies. Flux overrides any value the bundle sets for that key, so a bundle cannot claim another tenant's label. Like the other bundles it depends only on `grafana-operator`. The `VMRule` CRD comes from `victoria-metrics` and is always installed once the cluster is up; on a fresh bootstrap the bundle fails its dry-run until then and Flux retries it.
+- **o11y's own `vmalert`** (`base/victoria-metrics/app/helmrelease.yaml`) selects every `VMRule` without that label.
+- **The tenant's `VMAlert`** (`base/victoria-metrics-users/app/vmalert-<tenant>.yaml`) selects the label in the `o11y` namespace and also matches `kustomize.toolkit.fluxcd.io/name: <tenant>-o11y`, which kustomize-controller sets on every object it applies, so no other bundle can feed it rules. It reads `/select/<tenant>/prometheus`, writes through the multitenant insert endpoint, and sets the tenant's identity labels as `externalLabels`, which route the results back into the tenant.
+
+Those `externalLabels` do not pin the tenant. They displace a same-named label that comes from the query result, which `vmalert` keeps as `exported_<name>`, but a group's or rule's own `labels:` override them. A rule that set `project` or `cluster` would be filed under another tenant, so a bundle must not set identity labels (`project`, `cluster`, `env`, `provider`, `region`, `vm_account_id`, `vm_project_id`) on its groups or rules. o11y does not enforce this; immich-app/version's render script rejects them before it publishes.
+
+Per-group `tenant` on a `VMRule` is VictoriaMetrics Enterprise only, so each tenant with rules gets its own `vmalert`. A rule that joins a recorded series with an aggregate must match on the aggregate's labels (`and on(client_ip)`), because the recorded series carries the external labels and the aggregate does not.
 
 ## Model B: authored in this repo (o11y's own)
 
