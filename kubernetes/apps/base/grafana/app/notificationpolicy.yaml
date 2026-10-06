@@ -45,6 +45,9 @@ spec:
       - receiver: rootly-version
         object_matchers:
           - ["project", "=", "version"]
+      - receiver: rootly-bootstrap
+        object_matchers:
+          - ["project", "=", "bootstrap"]
       - receiver: rootly-o11y
         object_matchers:
           - ["grafana_folder", "=", "o11y"]
@@ -65,3 +68,6 @@ spec:
       - receiver: rootly-version
         object_matchers:
           - ["grafana_folder", "=", "version"]
+      - receiver: rootly-bootstrap
+        object_matchers:
+          - ["grafana_folder", "=", "bootstrap"]

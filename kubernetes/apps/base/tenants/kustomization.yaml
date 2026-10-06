@@ -7,4 +7,5 @@ resources:
   - ./harbor/bundle.yaml
   - ./fip/bundle.yaml
   - ./version/bundle.yaml
+  - ./bootstrap/bundle.yaml
   - ./shared/bundle.yaml
