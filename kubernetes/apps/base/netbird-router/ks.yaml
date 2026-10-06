@@ -6,6 +6,8 @@ metadata:
   name: netbird-router
   namespace: flux-system
 spec:
+  dependsOn:
+    - name: prometheus-operator-crds
   interval: 1h
   path: ./kubernetes/apps/base/netbird-router/app
   patches: []

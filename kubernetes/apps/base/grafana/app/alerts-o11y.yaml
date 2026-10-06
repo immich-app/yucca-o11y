@@ -727,3 +727,115 @@ spec:
                 reducer:
                   type: last
                   params: []
+    - uid: o11y-netbird-router-disconnected
+      title: o11y netbird router disconnected
+      condition: B
+      for: 10m
+      labels:
+        project: o11y
+        severity: warning
+      annotations:
+        summary: NetBird router {{ $labels.pod }} in {{ $labels.cluster }} has lost its connection to the NetBird management or signal service.
+        description: Existing tunnels can keep working, but the router stops receiving peer and policy changes and cannot set up new connections. Check the pod logs; a PermissionDenied login error means its setup key or peer was revoked or expired.
+      execErrState: Error
+      noDataState: OK
+      data:
+        - refId: A
+          datasourceUid: VictoriaMetrics
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: A
+            datasource:
+              type: prometheus
+              uid: VictoriaMetrics
+            expr: min by (cluster, pod) (netbird_management_connected{cluster="${CLUSTER_NAME}"} * netbird_signal_connected{cluster="${CLUSTER_NAME}"})
+            instant: true
+            range: false
+            intervalMs: 1000
+            maxDataPoints: 43200
+        - refId: B
+          datasourceUid: __expr__
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: B
+            type: threshold
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: A
+            intervalMs: 1000
+            maxDataPoints: 43200
+            conditions:
+              - type: query
+                evaluator:
+                  type: lt
+                  params: [1]
+                operator:
+                  type: and
+                query:
+                  params: [A]
+                reducer:
+                  type: last
+                  params: []
+    - uid: o11y-netbird-router-no-peers
+      title: o11y netbird router has no peers
+      condition: B
+      for: 10m
+      labels:
+        project: o11y
+        severity: warning
+      annotations:
+        summary: NetBird router {{ $labels.pod }} in {{ $labels.cluster }} has no connected peers.
+        description: Mesh clients cannot reach the cluster through this router. If it is still connected to management and signal, check relay reachability and the netbird-router-wg firewall rule on its node.
+      execErrState: Error
+      noDataState: OK
+      data:
+        - refId: A
+          datasourceUid: VictoriaMetrics
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: A
+            datasource:
+              type: prometheus
+              uid: VictoriaMetrics
+            expr: sum by (cluster, pod) (netbird_peers_connected{cluster="${CLUSTER_NAME}"})
+            instant: true
+            range: false
+            intervalMs: 1000
+            maxDataPoints: 43200
+        - refId: B
+          datasourceUid: __expr__
+          queryType: ""
+          relativeTimeRange:
+            from: 600
+            to: 0
+          model:
+            refId: B
+            type: threshold
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: A
+            intervalMs: 1000
+            maxDataPoints: 43200
+            conditions:
+              - type: query
+                evaluator:
+                  type: lt
+                  params: [1]
+                operator:
+                  type: and
+                query:
+                  params: [A]
+                reducer:
+                  type: last
+                  params: []

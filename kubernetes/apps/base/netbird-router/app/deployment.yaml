@@ -68,6 +68,10 @@ spec:
             # 51820 belongs to the node's own NetBird (Talos extension service).
             - name: NB_WIREGUARD_PORT
               value: "51821"
+            - name: NB_ENABLE_LOCAL_METRICS
+              value: "true"
+            - name: NB_LOCAL_METRICS_ADDRESS
+              value: 0.0.0.0:9191
           ports:
             - name: dns-udp
               containerPort: 53
@@ -80,6 +84,9 @@ spec:
               containerPort: 51821
               hostPort: 51821
               protocol: UDP
+            - name: metrics
+              containerPort: 9191
+              protocol: TCP
           startupProbe:
             exec:
               command: [netbird, status, --check, startup]
