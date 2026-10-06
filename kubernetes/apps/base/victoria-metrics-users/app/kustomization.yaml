@@ -6,3 +6,4 @@ resources:
   - ./vmauth-mesh-unauth.yaml
   - ./vmauth-self-select.yaml
   - ./httproute-vlogs-mesh.yaml
+  - ./vmalert-version.yaml

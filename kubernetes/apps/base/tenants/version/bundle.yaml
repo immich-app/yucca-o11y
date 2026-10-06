@@ -1,0 +1,57 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/source.toolkit.fluxcd.io/ocirepository_v1.json
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: version-o11y
+  namespace: flux-system
+spec:
+  interval: 1m
+  url: oci://ghcr.io/immich-app/version/o11y-manifests
+  ref:
+    tag: main
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://token\\.actions\\.githubusercontent\\.com$"
+        subject: "^https://github\\.com/immich-app/version/\\.github/workflows/o11y\\.yml@refs/heads/main$"
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: version-o11y
+  namespace: flux-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: OCIRepository
+    name: version-o11y
+  path: ./
+  # The bundle ships VMRules besides dashboards and alerts. This label keeps them
+  # off o11y's own vmalert and in front of the version VMAlert
+  # (base/victoria-metrics-users/app/vmalert-version.yaml); Flux overrides any
+  # value the bundle sets for it.
+  commonMetadata:
+    labels:
+      o11y.futo.org/tenant: version
+  patches:
+    - target:
+        kind: GrafanaFolder
+      patch: |-
+        - op: add
+          path: /spec/permissions
+          value: |
+            {
+              "items": [
+                {"role": "Viewer", "permission": 1},
+                {"role": "Editor", "permission": 1}
+              ]
+            }
+  prune: true
+  targetNamespace: o11y
+  # Not on victoria-metrics: its VMRule CRD is always installed once the cluster
+  # is up (on a fresh bootstrap the dry-run fails and retries), and the dependency
+  # would hold dashboards and alerts while victoria-metrics or VictoriaLogs is unhealthy.
+  dependsOn:
+    - name: grafana-operator
