@@ -93,3 +93,11 @@ data:
       regex: version;version
       target_label: vm_project_id
       replacement: "1"
+    - source_labels: [project, cluster]
+      regex: bootstrap;palpatine
+      target_label: vm_account_id
+      replacement: "8"
+    - source_labels: [project, cluster]
+      regex: bootstrap;palpatine
+      target_label: vm_project_id
+      replacement: "1"

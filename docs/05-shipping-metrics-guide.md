@@ -200,6 +200,7 @@ IDs are unique within a store, and an environment pair (a prod cluster and its s
 | fmeet | 5 | serverless | staging, prod | both | `5:1` |
 | immich | 6 | pokedex | prod | production | `6:1` |
 | version | 7 | version | dev, prod | both | `7:1` |
+| bootstrap | 8 | palpatine | prod | production | `8:1` |
 
 Onboarding a cluster onto its own tenant is a central-side change only: add its rule pair, for example
 

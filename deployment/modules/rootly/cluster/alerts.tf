@@ -11,7 +11,7 @@
 # new one, so each group posts to Zulip once when it fires and once when it
 # resolves.
 locals {
-  projects = toset(["o11y", "yucca", "fmeet", "harbor", "fip", "version"])
+  projects = toset(["o11y", "yucca", "fmeet", "harbor", "fip", "version", "bootstrap"])
 
   project_service_ids = merge(
     { o11y = rootly_service.o11y.id },
