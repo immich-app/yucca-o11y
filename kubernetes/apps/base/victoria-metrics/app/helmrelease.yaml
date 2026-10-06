@@ -239,16 +239,21 @@ spec:
           env: ${CLUSTER_ENV}
           provider: ovh
           region: global
-        # Every VMRule in the cluster except a tenant bundle's, which o11y labels
-        # o11y.futo.org/tenant and that tenant's own vmalert evaluates against its
-        # tenant (base/victoria-metrics-users/app/vmalert-*.yaml). The empty
-        # namespace selector keeps the cluster-wide scope selectAllByDefault gave:
-        # a ruleSelector alone narrows the search to this namespace.
+        # Every VMRule in the cluster except the tenants listed here, which o11y
+        # labels o11y.futo.org/tenant and whose own vmalert in
+        # base/victoria-metrics-users/app evaluates against their tenant. NotIn also
+        # matches a rule carrying no such label, so a tenant value that is not listed
+        # lands here rather than on no vmalert at all: list a tenant in the same change
+        # that gives it a vmalert, never before. The empty namespace selector keeps the
+        # cluster-wide scope selectAllByDefault gave: a ruleSelector alone narrows the
+        # search to this namespace.
         ruleNamespaceSelector: {}
         ruleSelector:
           matchExpressions:
             - key: o11y.futo.org/tenant
-              operator: DoesNotExist
+              operator: NotIn
+              values:
+                - version
         # Alertmanager is stubbed off for now, so vmalert has no notifier. Blackhole
         # notifications — rules still evaluate (state visible in the vmalert UI /
         # recording rules still written) — until a real Alertmanager + receiver lands.
