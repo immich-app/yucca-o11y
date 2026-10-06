@@ -1,8 +1,9 @@
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/k8s.cni.cncf.io/networkattachmentdefinition_v1.json
-# Second interface for mesh-egress pods (external-secrets -> opc). Node-local bridge; the
-# same range on every node is fine — traffic leaves masqueraded as the node peer (the nodes
-# advertise the range). Route scoped to the opc VIP so everything else stays on flannel.
+# Second interface for mesh-egress pods (external-secrets and gatus -> opc). Node-local
+# bridge; the same range on every node is fine — traffic leaves masqueraded as the node peer
+# (the nodes advertise the range). Route scoped to the opc VIP so everything else stays on
+# flannel.
 apiVersion: k8s.cni.cncf.io/v1
 kind: NetworkAttachmentDefinition
 metadata:

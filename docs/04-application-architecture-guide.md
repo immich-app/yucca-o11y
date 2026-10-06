@@ -68,7 +68,8 @@ Grafana's database is a CloudNativePG cluster. The operator runs in the `cnpg-sy
 ## Supporting components
 
 * **external-secrets** — syncs 1Password items into Kubernetes Secrets through cluster secret stores backed by the **bootstrap cluster's** 1Password Connect (`opc.o11y.futo.network`), reached over the NetBird mesh: the controller pod carries a Multus egress interface and resolves the endpoint via mesh DNS. Nearly every app above gets its credentials this way; the auth token is Terraform-seeded.
-* **Multus** — meta-CNI providing opt-in secondary pod interfaces; today only the `netbird-egress` attachment used by external-secrets.
+* **Multus** — meta-CNI providing opt-in secondary pod interfaces; today only the `netbird-egress` attachment used by external-secrets and gatus.
+* **gatus** — status page at `gatus.<mesh-domain>`, probing the HTTPRoutes on both gateways (discovered by its sidecar) plus every project's 1Password Connect on the bootstrap cluster (`opc.<project>.futo.network/heartbeat`, static, over the `netbird-egress` leg). Results are scraped as `gatus_results_*`; the bootstrap project's alert bundle pages on production's Connect probes.
 * **grafana-operator** — manages the Grafana instance plus dashboard and datasource resources, which VictoriaMetrics' chart provisions.
 * **prometheus-operator CRDs** — the ServiceMonitor/PrometheusRule CRDs the VM stack consumes.
 * **OpenEBS** — the local-hostpath provisioner backing the `openebs-system-disk` and `openebs-spare-disk` StorageClasses.
