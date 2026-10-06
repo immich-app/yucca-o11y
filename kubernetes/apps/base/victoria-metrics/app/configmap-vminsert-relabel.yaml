@@ -85,3 +85,11 @@ data:
       regex: immich;pokedex
       target_label: vm_project_id
       replacement: "1"
+    - source_labels: [project, cluster]
+      regex: version;version
+      target_label: vm_account_id
+      replacement: "7"
+    - source_labels: [project, cluster]
+      regex: version;version
+      target_label: vm_project_id
+      replacement: "1"
