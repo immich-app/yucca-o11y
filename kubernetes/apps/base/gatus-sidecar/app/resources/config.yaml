@@ -10,3 +10,33 @@ ui:
 
 web:
   port: ${GATUS_WEB_PORT}
+
+# The bootstrap cluster's 1Password Connect servers, probed over NetBird the
+# way their consumers reach them (mesh DNS plus the netbird-egress leg), because
+# Kubernetes-side signals stay green when only the mesh path breaks. bootstrap's
+# o11y bundle alerts on these results; /heartbeat needs no token.
+endpoints:
+  - name: opc.yucca.futo.network
+    group: onepassword-connect
+    url: https://opc.yucca.futo.network/heartbeat
+    interval: 1m
+    conditions:
+      - '[STATUS] == 200'
+  - name: opc.immich.futo.network
+    group: onepassword-connect
+    url: https://opc.immich.futo.network/heartbeat
+    interval: 1m
+    conditions:
+      - '[STATUS] == 200'
+  - name: opc.o11y.futo.network
+    group: onepassword-connect
+    url: https://opc.o11y.futo.network/heartbeat
+    interval: 1m
+    conditions:
+      - '[STATUS] == 200'
+  - name: opc.fip.futo.network
+    group: onepassword-connect
+    url: https://opc.fip.futo.network/heartbeat
+    interval: 1m
+    conditions:
+      - '[STATUS] == 200'

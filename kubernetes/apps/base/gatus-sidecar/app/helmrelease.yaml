@@ -12,6 +12,10 @@ spec:
   values:
     deploymentAnnotations:
       reloader.stakater.com/auto: "true"
+    # Mesh egress for the opc probes in config.yaml; the leg routes only the
+    # opc VIP, so every other check stays on flannel.
+    podAnnotations:
+      k8s.v1.cni.cncf.io/networks: kube-system/netbird-egress
     strategy:
       type: RollingUpdate
     sidecar:
