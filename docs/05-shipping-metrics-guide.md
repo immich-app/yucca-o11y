@@ -30,7 +30,7 @@ Both gateway URLs are also published to the per-environment shared 1Password vau
 | `O11Y_VICTORIAMETRICS_VMAUTH_MESH_URL` | `https://vmauth.<mesh-domain>` |
 | `O11Y_VICTORIAMETRICS_VMAUTH_PUBLIC_URL` | `https://vmauth.<app-domain>` |
 
-The items hold the bare origin (scheme and host, no path); append the insert or select path for your shipper. They are Terraform-managed by `deployment/modules/victoria-metrics/cluster`; the token item is managed by hand.
+The items hold the bare origin (scheme and host, no path); append the insert or select path for your shipper. They are Terraform-managed by `deployment/modules/victoria-metrics/cluster`. The token item is Terraform-generated too, by core-infra-tf's `shared-generated-secrets` module (`deployment/modules/shared/1password/futo-account/shared-secrets.tf`), as a separate random value in each of `shared_tf_prod`, `shared_tf_staging` and `shared_tf_dev`.
 
 The metrics remote-write path is the same on every host:
 
@@ -72,7 +72,9 @@ spec:
 
 ## Option B: over the internet
 
-The public gateway rejects anonymous requests, so a **shared bearer token** is required. It lives in 1Password as item `O11Y_VICTORIAMETRICS_VMAUTH_PASSWORD` (field `password`), in the same vault as the gateway URL items above. Clusters that share the vault can pull it with an ExternalSecret; otherwise create the Secret by hand. Rotating the token for everyone is a single edit to that vault item.
+The public gateway rejects anonymous requests, so a **shared bearer token** is required. It lives in 1Password as item `O11Y_VICTORIAMETRICS_VMAUTH_PASSWORD` (field `password`), in the same vault as the gateway URL items above. Clusters that can read the vault pull it with an ExternalSecret, or inject it from Terraform through an `op://shared_tf_<env>/O11Y_VICTORIAMETRICS_VMAUTH_PASSWORD/password` reference matching the gateway it ships to (`shared_tf_prod` for production, as yucca and bootstrap do). Avoid a hand-made copy, which goes stale on the next rotation.
+
+Rotating the token means replacing that environment's `random_password` in core-infra-tf and applying it there; a hand edit to the vault item is reverted on that module's next apply. This gateway reads the new value through its own ExternalSecret, and so do consumers that use one. A consumer that copied the token at apply time, such as bootstrap's Terraform-injected `vmagent-remote-write` Secret, keeps sending the old token, and is rejected, until its own next apply.
 
 ```yaml
 apiVersion: operator.victoriametrics.com/v1beta1
