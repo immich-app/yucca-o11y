@@ -9,8 +9,6 @@ data:
   # Bootstrap-cluster-owned (not o11y TF, hence not in bootstrap-settings): the range
   # holding its per-service ingress VIPs (opc.<project>, bao, ...).
   CLUSTER_BOOTSTRAP_INGRESS_CIDR: 10.41.16.32/27
-  # Bootstrap's legacy shared VIP, served until its DNS moves to the per-service VIPs.
-  CLUSTER_OPC_VIP: 10.41.19.250
   CLUSTER_NAME: o11y
   CLUSTER_ENV: prod
   CLUSTER_OP_O11Y_VAULT: o11y_tf_prod
