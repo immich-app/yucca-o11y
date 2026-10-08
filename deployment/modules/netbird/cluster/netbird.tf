@@ -291,12 +291,30 @@ resource "netbird_policy" "ci_to_talos" {
   }
 }
 
-# Bootstrap-owned group holding the opc resource (live account name — verify if it changes).
+# bootstrap (gitlab infra/bootstrap) serves each service on its own VIP, published as its
+# own NetBird resource in bootstrap-<service>-resources, so access is granted per service:
+# a peer allowed one VIP can't reach another service by Host/SNI. Never target
+# bootstrap-prod-do-nyc3-resources: it holds every service but is break-glass only.
 data "netbird_group" "bootstrap_opc" {
+  for_each = toset(["yucca", "immich", "o11y", "fip"])
+
+  name = "bootstrap-opc-${each.value}-resources"
+}
+
+data "netbird_group" "bootstrap_openbao" {
+  name = "bootstrap-openbao-resources"
+}
+
+# The legacy shared VIP every bootstrap service sits behind until bootstrap moves DNS to
+# the per-service VIPs.
+data "netbird_group" "bootstrap_resources" {
   name = "bootstrap-resources"
 }
 
-# Egress leaves masqueraded as the node peer -> nodes are the source; also pushes them the opc /32 route.
+# Egress leaves masqueraded as the node peer -> nodes are the source; also pushes them the
+# opc /32 routes. Every project's opc, not just o11y's: gatus probes them all. Keep each
+# bootstrap policy to ONE rule: bootstrap's routing peer applies every rule of a policy
+# that maps to it, so rules in one policy leak into each other.
 resource "netbird_policy" "talos_to_bootstrap_opc" {
   name    = "o11y-${var.env}-talos-to-bootstrap-opc"
   enabled = true
@@ -308,12 +326,18 @@ resource "netbird_policy" "talos_to_bootstrap_opc" {
     enabled       = true
     bidirectional = false
     sources       = [netbird_group.talos.id]
-    destinations  = [data.netbird_group.bootstrap_opc.id]
     ports         = ["443"]
+    destinations = concat(
+      [for group in data.netbird_group.bootstrap_opc : group.id],
+      # Temporary: kept while DNS still points at the shared VIP, dropped in a follow-up
+      # once every hostname has moved to its per-service VIP.
+      [data.netbird_group.bootstrap_resources.id],
+    )
   }
 }
 
 # CI runners plan/apply the rootly module, whose onepassword provider talks to opc.
+# OpenBao (bao.futo.network) has a GitHub Actions role for this repo, so CI may reach it too.
 resource "netbird_policy" "ci_to_bootstrap_opc" {
   name    = "o11y-${var.env}-ci-to-bootstrap-opc"
   enabled = true
@@ -325,7 +349,13 @@ resource "netbird_policy" "ci_to_bootstrap_opc" {
     enabled       = true
     bidirectional = false
     sources       = [netbird_group.ci.id]
-    destinations  = [data.netbird_group.bootstrap_opc.id]
     ports         = ["443"]
+    destinations = [
+      data.netbird_group.bootstrap_opc["o11y"].id,
+      data.netbird_group.bootstrap_openbao.id,
+      # Temporary: kept while DNS still points at the shared VIP, dropped in a follow-up
+      # once every hostname has moved to its per-service VIP.
+      data.netbird_group.bootstrap_resources.id,
+    ]
   }
 }
