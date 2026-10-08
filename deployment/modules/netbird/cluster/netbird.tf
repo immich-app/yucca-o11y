@@ -305,12 +305,6 @@ data "netbird_group" "bootstrap_openbao" {
   name = "bootstrap-openbao-resources"
 }
 
-# The legacy shared VIP every bootstrap service sits behind until bootstrap moves DNS to
-# the per-service VIPs.
-data "netbird_group" "bootstrap_resources" {
-  name = "bootstrap-resources"
-}
-
 # Egress leaves masqueraded as the node peer -> nodes are the source; also pushes them the
 # opc /32 routes. Every project's opc, not just o11y's: gatus probes them all. Keep each
 # bootstrap policy to ONE rule: bootstrap's routing peer applies every rule of a policy
@@ -327,12 +321,7 @@ resource "netbird_policy" "talos_to_bootstrap_opc" {
     bidirectional = false
     sources       = [netbird_group.talos.id]
     ports         = ["443"]
-    destinations = concat(
-      [for group in data.netbird_group.bootstrap_opc : group.id],
-      # Temporary: kept while DNS still points at the shared VIP, dropped in a follow-up
-      # once every hostname has moved to its per-service VIP.
-      [data.netbird_group.bootstrap_resources.id],
-    )
+    destinations  = [for group in data.netbird_group.bootstrap_opc : group.id]
   }
 }
 
@@ -353,9 +342,6 @@ resource "netbird_policy" "ci_to_bootstrap_opc" {
     destinations = [
       data.netbird_group.bootstrap_opc["o11y"].id,
       data.netbird_group.bootstrap_openbao.id,
-      # Temporary: kept while DNS still points at the shared VIP, dropped in a follow-up
-      # once every hostname has moved to its per-service VIP.
-      data.netbird_group.bootstrap_resources.id,
     ]
   }
 }
