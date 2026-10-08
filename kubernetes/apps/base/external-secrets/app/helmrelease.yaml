@@ -13,5 +13,8 @@ spec:
     # Resolve DNS via the CoreDNS futo.network zone
     podAnnotations:
       k8s.v1.cni.cncf.io/networks: kube-system/netbird-egress
+      # The leg's routes (multus-networks netbird-egress.yaml): host-local installs them
+      # only at pod creation, so changing them must roll the pod.
+      o11y.futo.org/netbird-egress-routes: "${CLUSTER_OPC_VIP}/32,${CLUSTER_BOOTSTRAP_INGRESS_CIDR}"
     serviceMonitor:
       enabled: true
