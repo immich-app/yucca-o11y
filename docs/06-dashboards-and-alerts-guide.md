@@ -15,6 +15,7 @@ Each project gets a Grafana **folder** named for it, and both its dashboards and
 | `version` | the Immich version worker (Cloudflare) | immich-app/version's signed OCI bundle (Model A), including recording rules |
 | `fmeet` | the fmeet serverless workers (Cloudflare) | fmeet's unsigned OCI bundle (Model A, private gitlab.futo.org registry pulled with a deploy token) |
 | `bootstrap` | the bootstrap DOKS cluster (palpatine) | bootstrap's key-signed GitLab OCI bundle (Model A, anonymous-pull registry: infra/bootstrap is a public project) |
+| `geoshenanigans` | the geoshenanigans geocoder nightly build and its watchdog (GitHub Actions jobs pushing straight to the public gateway) | immich-app/geoshenanigans's signed OCI bundle (Model A) |
 
 Add a project, add a folder. That folder is the unit you scope dashboards, alerts, and (eventually) permissions to.
 
