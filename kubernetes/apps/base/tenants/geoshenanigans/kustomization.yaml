@@ -1,0 +1,8 @@
+---
+# Production only (see the production o11y overlay): staging's store never
+# receives geoshenanigans' series, so its absence alerts would fire there for
+# good.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./bundle.yaml
