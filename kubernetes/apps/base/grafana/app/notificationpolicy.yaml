@@ -48,6 +48,9 @@ spec:
       - receiver: rootly-bootstrap
         object_matchers:
           - ["project", "=", "bootstrap"]
+      - receiver: rootly-geoshenanigans
+        object_matchers:
+          - ["project", "=", "geoshenanigans"]
       - receiver: rootly-o11y
         object_matchers:
           - ["grafana_folder", "=", "o11y"]
@@ -71,3 +74,6 @@ spec:
       - receiver: rootly-bootstrap
         object_matchers:
           - ["grafana_folder", "=", "bootstrap"]
+      - receiver: rootly-geoshenanigans
+        object_matchers:
+          - ["grafana_folder", "=", "geoshenanigans"]

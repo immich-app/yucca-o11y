@@ -1,0 +1,47 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/source.toolkit.fluxcd.io/ocirepository_v1.json
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: geoshenanigans-o11y
+  namespace: flux-system
+spec:
+  interval: 1m
+  url: oci://ghcr.io/immich-app/geoshenanigans/o11y-manifests
+  ref:
+    tag: main
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://token\\.actions\\.githubusercontent\\.com$"
+        subject: "^https://github\\.com/immich-app/geoshenanigans/\\.github/workflows/o11y\\.yml@refs/heads/main$"
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: geoshenanigans-o11y
+  namespace: flux-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: OCIRepository
+    name: geoshenanigans-o11y
+  path: ./
+  patches:
+    - target:
+        kind: GrafanaFolder
+      patch: |-
+        - op: add
+          path: /spec/permissions
+          value: |
+            {
+              "items": [
+                {"role": "Viewer", "permission": 1},
+                {"role": "Editor", "permission": 1}
+              ]
+            }
+  prune: true
+  targetNamespace: o11y
+  dependsOn:
+    - name: grafana-operator
