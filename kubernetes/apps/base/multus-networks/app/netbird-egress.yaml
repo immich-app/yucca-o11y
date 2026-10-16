@@ -2,8 +2,12 @@
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/k8s.cni.cncf.io/networkattachmentdefinition_v1.json
 # Second interface for mesh-egress pods (external-secrets and gatus -> opc). Node-local
 # bridge; the same range on every node is fine — traffic leaves masqueraded as the node peer
-# (the nodes advertise the range). Route scoped to the opc VIP so everything else stays on
-# flannel.
+# (the nodes advertise the range). Routes scoped to bootstrap's ingress VIPs so everything
+# else stays on flannel. host-local installs routes only at pod creation, so the attached
+# pods carry the same list in an annotation that rolls them when it changes. The ingress
+# CIDR has a := default: this Kustomization can render a new revision before the root one
+# has applied a new cluster-settings key, and an empty dst would fail every pod using the
+# leg until the next reconcile.
 apiVersion: k8s.cni.cncf.io/v1
 kind: NetworkAttachmentDefinition
 metadata:
@@ -25,7 +29,8 @@ spec:
               [{"subnet": "${BOOTSTRAP_NETBIRD_EGRESS_CIDR}", "gateway": "${BOOTSTRAP_NETBIRD_EGRESS_GW}"}]
             ],
             "routes": [
-              {"dst": "${CLUSTER_OPC_VIP}/32", "gw": "${BOOTSTRAP_NETBIRD_EGRESS_GW}"}
+              {"dst": "${CLUSTER_OPC_VIP}/32", "gw": "${BOOTSTRAP_NETBIRD_EGRESS_GW}"},
+              {"dst": "${CLUSTER_BOOTSTRAP_INGRESS_CIDR:=10.41.16.32/27}", "gw": "${BOOTSTRAP_NETBIRD_EGRESS_GW}"}
             ]
           }
         }
