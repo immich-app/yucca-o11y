@@ -22,9 +22,32 @@ resource "rootly_heartbeat" "grafana_alerting" {
   interval                 = 5
   interval_unit            = "minutes"
   alert_summary            = "o11y ${var.env} Grafana alerting heartbeat missed; the alert pipeline may be down."
+  alert_description        = "Grafana on o11y ${var.env} has not pinged Rootly for 5 minutes, so alerts from every project may not be reaching Rootly or Zulip. Check the Grafana pods and grafana-postgres in the o11y namespace, then the rootly-heartbeat receiver's last error in the Grafana receivers API. The alert resolves on the next ping."
   alert_urgency_id         = data.rootly_alert_urgency.high.id
   notification_target_type = "Service"
   notification_target_id   = rootly_service.o11y.id
+  enabled                  = true
+}
+
+# Dead man's switch for the remote cluster this env's store receives, pinged by
+# an o11y Grafana rule that fires only while that cluster's metrics arrive. It
+# reports an outage on its own clock instead of through an absence rule, so a
+# silent cluster alerts in minutes and stays alerted for as long as it lasts.
+locals {
+  remote_heartbeat_cluster = lookup({ production = "father", staging = "luke" }, var.env, null)
+}
+
+resource "rootly_heartbeat" "remote_cluster" {
+  count                    = local.remote_heartbeat_cluster == null ? 0 : 1
+  name                     = "yucca-${var.env}-${local.remote_heartbeat_cluster}-metrics"
+  description              = "Expires when metrics from the yucca ${local.remote_heartbeat_cluster} cluster stop arriving at o11y ${var.env}."
+  interval                 = 4
+  interval_unit            = "minutes"
+  alert_summary            = "yucca ${local.remote_heartbeat_cluster} stopped shipping metrics to o11y ${var.env}"
+  alert_description        = "No metrics from the yucca ${local.remote_heartbeat_cluster} cluster have reached o11y ${var.env} for several minutes. The cluster may be down, or its vmagent or its NetBird path to o11y may be broken; clusters that ship through it go silent with it. If the o11y ${var.env} Grafana alerting heartbeat fired too, o11y's own alerting is impaired, so check o11y first. The alert resolves on the next ping."
+  alert_urgency_id         = var.env == "production" ? data.rootly_alert_urgency.high.id : data.rootly_alert_urgency.medium.id
+  notification_target_type = "Service"
+  notification_target_id   = local.project_service_ids["yucca"]
   enabled                  = true
 }
 
@@ -49,6 +72,22 @@ locals {
     for project, channel in local.zulip_channels :
     project => "${var.rootly_zulip_webhook}&stream=${urlencode(channel)}&topic=${urlencode("${project}-${var.env}")}"
   }
+
+  zulip_fired_body = <<-EOT
+    {% capture text %}🔴 *Rootly* (${var.env}): <{{ alert.url }}|{{ alert.summary }}>
+    {{ alert.description }}{% endcapture %}{"text": {{ text | to_json }}}
+  EOT
+  zulip_resolved_body = jsonencode({
+    text = "🟢 *Rootly* (${var.env}): resolved <{{ alert.url }}|{{ alert.summary }}>"
+  })
+
+  # Heartbeat alerts carry no Grafana payload, so the per-project workflows
+  # can't match them; these match on the heartbeat that raised the alert and
+  # post to the topic of the project it watches.
+  heartbeat_zulip = merge(
+    { (rootly_heartbeat.grafana_alerting.name) = { project = "o11y", id = rootly_heartbeat.grafana_alerting.id } },
+    { for heartbeat in rootly_heartbeat.remote_cluster : heartbeat.name => { project = "yucca", id = heartbeat.id } },
+  )
 }
 
 resource "rootly_workflow_alert" "zulip_fired" {
@@ -73,10 +112,7 @@ resource "rootly_workflow_task_http_client" "zulip_fired" {
     url               = local.zulip_webhook_urls[each.key]
     method            = "POST"
     headers           = jsonencode({ "Content-Type" = "application/json" })
-    body              = <<-EOT
-      {% capture text %}🔴 *Rootly* (${var.env}): <{{ alert.url }}|{{ alert.summary }}>
-      {{ alert.description }}{% endcapture %}{"text": {{ text | to_json }}}
-    EOT
+    body              = local.zulip_fired_body
     succeed_on_status = "200"
     retry_count       = "4"
     retry_wait_time   = "15"
@@ -104,12 +140,68 @@ resource "rootly_workflow_task_http_client" "zulip_resolved" {
   workflow_id = rootly_workflow_alert.zulip_resolved[each.key].id
   name        = "Post to Zulip"
   task_params {
-    url     = local.zulip_webhook_urls[each.key]
-    method  = "POST"
-    headers = jsonencode({ "Content-Type" = "application/json" })
-    body = jsonencode({
-      text = "🟢 *Rootly* (${var.env}): resolved <{{ alert.url }}|{{ alert.summary }}>"
-    })
+    url               = local.zulip_webhook_urls[each.key]
+    method            = "POST"
+    headers           = jsonencode({ "Content-Type" = "application/json" })
+    body              = local.zulip_resolved_body
+    succeed_on_status = "200"
+    retry_count       = "4"
+    retry_wait_time   = "15"
+  }
+}
+
+resource "rootly_workflow_alert" "zulip_heartbeat_fired" {
+  for_each    = local.heartbeat_zulip
+  name        = "${each.key}-heartbeat-fired-to-zulip"
+  description = "Posts expiries of the ${each.key} heartbeat to the ${local.zulip_channels[each.value.project]} Zulip channel."
+  enabled     = true
+  trigger_params {
+    triggers                = ["alert_created"]
+    alert_condition_payload = "IS"
+    alert_query_payload     = "$.attributes.heartbeat_id"
+    alert_payload           = [each.value.id]
+  }
+}
+
+resource "rootly_workflow_task_http_client" "zulip_heartbeat_fired" {
+  for_each    = local.heartbeat_zulip
+  workflow_id = rootly_workflow_alert.zulip_heartbeat_fired[each.key].id
+  name        = "Post to Zulip"
+  task_params {
+    url               = local.zulip_webhook_urls[each.value.project]
+    method            = "POST"
+    headers           = jsonencode({ "Content-Type" = "application/json" })
+    body              = local.zulip_fired_body
+    succeed_on_status = "200"
+    retry_count       = "4"
+    retry_wait_time   = "15"
+  }
+}
+
+resource "rootly_workflow_alert" "zulip_heartbeat_resolved" {
+  for_each    = local.heartbeat_zulip
+  name        = "${each.key}-heartbeat-resolved-to-zulip"
+  description = "Posts recoveries of the ${each.key} heartbeat to the ${local.zulip_channels[each.value.project]} Zulip channel."
+  enabled     = true
+  trigger_params {
+    triggers                = ["alert_status_updated"]
+    alert_condition_status  = "IS"
+    alert_statuses          = ["resolved"]
+    alert_condition_payload = "IS"
+    alert_query_payload     = "$.attributes.heartbeat_id"
+    alert_payload           = [each.value.id]
+  }
+}
+
+resource "rootly_workflow_task_http_client" "zulip_heartbeat_resolved" {
+  for_each    = local.heartbeat_zulip
+  workflow_id = rootly_workflow_alert.zulip_heartbeat_resolved[each.key].id
+  name        = "Post to Zulip"
+  task_params {
+    url               = local.zulip_webhook_urls[each.value.project]
+    method            = "POST"
+    headers           = jsonencode({ "Content-Type" = "application/json" })
+    body              = local.zulip_resolved_body
     succeed_on_status = "200"
     retry_count       = "4"
     retry_wait_time   = "15"
