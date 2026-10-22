@@ -23,6 +23,22 @@ resource "onepassword_item" "heartbeat_ping_secret" {
   password = rootly_heartbeat.grafana_alerting.secret
 }
 
+resource "onepassword_item" "remote_heartbeat_ping_url" {
+  count    = length(rootly_heartbeat.remote_cluster)
+  vault    = data.onepassword_vault.env.uuid
+  title    = "ROOTLY_HEARTBEAT_REMOTE_PING_URL"
+  category = "password"
+  password = rootly_heartbeat.remote_cluster[0].ping_url
+}
+
+resource "onepassword_item" "remote_heartbeat_ping_secret" {
+  count    = length(rootly_heartbeat.remote_cluster)
+  vault    = data.onepassword_vault.env.uuid
+  title    = "ROOTLY_HEARTBEAT_REMOTE_PING_SECRET"
+  category = "password"
+  password = rootly_heartbeat.remote_cluster[0].secret
+}
+
 # Per-project Grafana alert source credentials, consumed by the rootly-alerts-*
 # ExternalSecrets that feed the rootly-<project> contact points. The secret
 # rides in the URL: Rootly's Grafana endpoint only reads it from the `secret`
