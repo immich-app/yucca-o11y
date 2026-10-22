@@ -29,3 +29,34 @@ spec:
             secretKeyRef:
               name: rootly-heartbeat
               key: token
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/grafana.integreatly.org/grafanacontactpoint_v1beta1.json
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaContactPoint
+metadata:
+  name: rootly-heartbeat-remote
+spec:
+  resyncPeriod: 1h
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
+  name: rootly-heartbeat-remote
+  receivers:
+    # Rootly counts any authenticated POST as a ping, so a resolve sent when
+    # the cluster goes silent would push the expiry out.
+    - type: webhook
+      disableResolveMessage: true
+      settings:
+        httpMethod: POST
+        authorization_scheme: Bearer
+      valuesFrom:
+        - targetPath: url
+          valueFrom:
+            secretKeyRef:
+              name: rootly-heartbeat-remote
+              key: url
+        - targetPath: authorization_credentials
+          valueFrom:
+            secretKeyRef:
+              name: rootly-heartbeat-remote
+              key: token
