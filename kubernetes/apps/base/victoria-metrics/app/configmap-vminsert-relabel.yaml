@@ -108,4 +108,4 @@ data:
     - source_labels: [project, cluster]
       regex: geoshenanigans;geocoder
       target_label: vm_project_id
-      replacement: "1"
+      replacement: "2"

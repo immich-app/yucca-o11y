@@ -279,6 +279,7 @@ spec:
             labelSelector:
               matchLabels:
                 app.kubernetes.io/name: vmauth
+                app.kubernetes.io/instance: victoria-metrics
         podDisruptionBudget:
           minAvailable: 1
         selectAllByDefault: true
