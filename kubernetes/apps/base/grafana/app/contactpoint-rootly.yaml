@@ -11,7 +11,10 @@ spec:
       dashboards: grafana
   name: rootly-heartbeat
   receivers:
+    # Rootly counts any authenticated POST as a ping, so a resolve sent when
+    # the heartbeat rule stops firing would push the expiry out.
     - type: webhook
+      disableResolveMessage: true
       settings:
         httpMethod: POST
         authorization_scheme: Bearer

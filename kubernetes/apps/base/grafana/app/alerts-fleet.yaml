@@ -14,15 +14,21 @@ spec:
   folderRef: o11y
   interval: 1m
   rules:
+    # Keyed on vminsert's per-tenant counters, which live in o11y's own
+    # tenant: the multitenant path stops returning a tenant that has ingested
+    # nothing since UTC midnight, so a rule reading the silent cluster's own
+    # history resolves at the first midnight of an outage. Account 0 is the
+    # draining legacy tenant and account 5 (fmeet) ships in bursts.
     - uid: o11y-cluster-silent
       title: o11y cluster stopped reporting
       condition: B
-      for: 15m
+      for: 5m
       labels:
         project: o11y
         severity: critical
       annotations:
-        summary: Cluster {{ $labels.cluster }} reported metrics within the last day but has sent nothing recently; its remote write path may be down.
+        summary: Tenant {{ $labels.accountID }}:{{ $labels.projectID }} ingested metrics within the last 7 days but nothing for 15m; its remote write path or the whole cluster may be down.
+        description: The tenant registry in base/victoria-metrics/app/configmap-vminsert-relabel.yaml maps the tenant to its project and cluster. A whole remote cluster going dark silences every tenant it ships, so several tenants firing together usually share one cause.
       execErrState: Error
       noDataState: OK
       data:
@@ -37,7 +43,10 @@ spec:
             datasource:
               type: prometheus
               uid: VictoriaMetricsFleet
-            expr: count by (cluster) (up offset 1d) unless count by (cluster) (up)
+            expr: >-
+              (sum by (accountID, projectID) (increase(vm_tenant_inserted_rows_total{accountID!~"0|5"}[7d])) > 0)
+              unless
+              (sum by (accountID, projectID) (increase(vm_tenant_inserted_rows_total[15m])) > 0)
             instant: true
             range: false
             intervalMs: 1000

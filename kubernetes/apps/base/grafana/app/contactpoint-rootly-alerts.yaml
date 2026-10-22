@@ -20,7 +20,7 @@ spec:
       settings:
         httpMethod: POST
         title: |-
-          {{ .CommonLabels.grafana_folder }} · {{ .CommonLabels.alertname }}{{ if .CommonLabels.cluster }} · {{ .CommonLabels.cluster }}{{ end }}
+          {{ .CommonLabels.grafana_folder }} · {{ .CommonLabels.alertname }}{{ if .CommonLabels.cluster }} · {{ .CommonLabels.cluster }}{{ else if .CommonLabels.accountID }} · tenant {{ .CommonLabels.accountID }}:{{ .CommonLabels.projectID }}{{ end }}
         message: |-
           {{ template "rootly.message" . }}
       valuesFrom:

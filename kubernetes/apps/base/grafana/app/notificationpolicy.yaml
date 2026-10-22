@@ -12,21 +12,30 @@ spec:
   route:
     # Folders without a Rootly alert source of their own land on the o11y one.
     receiver: rootly-o11y
+    # accountID/projectID only appear on o11y-cluster-silent. They keep each
+    # silent tenant its own group, since Rootly folds an alert that joins an
+    # open group into the existing Rootly alert without a new Zulip post.
     group_by:
       - project
       - grafana_folder
       - alertname
       - cluster
+      - accountID
+      - projectID
     group_wait: 30s
     group_interval: 5m
     repeat_interval: 4h
     routes:
+      # A repeat goes out only once the last send is a full repeat_interval
+      # old, and that send is logged after the POST, so with equal intervals
+      # one replica pings every 2 x repeat_interval. Keep that well inside the
+      # Rootly heartbeat's 5m expiry.
       - receiver: rootly-heartbeat
         object_matchers:
           - ["heartbeat", "=", "rootly"]
         group_wait: 15s
-        group_interval: 2m
-        repeat_interval: 2m
+        group_interval: 1m
+        repeat_interval: 1m
       - receiver: rootly-o11y
         object_matchers:
           - ["project", "=", "o11y"]

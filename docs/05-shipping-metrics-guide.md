@@ -157,7 +157,7 @@ Prometheus users get the same effect by setting `cluster` as a target label in `
 
 ### Shippers that push instead of scrape
 
-The fleet-wide `o11y cluster stopped reporting` alert keys on `up`, which only scrapers emit. A pusher such as a serverless worker never produces `up` and often ships in bursts, so it can go dark without anyone noticing. Such a shipper should emit one steady heartbeat metric and own an `absent_over_time` alert on it in its project folder, with a window matched to its push cadence.
+The fleet-wide `o11y cluster stopped reporting` alert fires about 20 minutes after a tenant that ingested within the last 7 days stops writing (a 15-minute window, then `for: 5m`). A pusher such as a serverless worker often ships in bursts, which that window would misread as an outage, so bursty tenants are left out of the rule (fmeet's today) and can go dark without anyone noticing. Such a shipper should emit one steady heartbeat metric and own an `absent_over_time` alert on it in its project folder, with a window matched to its push cadence.
 
 ## Sample cadence
 
