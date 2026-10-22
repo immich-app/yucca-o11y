@@ -157,7 +157,7 @@ Prometheus users get the same effect by setting `cluster` as a target label in `
 
 ### Shippers that push instead of scrape
 
-The fleet-wide `o11y cluster stopped reporting` alert fires about 20 minutes after a tenant that ingested within the last 7 days stops writing (a 15-minute window, then `for: 5m`). A pusher such as a serverless worker often ships in bursts, which that window would misread as an outage, so bursty tenants are left out of the rule (fmeet's today) and can go dark without anyone noticing. Such a shipper should emit one steady heartbeat metric and own an `absent_over_time` alert on it in its project folder, with a window matched to its push cadence.
+The fleet-wide `o11y cluster stopped reporting` alert fires about 20 minutes after a tenant that ingested within the last 7 days stops writing (a 15-minute window, then `for: 5m`). A pusher such as a serverless worker often ships in bursts, which that window would misread as an outage, so bursty tenants are left out of the rule (fmeet's and geoshenanigans' today) and can go dark without anyone noticing. Such a shipper should emit one steady heartbeat metric and own an `absent_over_time` alert on it in its project folder, with a window matched to its push cadence.
 
 ## Sample cadence
 
@@ -203,7 +203,7 @@ IDs are unique within a store, and an environment pair (a prod cluster and its s
 | immich | 6 | pokedex | prod | production | `6:1` |
 | version | 7 | version | dev, prod | both | `7:1` |
 | bootstrap | 8 | palpatine | prod | production | `8:1` |
-| geoshenanigans | 6 | geocoder | prod | production | `6:1` |
+| geoshenanigans | 6 | geocoder | prod | production | `6:2` |
 
 Onboarding a cluster onto its own tenant is a central-side change only: add its rule pair, for example
 

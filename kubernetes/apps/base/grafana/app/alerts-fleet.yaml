@@ -18,7 +18,8 @@ spec:
     # tenant: the multitenant path stops returning a tenant that has ingested
     # nothing since UTC midnight, so a rule reading the silent cluster's own
     # history resolves at the first midnight of an outage. Account 0 is the
-    # draining legacy tenant and account 5 (fmeet) ships in bursts.
+    # draining legacy tenant; account 5 (fmeet) and 6:2 (geoshenanigans'
+    # geocoder) ship in bursts. The `or` selector is MetricsQL.
     - uid: o11y-cluster-silent
       title: o11y cluster stopped reporting
       condition: B
@@ -44,7 +45,7 @@ spec:
               type: prometheus
               uid: VictoriaMetricsFleet
             expr: >-
-              (sum by (accountID, projectID) (increase(vm_tenant_inserted_rows_total{accountID!~"0|5"}[7d])) > 0)
+              (sum by (accountID, projectID) (increase(vm_tenant_inserted_rows_total{accountID!~"0|5|6" or accountID="6", projectID!="2"}[7d])) > 0)
               unless
               (sum by (accountID, projectID) (increase(vm_tenant_inserted_rows_total[15m])) > 0)
             instant: true
