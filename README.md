@@ -20,12 +20,15 @@ Built for geographic resilience with single-cluster operational simplicity: thre
 
 ```text
 deployment/modules/
-├── ovh/account/          # cloud project, vRack, private network, CPs, workers, IPLB, DNS
-├── netbird/cluster/      # per-env mesh: vRack route, mesh-gateway VIP + DNS, pod egress, policies
-├── grafana/cluster/      # Grafana service account for the Rootly integration
-├── netbox/cluster/       # IPAM registration of the ranges the other modules allocate
-├── talos/cluster/        # machine secrets, CP + worker configs, bootstrap, ingress firewall
-└── kubernetes/helm/      # CoreDNS, Flux Operator + Instance, bootstrap-settings, env secrets
+├── root.hcl                  # included by every module: S3 backend + per-env .terragrunt-cache/<env>
+├── ovh/account/              # cloud project, vRack, private network, CPs, workers, IPLB, DNS
+├── netbird/cluster/          # per-env mesh: vRack route, mesh-gateway VIP + DNS, pod egress, policies
+├── grafana/cluster/          # Grafana service account for the Rootly integration
+├── rootly/cluster/           # Rootly service, heartbeats, alert sources, Zulip workflows, status page
+├── netbox/cluster/           # IPAM registration of the ranges the other modules allocate
+├── talos/cluster/            # machine secrets, CP + worker configs, bootstrap, ingress firewall
+├── kubernetes/helm/          # CoreDNS, Flux Operator + Instance, bootstrap-settings, env secrets
+└── victoria-metrics/cluster/ # vmauth mesh + public URL items in the shared 1Password vault
 
 kubernetes/
 ├── apps/
@@ -38,4 +41,4 @@ kubernetes/
         └── cluster-settings.yaml # per-env CLUSTER_* ConfigMap (BOOTSTRAP_* comes from Terraform)
 ```
 
-State lives in S3 under `yucca/o11y/v3/<module>/<env>`. Secrets and OVH/NetBird tokens come from 1Password via `op run` and `deployment/.env`.
+State lives in S3 under `yucca/o11y/v3/<module>/<env>`. Each environment keeps its own Terragrunt working directory, so switching `ENVIRONMENT` needs no re-init. Secrets and OVH/NetBird tokens come from 1Password via `op run` and `deployment/.env`.
