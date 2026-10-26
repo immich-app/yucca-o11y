@@ -80,11 +80,11 @@ description = "Read outputs from this module"
 # Paths are explicit because oxfmt honours only .gitignore and .prettierignore,
 # not the global excludes that hide .private/.
 [tasks.fmt]
-run = "oxfmt docs kubernetes o11y .github README.md renovate.json"
+run = "oxfmt deployment docs kubernetes o11y .github README.md renovate.json"
 description = "Format markdown, YAML and JSON in place (what the lefthook pre-commit does per staged file)"
 
 [tasks."fmt:check"]
-run = "oxfmt --check docs kubernetes o11y .github README.md renovate.json"
+run = "oxfmt --check deployment docs kubernetes o11y .github README.md renovate.json"
 description = "Verify markdown, YAML and JSON are formatted"
 
 [tasks."o11y:vendor"]
