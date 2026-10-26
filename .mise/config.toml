@@ -4,21 +4,23 @@ monorepo_root = true
 config_roots = ["deployment", "deployment/modules/*/*"]
 
 [tools]
+actionlint = "1.7.12"
+lefthook = "2.2.2"
 opentofu = "1.13.1"
 terragrunt = "1.1.6"
-python = "3.15.0"
 pipx = "1.17.13"
 "pipx:python-openstackclient" = { version = "10.4.0", uvx = false }
 kubectl = "1.37.1"
 flux2 = "2.9.6"
-"sd" = "1.1.0"
+sd = "1.1.0"
 talosctl = "1.14.2"
-"jq" = "1.8.2"
+jq = "1.8.2"
 yq = "4.54.1"
-"kustomize" = "5.8.3"
-markdownlint-cli2 = "0.23.3"
+kustomize = "5.8.3"
+oxfmt = "0.74.0"
+zizmor = "1.31.1"
 "github:home-operations/flate" = "v0.6.5"
-"github:sigstore/cosign" = "v3.1.3"
+cosign = "3.1.3"
 
 [env]
 TF_VAR_dist_dir = "{{config_root}}/dist"
@@ -75,13 +77,15 @@ description = "Destroy this module"
 run = "{{vars.tg}} run -- output"
 description = "Read outputs from this module"
 
-[tasks."md:lint"]
-run = "markdownlint-cli2 'docs/**/*.md' 'README.md'"
-description = "Lint markdown docs"
+# Paths are explicit because oxfmt honours only .gitignore and .prettierignore,
+# not the global excludes that hide .private/.
+[tasks.fmt]
+run = "oxfmt deployment docs kubernetes o11y .github README.md renovate.json"
+description = "Format markdown, YAML and JSON in place (what the lefthook pre-commit does per staged file)"
 
-[tasks."md:fix"]
-run = "markdownlint-cli2 --fix 'docs/**/*.md' 'README.md'"
-description = "Auto-fix markdown lint issues where possible"
+[tasks."fmt:check"]
+run = "oxfmt --check deployment docs kubernetes o11y .github README.md renovate.json"
+description = "Verify markdown, YAML and JSON are formatted"
 
 [tasks."o11y:vendor"]
 description = "Fetch upstream boards that need a rewrite before the sync-job sees them (CloudNativePG: its `cluster` means the Postgres cluster, kept as `pg_cluster`; etcd: its `cluster` variable holds job names, kept as `job`)"
@@ -108,3 +112,6 @@ description = "Render o11y/manifests/dashboards.yaml (git-ignored) from the upst
 [settings]
 experimental = true
 idiomatic_version_file_enable_tools = []
+
+[hooks]
+postinstall = "lefthook install"

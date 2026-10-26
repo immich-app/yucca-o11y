@@ -27,13 +27,13 @@ Two consequences for how you verify:
 
 The operator derives zone object names as `<cr-name>-<zone>`, and component workloads as `vl<component>-<zone-object-name>`:
 
-| Thing | Name |
-|---|---|
-| VLDistributed CR | `victoria-logs` |
-| VLCluster per zone | `victoria-logs-a`, `victoria-logs-b` |
-| VLAgent per zone | `victoria-logs-a`, `victoria-logs-b` |
-| Managed VMAuth | `victoria-logs` (Service `vmauth-victoria-logs:8427`) |
-| Storage workloads | `vlstorage-victoria-logs-a`, `vlstorage-victoria-logs-b` |
+| Thing              | Name                                                     |
+| ------------------ | -------------------------------------------------------- |
+| VLDistributed CR   | `victoria-logs`                                          |
+| VLCluster per zone | `victoria-logs-a`, `victoria-logs-b`                     |
+| VLAgent per zone   | `victoria-logs-a`, `victoria-logs-b`                     |
+| Managed VMAuth     | `victoria-logs` (Service `vmauth-victoria-logs:8427`)    |
+| Storage workloads  | `vlstorage-victoria-logs-a`, `vlstorage-victoria-logs-b` |
 
 One endpoint serves both directions: `/insert/*` is load-balanced across the zone agents, which each replicate to every zone, and `/select/*` is `first_available` across the zone selects. The scrape `job` label of each component is its Service name, so `vl_rows_ingested_total{job="vlstorage-victoria-logs-a"}` is zone A's storage (`type="internalinsert"`).
 

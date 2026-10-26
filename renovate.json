@@ -4,24 +4,16 @@
   "semanticCommits": "enabled",
   "prHourlyLimit": 0,
   "flux": {
-    "managerFilePatterns": [
-      "/(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$/"
-    ]
+    "managerFilePatterns": ["/(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$/"]
   },
   "helm-values": {
-    "managerFilePatterns": [
-      "/(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$/"
-    ]
+    "managerFilePatterns": ["/(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$/"]
   },
   "kubernetes": {
-    "managerFilePatterns": [
-      "/(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$/"
-    ]
+    "managerFilePatterns": ["/(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$/"]
   },
   "kustomize": {
-    "managerFilePatterns": [
-      "/(^|/)kustomization\\.ya?ml(?:\\.j2)?$/"
-    ]
+    "managerFilePatterns": ["/(^|/)kustomization\\.ya?ml(?:\\.j2)?$/"]
   },
   "customManagers": [
     {
@@ -39,33 +31,25 @@
   "packageRules": [
     {
       "description": "Split base Kubernetes updates into their own PRs",
-      "matchFileNames": [
-        "kubernetes/apps/base/**"
-      ],
+      "matchFileNames": ["kubernetes/apps/base/**"],
       "additionalBranchPrefix": "base-",
       "semanticCommitScope": "base"
     },
     {
       "description": "Split development Kubernetes updates into their own PRs",
-      "matchFileNames": [
-        "kubernetes/apps/development/**"
-      ],
+      "matchFileNames": ["kubernetes/apps/development/**"],
       "additionalBranchPrefix": "development-",
       "semanticCommitScope": "development"
     },
     {
       "description": "Split staging Kubernetes updates into their own PRs",
-      "matchFileNames": [
-        "kubernetes/apps/staging/**"
-      ],
+      "matchFileNames": ["kubernetes/apps/staging/**"],
       "additionalBranchPrefix": "staging-",
       "semanticCommitScope": "staging"
     },
     {
       "description": "Split production Kubernetes updates into their own PRs and gate behind manual approval in the dashboard",
-      "matchFileNames": [
-        "kubernetes/apps/production/**"
-      ],
+      "matchFileNames": ["kubernetes/apps/production/**"],
       "additionalBranchPrefix": "production-",
       "semanticCommitScope": "production",
       "dependencyDashboardApproval": true

@@ -13,6 +13,7 @@ How to stand up an environment from nothing. The cluster is built by Terragrunt 
    ```
 
    This image carries the `qemu-guest-agent` + `netbird` schematic.
+
 4. Workers need **no download or upload** — they are OVH BYOI and pull the bare-metal raw straight from the Talos Factory at order time. The worker schematic must stay **netbird-only**: `qemu-guest-agent` on bare metal blocks on a virtio port that never appears and reboot-loops the node.
 5. For production: delete the apex DNS records via the OVH dashboard before applying.
 
@@ -78,8 +79,8 @@ How to get `kubectl` / `talosctl` access to an **existing** cluster (no bootstra
 
 **Prerequisites:**
 
-* **NetBird** — the cluster APIs are reachable only over the NetBird network, so your host must be running the NetBird client (`netbird up`) and joined to the FUTO NetBird account, which places your peer in the `yucca` group. The access policy then distributes the route to the cluster's vRack CIDR, so `kubectl`/`talosctl` can reach the nodes' private IPs.
-* **1Password CLI (`op`)** — installed and signed in to the `team-futo.1password.com` account. `mise run //deployment/modules/talos/cluster:kubeconfig` fetches the configs through the `//:tg` terragrunt wrapper, which wraps `op run` to inject the Terraform state credentials; without an authenticated `op` it can't read state.
+- **NetBird** — the cluster APIs are reachable only over the NetBird network, so your host must be running the NetBird client (`netbird up`) and joined to the FUTO NetBird account, which places your peer in the `yucca` group. The access policy then distributes the route to the cluster's vRack CIDR, so `kubectl`/`talosctl` can reach the nodes' private IPs.
+- **1Password CLI (`op`)** — installed and signed in to the `team-futo.1password.com` account. `mise run //deployment/modules/talos/cluster:kubeconfig` fetches the configs through the `//:tg` terragrunt wrapper, which wraps `op run` to inject the Terraform state credentials; without an authenticated `op` it can't read state.
 
 **Fetch the configs.** Two tasks pull `kubeconfig` and `talosconfig` for the environment (run whichever you need):
 
@@ -92,8 +93,8 @@ mise run //deployment/modules/talos/cluster:talosconfig        # for talosctl
 
 Each writes to `.private/$ENVIRONMENT/` (mode 600) from the Talos module's Terraform outputs. The kubeconfig is TF-authored with two contexts:
 
-* **`o11y-<env>`** (default) — the HA endpoint `kube.<mesh-zone>:6443`, fronted by the Envoy mesh gateway (TLS passthrough to every apiserver). Survives any single CP being down and never hairpins through a NetBird routing peer.
-* **`o11y-<env>-direct`** — a control-plane private IP, for bootstrap/DR before the mesh gateway exists: `kubectl --context o11y-<env>-direct`. Every CP IP is an apiserver cert SAN, so TLS validates on both paths. (The floating VIP `.5` is in-cluster-only — it doesn't ARP across DCs.)
+- **`o11y-<env>`** (default) — the HA endpoint `kube.<mesh-zone>:6443`, fronted by the Envoy mesh gateway (TLS passthrough to every apiserver). Survives any single CP being down and never hairpins through a NetBird routing peer.
+- **`o11y-<env>-direct`** — a control-plane private IP, for bootstrap/DR before the mesh gateway exists: `kubectl --context o11y-<env>-direct`. Every CP IP is an apiserver cert SAN, so TLS validates on both paths. (The floating VIP `.5` is in-cluster-only — it doesn't ARP across DCs.)
 
 **Point your tools at them:**
 
@@ -107,22 +108,22 @@ talosctl -n 10.150.200.10 health   # any CP private IP; the talosconfig also lis
 
 ## Common operations
 
-| Task | Command |
-| --- | --- |
-| Plan/apply one module | `mise run //deployment/modules/<m>:plan` / `mise run //deployment/modules/<m>:apply` (or `mise run :plan` from inside the module) |
-| Plan/apply all in dep order | `mise run //deployment:plan` / `mise run //deployment:apply` |
-| Re-init backends | `mise run //deployment:init` |
-| Any other terragrunt subcommand | `mise run //:tg <args>` (runs in the current directory, e.g. `state rm`, `import`, `force-unlock`) |
-| Format HCL / Terraform | `mise run //deployment:fmt` |
-| Lint docs | `mise run //:md:lint` |
-| Fetch kubeconfig / talosconfig | `mise run //deployment/modules/talos/cluster:kubeconfig` / `mise run //deployment/modules/talos/cluster:talosconfig` (see [Cluster access](#cluster-access)) |
+| Task                            | Command                                                                                                                                                      |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Plan/apply one module           | `mise run //deployment/modules/<m>:plan` / `mise run //deployment/modules/<m>:apply` (or `mise run :plan` from inside the module)                            |
+| Plan/apply all in dep order     | `mise run //deployment:plan` / `mise run //deployment:apply`                                                                                                 |
+| Re-init backends                | `mise run //deployment:init`                                                                                                                                 |
+| Any other terragrunt subcommand | `mise run //:tg <args>` (runs in the current directory, e.g. `state rm`, `import`, `force-unlock`)                                                           |
+| Format HCL / Terraform          | `mise run //deployment:fmt`                                                                                                                                  |
+| Format docs and manifests       | `mise run //:fmt` (`//:fmt:check` to verify; lefthook runs it per commit)                                                                                    |
+| Fetch kubeconfig / talosconfig  | `mise run //deployment/modules/talos/cluster:kubeconfig` / `mise run //deployment/modules/talos/cluster:talosconfig` (see [Cluster access](#cluster-access)) |
 
 ## Apply guardrails
 
-* **Production never reboots unattended.** The production Talos module applies with `staged_if_needing_reboot`: a machine-config change that needs a reboot is written to the node but stays inactive until the node reboots (the plan shows `resolved_apply_mode = "staged"` for those nodes). Roll them yourself, one at a time, checking `talosctl health` between nodes and doing the elected NetBird routing peer last (rebooting it drops the vRack route until another peer is elected). Staging applies with `auto`, so it reboots on its own and proves the change first.
-* **Servers cannot be destroyed by an apply.** The OVH control-plane instances, the bare-metal workers, and the Talos machine secrets carry `prevent_destroy`; a plan that would replace or delete one fails instead. Tearing one down deliberately means removing that lifecycle rule in the same change.
+- **Production never reboots unattended.** The production Talos module applies with `staged_if_needing_reboot`: a machine-config change that needs a reboot is written to the node but stays inactive until the node reboots (the plan shows `resolved_apply_mode = "staged"` for those nodes). Roll them yourself, one at a time, checking `talosctl health` between nodes and doing the elected NetBird routing peer last (rebooting it drops the vRack route until another peer is elected). Staging applies with `auto`, so it reboots on its own and proves the change first.
+- **Servers cannot be destroyed by an apply.** The OVH control-plane instances, the bare-metal workers, and the Talos machine secrets carry `prevent_destroy`; a plan that would replace or delete one fails instead. Tearing one down deliberately means removing that lifecycle rule in the same change.
 
 ## Tooling
 
-* **OpenTofu** + **Terragrunt** for IaC; **mise** drives tool versions and task wrappers. Version pins live in `.mise/config.toml` and each module's lock file.
-* **1Password CLI** (`op run --env-file deployment/.env`) injects API credentials at invocation time.
+- **OpenTofu** + **Terragrunt** for IaC; **mise** drives tool versions and task wrappers. Version pins live in `.mise/config.toml` and each module's lock file.
+- **1Password CLI** (`op run --env-file deployment/.env`) injects API credentials at invocation time.

@@ -20,10 +20,10 @@ cert-manager issues short-lived ECDSA P-256 wildcard certificates with always-ro
 
 This cluster's VictoriaMetrics is the **central metrics store for all FUTO clusters**. Other Kubernetes clusters each run their own `vmagent` and remote-write into this cluster; it is the ingestion target plus the query and alerting brain for everyone.
 
-* **Storage** — VMCluster mode with `replicationFactor=2`, `vmstorage` spread one-per-worker across the three DCs on `openebs-spare-disk`; retention is set per environment via `CLUSTER_VMETRICS_RETENTION` (30d staging, 120d production). The `vmstorage`, `vminsert`, and `vmselect` tiers scale independently.
-* **Local collection**: a `vmagent` (with a persistent disk buffer) scrapes this cluster and remote-writes to the local `vminsert`'s multitenant endpoint. It tags series with the cluster's identity, from which `vminsert` derives the tenant.
-* **Alerting** — `vmalert` evaluates rules; notifications are blackholed for now (no Alertmanager yet), so rules still evaluate and recording rules still write. A tenant whose bundle ships `VMRule`s gets its own `vmalert`, which reads only that tenant and writes back into it through the tenant's identity labels; o11y labels those rules `o11y.futo.org/tenant` and its own `vmalert` skips them ([dashboards and alerts guide](06-dashboards-and-alerts-guide.md#recording-rules-in-a-bundle)).
-* **Ingestion gateway** — a locked-down `vmauth` (no anonymous access, run as an HA pair) fronts `vminsert` and is exposed publicly at `vmauth.<CLUSTER_APP_DOMAIN>` through the Envoy Gateway and IPLB with cert-manager TLS.
+- **Storage** — VMCluster mode with `replicationFactor=2`, `vmstorage` spread one-per-worker across the three DCs on `openebs-spare-disk`; retention is set per environment via `CLUSTER_VMETRICS_RETENTION` (30d staging, 120d production). The `vmstorage`, `vminsert`, and `vmselect` tiers scale independently.
+- **Local collection**: a `vmagent` (with a persistent disk buffer) scrapes this cluster and remote-writes to the local `vminsert`'s multitenant endpoint. It tags series with the cluster's identity, from which `vminsert` derives the tenant.
+- **Alerting** — `vmalert` evaluates rules; notifications are blackholed for now (no Alertmanager yet), so rules still evaluate and recording rules still write. A tenant whose bundle ships `VMRule`s gets its own `vmalert`, which reads only that tenant and writes back into it through the tenant's identity labels; o11y labels those rules `o11y.futo.org/tenant` and its own `vmalert` skips them ([dashboards and alerts guide](06-dashboards-and-alerts-guide.md#recording-rules-in-a-bundle)).
+- **Ingestion gateway** — a locked-down `vmauth` (no anonymous access, run as an HA pair) fronts `vminsert` and is exposed publicly at `vmauth.<CLUSTER_APP_DOMAIN>` through the Envoy Gateway and IPLB with cert-manager TLS.
 
 ### Tenancy and auth
 
@@ -67,11 +67,11 @@ Grafana's database is a CloudNativePG cluster. The operator runs in the `cnpg-sy
 
 ## Supporting components
 
-* **external-secrets** — syncs 1Password items into Kubernetes Secrets through cluster secret stores backed by the **bootstrap cluster's** 1Password Connect (`opc.o11y.futo.network`), reached over the NetBird mesh: the controller pod carries a Multus egress interface and resolves the endpoint via mesh DNS. Nearly every app above gets its credentials this way; the auth token is Terraform-seeded.
-* **Multus** — meta-CNI providing opt-in secondary pod interfaces; today only the `netbird-egress` attachment used by external-secrets and gatus.
-* **gatus** — status page at `gatus.<mesh-domain>`, probing the HTTPRoutes on both gateways (discovered by its sidecar) plus every project's 1Password Connect on the bootstrap cluster (`opc.<project>.futo.network/heartbeat`, static, over the `netbird-egress` leg). Results are scraped as `gatus_results_*`; the bootstrap project's alert bundle pages on production's Connect probes.
-* **grafana-operator** — manages the Grafana instance plus dashboard and datasource resources, which VictoriaMetrics' chart provisions.
-* **prometheus-operator CRDs** — the ServiceMonitor/PrometheusRule CRDs the VM stack consumes.
-* **OpenEBS** — the local-hostpath provisioner backing the `openebs-system-disk` and `openebs-spare-disk` StorageClasses.
-* **Spegel** — peer-to-peer image registry mirror across nodes.
-* **descheduler**, **reloader**, **metrics-server** — pod rebalancing, config-change pod reloads, and the resource-metrics API.
+- **external-secrets** — syncs 1Password items into Kubernetes Secrets through cluster secret stores backed by the **bootstrap cluster's** 1Password Connect (`opc.o11y.futo.network`), reached over the NetBird mesh: the controller pod carries a Multus egress interface and resolves the endpoint via mesh DNS. Nearly every app above gets its credentials this way; the auth token is Terraform-seeded.
+- **Multus** — meta-CNI providing opt-in secondary pod interfaces; today only the `netbird-egress` attachment used by external-secrets and gatus.
+- **gatus** — status page at `gatus.<mesh-domain>`, probing the HTTPRoutes on both gateways (discovered by its sidecar) plus every project's 1Password Connect on the bootstrap cluster (`opc.<project>.futo.network/heartbeat`, static, over the `netbird-egress` leg). Results are scraped as `gatus_results_*`; the bootstrap project's alert bundle pages on production's Connect probes.
+- **grafana-operator** — manages the Grafana instance plus dashboard and datasource resources, which VictoriaMetrics' chart provisions.
+- **prometheus-operator CRDs** — the ServiceMonitor/PrometheusRule CRDs the VM stack consumes.
+- **OpenEBS** — the local-hostpath provisioner backing the `openebs-system-disk` and `openebs-spare-disk` StorageClasses.
+- **Spegel** — peer-to-peer image registry mirror across nodes.
+- **descheduler**, **reloader**, **metrics-server** — pod rebalancing, config-change pod reloads, and the resource-metrics API.

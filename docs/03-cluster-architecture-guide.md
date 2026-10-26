@@ -10,21 +10,21 @@ Talos Linux on every node, with flannel CNI (wrapped by Multus for opt-in second
 
 Control planes and workers use **different** Talos Factory schematics, on purpose:
 
-| Node type | Platform | Schematic |
-|-----------|----------|-----------|
+| Node type     | Platform               | Schematic                      |
+| ------------- | ---------------------- | ------------------------------ |
 | Control plane | OVH Public Cloud (KVM) | `netbird` + `qemu-guest-agent` |
-| Worker | Bare metal | `netbird` only |
+| Worker        | Bare metal             | `netbird` only                 |
 
 `qemu-guest-agent` on bare metal wedges boot — it waits on a virtio-serial port that isn't present and reboot-loops the node. The control-plane image is an OpenStack image uploaded to OVH glance once; workers are BYOI and fetch their raw image from the Factory at order time.
 
 ### Machine configuration
 
-* **Control-plane endpoint** is the floating VIP (`10.150.200.5`); the apiserver cert SANs include the VIP, every CP private IP (the direct/break-glass path), and `kube.<mesh-domain>` — the HA endpoint the mesh gateway fronts via TLS passthrough, which `kubectl` uses by default.
-* **CoreDNS is Terraform-seeded**, not Flux-managed: Flux itself needs cluster DNS from its first reconcile, so a fresh bootstrap would deadlock. Talos's own CoreDNS is disabled and the chart (installed by `kubernetes/helm`) owns the `kube-dns` Service; kubelet's `clusterDNS` pins its IP. The Corefile adds a `futo.network` zone forwarded to the NetBird mesh DNS (see the infrastructure guide).
-* **kubelet's node IP is pinned to the vRack subnet** — otherwise kubelet auto-detects, and a lower-sorting host address (such as the Multus egress bridge) steals the node's InternalIP and breaks apiserver→kubelet traffic.
-* **Component metrics** for kube-controller-manager, kube-scheduler, and etcd bind to all interfaces rather than localhost, so VMAgent (running on a worker) can scrape them. The host firewall keeps these ports private. The controller-manager and scheduler endpoints are authenticated HTTPS; etcd's is plain HTTP, so the firewall is its only protection.
-* **kube-proxy** is told to answer NodePorts on every interface (not just the node's primary vRack IP), so the IPLB can reach Envoy on the workers' public NIC; its own metrics endpoint is likewise bound for scraping. These settings are generated into the cluster-wide kube-proxy DaemonSet.
-* **Flannel's VXLAN endpoint** is pinned to the vRack interface; otherwise it defaults to the public NIC and the host firewall drops east-west pod traffic.
+- **Control-plane endpoint** is the floating VIP (`10.150.200.5`); the apiserver cert SANs include the VIP, every CP private IP (the direct/break-glass path), and `kube.<mesh-domain>` — the HA endpoint the mesh gateway fronts via TLS passthrough, which `kubectl` uses by default.
+- **CoreDNS is Terraform-seeded**, not Flux-managed: Flux itself needs cluster DNS from its first reconcile, so a fresh bootstrap would deadlock. Talos's own CoreDNS is disabled and the chart (installed by `kubernetes/helm`) owns the `kube-dns` Service; kubelet's `clusterDNS` pins its IP. The Corefile adds a `futo.network` zone forwarded to the NetBird mesh DNS (see the infrastructure guide).
+- **kubelet's node IP is pinned to the vRack subnet** — otherwise kubelet auto-detects, and a lower-sorting host address (such as the Multus egress bridge) steals the node's InternalIP and breaks apiserver→kubelet traffic.
+- **Component metrics** for kube-controller-manager, kube-scheduler, and etcd bind to all interfaces rather than localhost, so VMAgent (running on a worker) can scrape them. The host firewall keeps these ports private. The controller-manager and scheduler endpoints are authenticated HTTPS; etcd's is plain HTTP, so the firewall is its only protection.
+- **kube-proxy** is told to answer NodePorts on every interface (not just the node's primary vRack IP), so the IPLB can reach Envoy on the workers' public NIC; its own metrics endpoint is likewise bound for scraping. These settings are generated into the cluster-wide kube-proxy DaemonSet.
+- **Flannel's VXLAN endpoint** is pinned to the vRack interface; otherwise it defaults to the public NIC and the host firewall drops east-west pod traffic.
 
 ### Worker storage
 
@@ -36,22 +36,22 @@ The **second NVMe** is a separate `local-hostpath` UserVolume backing the `opene
 
 Default-deny ingress on every node; anything not listed is dropped at the host. Allowed:
 
-| Service | Port(s) | Allowed sources |
-|---------|---------|-----------------|
-| apid | 50000/tcp | vRack + NetBird peers `10.254.0.0/15` |
-| trustd | 50001/tcp | vRack |
-| kube-apiserver (CPs) | 6443/tcp | vRack + NetBird peers `10.254.0.0/15` |
-| etcd (CPs) | 2379–2380/tcp | vRack |
-| kubelet | 10250/tcp | vRack + pod CIDR `10.244.0.0/16` |
-| flannel VXLAN | 4789/udp | vRack |
-| Spegel registry (workers) | 29999/tcp, 30021/tcp | vRack |
-| Envoy ingress (workers) | 30443/tcp | `10.108.0.0/14` (IPLB NAT range only) |
-| CP component metrics (CPs) | 10257, 10259, 2381/tcp | vRack + pod CIDR |
-| Node metrics (all nodes) | 10249, 9100/tcp | vRack + pod CIDR |
+| Service                    | Port(s)                | Allowed sources                       |
+| -------------------------- | ---------------------- | ------------------------------------- |
+| apid                       | 50000/tcp              | vRack + NetBird peers `10.254.0.0/15` |
+| trustd                     | 50001/tcp              | vRack                                 |
+| kube-apiserver (CPs)       | 6443/tcp               | vRack + NetBird peers `10.254.0.0/15` |
+| etcd (CPs)                 | 2379–2380/tcp          | vRack                                 |
+| kubelet                    | 10250/tcp              | vRack + pod CIDR `10.244.0.0/16`      |
+| flannel VXLAN              | 4789/udp               | vRack                                 |
+| Spegel registry (workers)  | 29999/tcp, 30021/tcp   | vRack                                 |
+| Envoy ingress (workers)    | 30443/tcp              | `10.108.0.0/14` (IPLB NAT range only) |
+| CP component metrics (CPs) | 10257, 10259, 2381/tcp | vRack + pod CIDR                      |
+| Node metrics (all nodes)   | 10249, 9100/tcp        | vRack + pod CIDR                      |
 
 Pod CIDR is allowed on `kubelet` and the metrics ports because pod-to-own-node-IP traffic skips flannel masquerade (a same-node scrape keeps its pod-IP source), which the vRack-only rule would otherwise drop.
 
-Operator `talosctl`/`kubectl` traffic forwarded through the NetBird route arrives masqueraded to a routing peer's vRack IP, which the vRack allow covers. Traffic addressed to the elected routing peer's *own* vRack IP never traverses the forward path — it is delivered locally with the operator's NetBird source intact — so `apid` and `kube-apiserver` also allow the NetBird peer range. Without it the elected router is unreachable at its own IP; the matching NetBird-side accept is the `yucca → talos` peer policy, since resource policies only program forwarding.
+Operator `talosctl`/`kubectl` traffic forwarded through the NetBird route arrives masqueraded to a routing peer's vRack IP, which the vRack allow covers. Traffic addressed to the elected routing peer's _own_ vRack IP never traverses the forward path — it is delivered locally with the operator's NetBird source intact — so `apid` and `kube-apiserver` also allow the NetBird peer range. Without it the elected router is unreachable at its own IP; the matching NetBird-side accept is the `yucca → talos` peer policy, since resource policies only program forwarding.
 
 ## Kubernetes
 
@@ -63,11 +63,11 @@ Kubernetes with flannel CNI and kube-proxy in nftables mode. **Multus** runs as 
 
 Everything above the OS is managed by Flux v2. Manifests are organized as reusable bases plus per-environment overlays:
 
-* **`kubernetes/apps/base/<app>/`** is the app's single home: `ks.yaml` is its Flux Kustomization (`dependsOn` ordering, health checks) and `app/` is what that Kustomization deploys (chart source + manifests). Both environments reconcile the same definition.
-* **`kubernetes/apps/<env>/<ns>/`** is the per-namespace overlay: a kustomization listing which base apps run there, plus the Namespace itself. Anything an environment needs to differ from `base/` is one patch file per app under the overlay's `patches/` — today that's production's version pins.
-* **`kubernetes/components/`** holds shared kustomize Components — today just **`replacements/`**, included by every overlay. It copies the overlay Namespace's name into each Flux Kustomization's `spec.targetNamespace`, so an app deploys into whichever namespace lists it and `base/` stays namespace-agnostic. The corollary: an app belongs in the folder of the namespace its resources live in — `mesh-gateway-api` sits under `default/` because its TLSRoute must share a namespace with the `default/kubernetes` Service it fronts. The overlay's namespace is forced onto every namespaced resource (explicit values are overridden), so an app that genuinely needs resources in a foreign namespace would need a `reject` entry in the component.
+- **`kubernetes/apps/base/<app>/`** is the app's single home: `ks.yaml` is its Flux Kustomization (`dependsOn` ordering, health checks) and `app/` is what that Kustomization deploys (chart source + manifests). Both environments reconcile the same definition.
+- **`kubernetes/apps/<env>/<ns>/`** is the per-namespace overlay: a kustomization listing which base apps run there, plus the Namespace itself. Anything an environment needs to differ from `base/` is one patch file per app under the overlay's `patches/` — today that's production's version pins.
+- **`kubernetes/components/`** holds shared kustomize Components — today just **`replacements/`**, included by every overlay. It copies the overlay Namespace's name into each Flux Kustomization's `spec.targetNamespace`, so an app deploys into whichever namespace lists it and `base/` stays namespace-agnostic. The corollary: an app belongs in the folder of the namespace its resources live in — `mesh-gateway-api` sits under `default/` because its TLSRoute must share a namespace with the `default/kubernetes` Service it fronts. The overlay's namespace is forced onto every namespaced resource (explicit values are overridden), so an app that genuinely needs resources in a foreign namespace would need a `reject` entry in the component.
 
-* **`kubernetes/clusters/<env>/apps.yaml`** is the `cluster-apps` entry point the Flux Instance points at.
+- **`kubernetes/clusters/<env>/apps.yaml`** is the `cluster-apps` entry point the Flux Instance points at.
 
 Cluster-wide HelmRelease lifecycle defaults (`crds: CreateReplace` on install and upgrade, `cleanupOnFail`, `RemediateOnFailure` with retries) are defined once in `kubernetes/clusters/<env>/apps.yaml`: `cluster-apps` **appends** them (a JSON6902 `add /spec/patches/-`) to every child Kustomization, which applies them to every HelmRelease it renders — individual releases declare only what deviates. Appending, rather than strategic-merging, is what lets the per-app override patches, which ride the same list, coexist: a strategic-merge there would replace the list and silently erase every override. Every base `ks.yaml` seeds `patches: []` so the append always has a list to land on; a new app that omits it fails the environment build loudly.
 
@@ -81,7 +81,7 @@ Today the only overrides are version pins. Chart (and the CloudNativePG Postgres
 
 Per-environment values are **not** hardcoded in `base/` and **not** patched into each overlay. Instead, `cluster-apps` carries a single patch that targets every child Kustomization and injects `postBuild.substituteFrom` pointing at **two** ConfigMaps, resolved by Flux's envsubst at apply time — the prefix tells you who owns the value:
 
-* **`cluster-settings`** (`CLUSTER_*`, committed in `kubernetes/clusters/<env>/`) — git-owned values: `CLUSTER_APP_DOMAIN`, the telemetry identity pair `CLUSTER_NAME`/`CLUSTER_ENV` (the `cluster` and `env` labels, see the [shipping guide](05-shipping-metrics-guide.md)), the 1Password vault names, VictoriaMetrics retention/storage class, and the bootstrap Connect VIP.
-* **`bootstrap-settings`** (`BOOTSTRAP_*`, created in-cluster by the `deployment/modules/kubernetes/helm` Terraform module) — Terraform-owned values that must never drift from the infrastructure: the mesh DNS zone and the NetBird gateway VIP, ServiceCIDR, and egress CIDR/gateway. The entry is `optional` because offline renderers (flate CI) can't see an in-cluster-only ConfigMap; consumers still fail loudly at apply if it's genuinely missing.
+- **`cluster-settings`** (`CLUSTER_*`, committed in `kubernetes/clusters/<env>/`) — git-owned values: `CLUSTER_APP_DOMAIN`, the telemetry identity pair `CLUSTER_NAME`/`CLUSTER_ENV` (the `cluster` and `env` labels, see the [shipping guide](05-shipping-metrics-guide.md)), the 1Password vault names, VictoriaMetrics retention/storage class, and the bootstrap Connect VIP.
+- **`bootstrap-settings`** (`BOOTSTRAP_*`, created in-cluster by the `deployment/modules/kubernetes/helm` Terraform module) — Terraform-owned values that must never drift from the infrastructure: the mesh DNS zone and the NetBird gateway VIP, ServiceCIDR, and egress CIDR/gateway. The entry is `optional` because offline renderers (flate CI) can't see an in-cluster-only ConfigMap; consumers still fail loudly at apply if it's genuinely missing.
 
 Because of this, values that vary by environment live exactly once — in git or in Terraform — rather than being duplicated across overlays; only versions are still patched per environment. A rendered object can be checked exactly as Flux will produce it using the `flate` CLI.

@@ -6,29 +6,29 @@ Both paths terminate at a `vmauth` gateway that proxies to the same `vminsert` t
 
 ## The two paths
 
-| | Over the NetBird mesh | Over the internet |
-|---|---|---|
-| Gateway hostname | `vmauth.<mesh-domain>` | `vmauth.<app-domain>` |
-| Envoy gateway | `mesh` (mesh-only VIP) | `envoy` (public, via OVH IPLB) |
-| Auth | none; the NetBird ACL is the gate | shared bearer token |
-| Transport | private overlay, never leaves the mesh | public internet, TLS at Envoy |
-| Use when | the remote cluster is already a mesh peer | the remote cluster is not on the mesh |
+|                  | Over the NetBird mesh                     | Over the internet                     |
+| ---------------- | ----------------------------------------- | ------------------------------------- |
+| Gateway hostname | `vmauth.<mesh-domain>`                    | `vmauth.<app-domain>`                 |
+| Envoy gateway    | `mesh` (mesh-only VIP)                    | `envoy` (public, via OVH IPLB)        |
+| Auth             | none; the NetBird ACL is the gate         | shared bearer token                   |
+| Transport        | private overlay, never leaves the mesh    | public internet, TLS at Envoy         |
+| Use when         | the remote cluster is already a mesh peer | the remote cluster is not on the mesh |
 
 Prefer the mesh path for clusters already joined to the FUTO NetBird mesh: there is no token to distribute or rotate, and the traffic never traverses the public internet. Use the internet path for anything not on the mesh. Both may be used at once; they write to the same store.
 
 ### Per-environment endpoints
 
-| | staging | production |
-|---|---|---|
-| Mesh gateway | `vmauth.staging.o11y.futo.network` | `vmauth.o11y.futo.network` |
-| Public gateway | `vmauth.staging.futostatus.com` | `vmauth.futostatus.com` |
+|                | staging                            | production                 |
+| -------------- | ---------------------------------- | -------------------------- |
+| Mesh gateway   | `vmauth.staging.o11y.futo.network` | `vmauth.o11y.futo.network` |
+| Public gateway | `vmauth.staging.futostatus.com`    | `vmauth.futostatus.com`    |
 
 Both gateway URLs are also published to the per-environment shared 1Password vault (`shared_tf_staging` / `shared_tf_prod`), alongside the bearer token, so a consuming cluster can pull its endpoint from the vault instead of hardcoding the hostname:
 
-| Item | Value (field `password`) |
-|---|---|
-| `O11Y_VICTORIAMETRICS_VMAUTH_MESH_URL` | `https://vmauth.<mesh-domain>` |
-| `O11Y_VICTORIAMETRICS_VMAUTH_PUBLIC_URL` | `https://vmauth.<app-domain>` |
+| Item                                     | Value (field `password`)       |
+| ---------------------------------------- | ------------------------------ |
+| `O11Y_VICTORIAMETRICS_VMAUTH_MESH_URL`   | `https://vmauth.<mesh-domain>` |
+| `O11Y_VICTORIAMETRICS_VMAUTH_PUBLIC_URL` | `https://vmauth.<app-domain>`  |
 
 The items hold the bare origin (scheme and host, no path); append the insert or select path for your shipper. They are Terraform-managed by `deployment/modules/victoria-metrics/cluster`. The token item is Terraform-generated too, by core-infra-tf's `shared-generated-secrets` module (`deployment/modules/shared/1password/futo-account/shared-secrets.tf`), as a separate random value in each of `shared_tf_prod`, `shared_tf_staging` and `shared_tf_dev`.
 
@@ -42,8 +42,8 @@ The metrics remote-write path is the same on every host:
 
 ## Prerequisites (both paths)
 
-* **A `vmagent` with a persistent disk buffer.** The central store is a single point of failure for observability; a per-remote disk buffer means a central outage replays on recovery instead of dropping data. Give `vmagent` a PVC and point `-remoteWrite.tmpDataPath` at it (or, for Prometheus, rely on its WAL and tune `queue_config`).
-* **The mandatory identity labels.** See [Labels](#labels).
+- **A `vmagent` with a persistent disk buffer.** The central store is a single point of failure for observability; a per-remote disk buffer means a central outage replays on recovery instead of dropping data. Give `vmagent` a PVC and point `-remoteWrite.tmpDataPath` at it (or, for Prometheus, rely on its WAL and tune `queue_config`).
+- **The mandatory identity labels.** See [Labels](#labels).
 
 ## Option A: over the NetBird mesh
 
@@ -60,7 +60,7 @@ spec:
   externalLabels:
     project: yucca
     env: prod
-    cluster: father       # unique per remote, mandatory
+    cluster: father # unique per remote, mandatory
     provider: hetzner
     region: fsn
   remoteWrite:
@@ -85,13 +85,13 @@ spec:
   externalLabels:
     project: yucca
     env: prod
-    cluster: father       # unique per remote, mandatory
+    cluster: father # unique per remote, mandatory
     provider: hetzner
     region: fsn
   remoteWrite:
     - url: https://vmauth.futostatus.com/insert/0/prometheus/api/v1/write
       bearerTokenSecret:
-        name: o11y-remote-write-token   # a Secret holding the vault token
+        name: o11y-remote-write-token # a Secret holding the vault token
         key: token
   extraArgs:
     remoteWrite.tmpDataPath: /vmagent-buffer
@@ -119,15 +119,15 @@ remote_write:
 
 Everything lands in one tenant, distinguished by labels rather than VictoriaMetrics multitenancy: one organization, mutual trust, everything queryable together. Every shipper - metrics and logs alike - must stamp the same five identity labels on everything it sends:
 
-* **`project`** - which project the cluster belongs to (`o11y`, `yucca`, ...).
-* **`env`** - short environment name: `dev`, `staging`, or `prod` (not `production`).
-* **`cluster`** (mandatory, unique) - a short name unique to the cluster (`father`, `o11y`, ...), so series never collide with another cluster's, and so alerting can tell clusters apart: o11y's alert rules aggregate `by (cluster)` and notifications group on it, so a missing or reused `cluster` label collapses every cluster into a single alert and a single notification. Cheap to enforce now, painful to retrofit.
-* **`provider`** - infrastructure provider (`ovh`, `hetzner`, ...).
-* **`region`** - the IATA/ICAO airport code nearest the site (`fsn`, `aus`, ...). A cluster spanning several sites uses `global` (the o11y clusters do: their nodes span three OVH datacenters).
+- **`project`** - which project the cluster belongs to (`o11y`, `yucca`, ...).
+- **`env`** - short environment name: `dev`, `staging`, or `prod` (not `production`).
+- **`cluster`** (mandatory, unique) - a short name unique to the cluster (`father`, `o11y`, ...), so series never collide with another cluster's, and so alerting can tell clusters apart: o11y's alert rules aggregate `by (cluster)` and notifications group on it, so a missing or reused `cluster` label collapses every cluster into a single alert and a single notification. Cheap to enforce now, painful to retrofit.
+- **`provider`** - infrastructure provider (`ovh`, `hetzner`, ...).
+- **`region`** - the IATA/ICAO airport code nearest the site (`fsn`, `aus`, ...). A cluster spanning several sites uses `global` (the o11y clusters do: their nodes span three OVH datacenters).
 
 The value sets are open - these are the conventions, not a closed enumeration; the authority for any given cluster is its own shipper config. The o11y clusters stamp `project=o11y, env=<staging|prod>, cluster=o11y, provider=ovh, region=global`, with `cluster` and `env` supplied per environment from `CLUSTER_NAME`/`CLUSTER_ENV` in `kubernetes/clusters/<env>/cluster-settings.yaml`.
 
-`externalLabels` only tags *scraped* series; if the shipper also forwards pushed data (e.g. OTLP app metrics through a `vmagent`), apply the same labels with a relabel config instead so ingested series are tagged too.
+`externalLabels` only tags _scraped_ series; if the shipper also forwards pushed data (e.g. OTLP app metrics through a `vmagent`), apply the same labels with a relabel config instead so ingested series are tagged too.
 
 ### Make the identity labels win
 
@@ -189,21 +189,21 @@ Metrics are also keyed by VictoriaMetrics tenant (`accountID:projectID`): `accou
 
 IDs are unique within a store, and an environment pair (a prod cluster and its staging twin, each shipping to its own store) shares the same tenant so tenant-scoped config carries across environments unchanged; clusters with no twin take the next free number in their project. `accountID` 0 and `projectID` 0 are never assigned: any cluster without a rule pair lands in `0:0`, whatever its project. Rules are keyed on `project;cluster` for both labels, never on the project alone, so each cluster migrates independently and a new cluster in a known project cannot be moved by accident. This table records the assignments; a cluster is live on its tenant exactly when its rule pair is in the ConfigMap, so add the row and the rule in the same change.
 
-| Project | accountID | Cluster | Env | Store | Tenant |
-|---|---|---|---|---|---|
-| o11y | 1 | o11y | staging, prod | both | `1:1` |
-| yucca | 2 | father | prod | production | `2:1` |
-| yucca | 2 | netops | prod | production | `2:2` |
-| yucca | 2 | spice | prod | production | `2:3` |
-| yucca | 2 | luke | staging | staging | `2:4` |
-| harbor | 3 | harbor-infra-prod | prod | production | `3:1` |
-| harbor | 3 | harbor-infra-staging | staging | staging | `3:1` |
-| fip | 4 | azad | prod | production | `4:1` |
-| fmeet | 5 | serverless | staging, prod | both | `5:1` |
-| immich | 6 | pokedex | prod | production | `6:1` |
-| version | 7 | version | dev, prod | both | `7:1` |
-| bootstrap | 8 | palpatine | prod | production | `8:1` |
-| geoshenanigans | 6 | geocoder | prod | production | `6:2` |
+| Project        | accountID | Cluster              | Env           | Store      | Tenant |
+| -------------- | --------- | -------------------- | ------------- | ---------- | ------ |
+| o11y           | 1         | o11y                 | staging, prod | both       | `1:1`  |
+| yucca          | 2         | father               | prod          | production | `2:1`  |
+| yucca          | 2         | netops               | prod          | production | `2:2`  |
+| yucca          | 2         | spice                | prod          | production | `2:3`  |
+| yucca          | 2         | luke                 | staging       | staging    | `2:4`  |
+| harbor         | 3         | harbor-infra-prod    | prod          | production | `3:1`  |
+| harbor         | 3         | harbor-infra-staging | staging       | staging    | `3:1`  |
+| fip            | 4         | azad                 | prod          | production | `4:1`  |
+| fmeet          | 5         | serverless           | staging, prod | both       | `5:1`  |
+| immich         | 6         | pokedex              | prod          | production | `6:1`  |
+| version        | 7         | version              | dev, prod     | both       | `7:1`  |
+| bootstrap      | 8         | palpatine            | prod          | production | `8:1`  |
+| geoshenanigans | 6         | geocoder             | prod          | production | `6:2`  |
 
 Onboarding a cluster onto its own tenant is a central-side change only: add its rule pair, for example
 
@@ -251,7 +251,7 @@ Logs carry the same identity labels as metrics, stamped as fields by the shipper
 
 For maintainers, the ingestion config lives in `kubernetes/apps/base/victoria-metrics-users/app/`:
 
-* `vmuser-remote-clusters.yaml` - the `VMUser` behind the public gateway. It holds the shared token (via ExternalSecret) and the allowed path set: metrics and logs insert **and** select (remote clusters can read back, not only write).
-* `vmauth-mesh-unauth.yaml` - the unauthenticated `mesh-unauth` `VMAuth` on the mesh gateway, with the same path set exposed through `unauthorizedUserAccessSpec`.
+- `vmuser-remote-clusters.yaml` - the `VMUser` behind the public gateway. It holds the shared token (via ExternalSecret) and the allowed path set: metrics and logs insert **and** select (remote clusters can read back, not only write).
+- `vmauth-mesh-unauth.yaml` - the unauthenticated `mesh-unauth` `VMAuth` on the mesh gateway, with the same path set exposed through `unauthorizedUserAccessSpec`.
 
 The public gateway itself is the `vmauth` defined in the VictoriaMetrics release (`kubernetes/apps/base/victoria-metrics/app/helmrelease.yaml`), reached at `vmauth.<CLUSTER_APP_DOMAIN>`.
