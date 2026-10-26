@@ -5,7 +5,9 @@ locals {
 
 # Per-env working dirs, so switching ENVIRONMENT never reuses another env's
 # initialized backend (including the copies dependency outputs are read from).
-download_dir = "${get_terragrunt_dir()}/.terragrunt-cache/${local.env}${local.stage != "" ? "-${local.stage}" : ""}"
+# The stage is hashed: a raw one containing "/../" can resolve into another
+# env's directory.
+download_dir = "${get_terragrunt_dir()}/.terragrunt-cache/${local.env}${local.stage != "" ? "-${sha256(local.stage)}" : ""}"
 
 generate "backend" {
   path      = "backend.tf"
