@@ -19,7 +19,7 @@ variable "cluster" {
 
 variable "flux_operator_version" {
   type    = string
-  default = "0.50.0"
+  default = "0.62.0"
 }
 
 variable "coredns_version" {
