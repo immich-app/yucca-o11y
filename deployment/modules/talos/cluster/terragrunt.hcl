@@ -1,3 +1,7 @@
+include "root" {
+  path = find_in_parent_folders("root.hcl")
+}
+
 terraform {
   source = "."
 
@@ -7,8 +11,7 @@ terraform {
 }
 
 locals {
-  env   = get_env("TF_VAR_env")
-  stage = get_env("TF_VAR_stage")
+  env = get_env("TF_VAR_env")
 
   # Worker spare-disk UserVolume selectors (see variables.tf). Both data volumes
   # use model + !system_disk; Talos spreads them across the non-system disks.
@@ -85,28 +88,4 @@ inputs = {
   mesh_dns_zone           = dependency.netbird_cluster.outputs.mesh_dns_zone
   # CI applies on merge; production never reboots unattended (see variables.tf).
   apply_mode = local.env == "production" ? "staged_if_needing_reboot" : "auto"
-}
-
-generate "backend" {
-  path      = "backend.tf"
-  if_exists = "overwrite_terragrunt"
-  contents  = <<EOF
-terraform {
-  backend "s3" {
-    bucket = "${get_env("TF_VAR_tf_state_s3_bucket")}"
-    key    = "yucca/o11y/v3/talos/cluster/${local.env}${local.stage != "" ? "/${local.stage}" : ""}"
-    region = "${get_env("TF_VAR_tf_state_s3_region")}"
-    access_key = "${get_env("TF_VAR_tf_state_s3_access_key")}"
-    secret_key = "${get_env("TF_VAR_tf_state_s3_secret_key")}"
-
-    endpoints = {
-      s3 = "${get_env("TF_VAR_tf_state_s3_endpoint")}"
-    }
-
-    skip_credentials_validation = true
-    skip_metadata_api_check     = true
-    skip_region_validation      = true
-  }
-}
-EOF
 }
