@@ -22,10 +22,10 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'deployment/**'
-      - '.mise/config.toml'
-      - '.github/actions/netbird-connect/**'
-      - '.github/workflows/deploy.yml'
+      - "deployment/**"
+      - ".mise/config.toml"
+      - ".github/actions/netbird-connect/**"
+      - ".github/workflows/deploy.yml"
   workflow_dispatch:
 
 concurrency:
@@ -36,7 +36,7 @@ permissions:
   contents: read
 
 env:
-  TG_NON_INTERACTIVE: 'true'
+  TG_NON_INTERACTIVE: "true"
 
 jobs:
   plan:

@@ -6,16 +6,16 @@ o11y's Grafana renders the dashboards and alert rules that each project ships to
 
 Each project gets a Grafana **folder** named for it, and both its dashboards and its alert rule groups file under that folder:
 
-| Folder | Owner | Delivered by |
-| --- | --- | --- |
-| `yucca` | the yucca cluster/product | yucca's signed OCI bundle (Model A) |
-| `o11y` | this cluster's own dashboards/alerts | authored in this repo (Model B) |
-| `harbor` | the Harbor clusters (harbor-infra-prod/staging) | harbor-o11y's key-signed OCI bundle (Model A, anonymous-pull registry) |
-| `fip` | the FUTO internal platform cluster (azad) | futo-internal-platform's signed OCI bundle (Model A) |
-| `version` | the Immich version worker (Cloudflare) | immich-app/version's signed OCI bundle (Model A), including recording rules |
-| `fmeet` | the fmeet serverless workers (Cloudflare) | fmeet's unsigned OCI bundle (Model A, private gitlab.futo.org registry pulled with a deploy token) |
-| `bootstrap` | the bootstrap DOKS cluster (palpatine) | bootstrap's key-signed GitLab OCI bundle (Model A, anonymous-pull registry: infra/bootstrap is a public project) |
-| `geoshenanigans` | the geoshenanigans geocoder nightly build and its watchdog (GitHub Actions jobs pushing straight to the public gateway) | immich-app/geoshenanigans's signed OCI bundle (Model A) |
+| Folder           | Owner                                                                                                                   | Delivered by                                                                                                     |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `yucca`          | the yucca cluster/product                                                                                               | yucca's signed OCI bundle (Model A)                                                                              |
+| `o11y`           | this cluster's own dashboards/alerts                                                                                    | authored in this repo (Model B)                                                                                  |
+| `harbor`         | the Harbor clusters (harbor-infra-prod/staging)                                                                         | harbor-o11y's key-signed OCI bundle (Model A, anonymous-pull registry)                                           |
+| `fip`            | the FUTO internal platform cluster (azad)                                                                               | futo-internal-platform's signed OCI bundle (Model A)                                                             |
+| `version`        | the Immich version worker (Cloudflare)                                                                                  | immich-app/version's signed OCI bundle (Model A), including recording rules                                      |
+| `fmeet`          | the fmeet serverless workers (Cloudflare)                                                                               | fmeet's unsigned OCI bundle (Model A, private gitlab.futo.org registry pulled with a deploy token)               |
+| `bootstrap`      | the bootstrap DOKS cluster (palpatine)                                                                                  | bootstrap's key-signed GitLab OCI bundle (Model A, anonymous-pull registry: infra/bootstrap is a public project) |
+| `geoshenanigans` | the geoshenanigans geocoder nightly build and its watchdog (GitHub Actions jobs pushing straight to the public gateway) | immich-app/geoshenanigans's signed OCI bundle (Model A)                                                          |
 
 Add a project, add a folder. That folder is the unit you scope dashboards, alerts, and (eventually) permissions to.
 
@@ -40,8 +40,8 @@ spec:
   interval: 1m
   url: oci://ghcr.io/immich-app/yucca/o11y-manifests
   ref:
-    tag: main            # tracks every merge; no digest, or auto-updates stop
-  verify:                # gate on the CI cosign signature
+    tag: main # tracks every merge; no digest, or auto-updates stop
+  verify: # gate on the CI cosign signature
     provider: cosign
     matchOIDCIdentity:
       - issuer: "^https://token\\.actions\\.githubusercontent\\.com$"
@@ -76,7 +76,7 @@ case, covered at the end of this section.
 
 Two additions, then:
 
-- **A read-only pull credential.** A GitLab *project deploy token* scoped to
+- **A read-only pull credential.** A GitLab _project deploy token_ scoped to
   `read_registry` is the least it can be — pull on that one project's registry,
   nothing else, revocable without touching an account. Its username and password
   go into 1Password as **two separate manual secrets**, each holding its value in
@@ -159,7 +159,7 @@ Cluster-generic boards (Kubernetes views and system, node exporter, vmagent, Cil
 
 ```yaml
 route:
-  receiver: rootly-o11y       # default / catch-all
+  receiver: rootly-o11y # default / catch-all
   routes:
     - object_matchers: [["project", "=", "yucca"]]
       receiver: rootly-yucca

@@ -29,7 +29,7 @@ concurrency:
 
 env:
   IMAGE: ghcr.io/${{ github.repository }}/o11y-manifests
-  MISE_AUTO_INSTALL: 'false'
+  MISE_AUTO_INSTALL: "false"
 
 jobs:
   validate:

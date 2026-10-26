@@ -21,22 +21,22 @@ endpoints:
     url: https://opc.yucca.futo.network/heartbeat
     interval: 1m
     conditions:
-      - '[STATUS] == 200'
+      - "[STATUS] == 200"
   - name: opc.immich.futo.network
     group: onepassword-connect
     url: https://opc.immich.futo.network/heartbeat
     interval: 1m
     conditions:
-      - '[STATUS] == 200'
+      - "[STATUS] == 200"
   - name: opc.o11y.futo.network
     group: onepassword-connect
     url: https://opc.o11y.futo.network/heartbeat
     interval: 1m
     conditions:
-      - '[STATUS] == 200'
+      - "[STATUS] == 200"
   - name: opc.fip.futo.network
     group: onepassword-connect
     url: https://opc.fip.futo.network/heartbeat
     interval: 1m
     conditions:
-      - '[STATUS] == 200'
+      - "[STATUS] == 200"
