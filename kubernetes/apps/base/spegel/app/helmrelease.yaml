@@ -12,9 +12,12 @@ spec:
   values:
     service:
       registry:
+        # Both ports must match the Talos spegel-registry firewall rule; the chart's
+        # nodePort default (30020) does not. hostPort only applies to chart 0.7.x,
+        # which production still pins.
         hostPort: 29999
+        nodePort: 30021
     serviceMonitor:
       enabled: true
     spegel:
-      containerdSock: /run/containerd/containerd.sock
       containerdRegistryConfigPath: /etc/cri/conf.d/hosts
