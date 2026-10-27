@@ -1,0 +1,50 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/external-secrets.io/externalsecret_v1.json
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: vmuser-client-logs-token
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: onepassword-shared-environment
+  target:
+    name: vmuser-client-logs-token
+    template:
+      data:
+        token: "{{ .password }}"
+  dataFrom:
+    - extract:
+        key: O11Y_VICTORIALOGS_CLIENT_TOKEN
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/operator.victoriametrics.com/vmuser_v1beta1.json
+#
+# Write-only logs token for shippers that run inside something we do not
+# control (today: the Harbor mobile app). A token in an app binary is public,
+# so this user can only insert logs, and only under /client/harbor-mobile/ so
+# the httproute-client-logs rate limit catches it without touching the
+# remote-clusters paths. The identity fields are pinned here: VictoriaLogs
+# reads query args before VL-* headers and vmauth's args come first in the
+# merged query, so the client cannot relabel itself into another project or
+# open a stream per device (docs/05, "Shipping logs from an app").
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMUser
+metadata:
+  name: client-logs
+spec:
+  tokenRef:
+    name: vmuser-client-logs-token
+    key: token
+  targetRefs:
+    - static:
+        url: http://vmauth-victoria-logs.o11y.svc.cluster.local:8427
+      paths:
+        - /client/harbor-mobile/insert/jsonline
+        - /client/harbor-mobile/insert/opentelemetry/.*
+      drop_src_path_prefix_parts: 2
+      query_args:
+        - name: extra_fields
+          values:
+            ["project=harbor,cluster=harbor-mobile,env=${CLUSTER_ENV},provider=mobile,region=world"]
+        - name: _stream_fields
+          values: ["project,cluster,env"]
