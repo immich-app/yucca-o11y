@@ -40,7 +40,7 @@ spec:
       containers:
         - name: netbird
           # renovate: datasource=docker depName=netbirdio/netbird
-          image: netbirdio/netbird:0.80.0@sha256:4976692ea44bb93871743d0b742b4a8f97f6425bfc458ca2d78e28fdb8bdf4ad
+          image: netbirdio/netbird:0.81.3@sha256:f8a4ea01da9f2351d5c9436209ee9caf35dd118fc9c1fc2ce7859f0c6e44781c
           # The flannel masquerade randomizes source ports, so ICE never finds a working
           # pair and every mesh connection to the routers falls back to NetBird's relays.
           # Advertise the node's public IP (egress and node IP are the same address;
