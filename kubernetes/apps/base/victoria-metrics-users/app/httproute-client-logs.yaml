@@ -1,0 +1,50 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.networking.k8s.io/httproute_v1.json
+#
+# Same hostname and backend as the operator-managed vmauth-victoria-metrics
+# route, split out so the client-side shipper paths can carry a rate limit of
+# their own. The longer prefix wins over that route's "/" for /client/ only.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: vmauth-client-logs
+spec:
+  parentRefs:
+    - name: envoy
+      namespace: envoy-system
+  hostnames:
+    - vmauth.${CLUSTER_APP_DOMAIN}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /client/
+      backendRefs:
+        - name: vmauth-victoria-metrics
+          port: 8427
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.envoyproxy.io/backendtrafficpolicy_v1alpha1.json
+#
+# Local (per Envoy replica, three of them) so no rate limit service is needed;
+# the ceiling is a leak brake, not a quota, so it sits well above what a
+# phone fleet batching logs should ever send. The request buffer caps the
+# bytes per request (413 above it), since the rate limit alone counts
+# requests and VictoriaLogs would otherwise stream any body size.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: vmauth-client-logs
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: vmauth-client-logs
+  requestBuffer:
+    limit: 1Mi
+  rateLimit:
+    type: Local
+    local:
+      rules:
+        - limit:
+            requests: 50
+            unit: Second
