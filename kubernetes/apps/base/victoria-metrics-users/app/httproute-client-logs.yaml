@@ -27,7 +27,9 @@ spec:
 #
 # Local (per Envoy replica, three of them) so no rate limit service is needed;
 # the ceiling is a leak brake, not a quota, so it sits well above what a
-# phone fleet batching logs should ever send.
+# phone fleet batching logs should ever send. The request buffer caps the
+# bytes per request (413 above it), since the rate limit alone counts
+# requests and VictoriaLogs would otherwise stream any body size.
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: BackendTrafficPolicy
 metadata:
@@ -37,6 +39,8 @@ spec:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: vmauth-client-logs
+  requestBuffer:
+    limit: 1Mi
   rateLimit:
     type: Local
     local:

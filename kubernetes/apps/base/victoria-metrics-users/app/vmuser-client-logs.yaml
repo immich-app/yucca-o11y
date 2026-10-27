@@ -26,7 +26,9 @@ spec:
 # remote-clusters paths. The identity fields are pinned here: VictoriaLogs
 # reads query args before VL-* headers and vmauth's args come first in the
 # merged query, so the client cannot relabel itself into another project or
-# open a stream per device (docs/05, "Shipping logs from an app").
+# open a stream per device, and the tenant headers are forced to 0:0 because
+# VictoriaLogs reads AccountID/ProjectID from request headers and vmauth's
+# headers replace the caller's (docs/05, "Shipping logs from an app").
 apiVersion: operator.victoriametrics.com/v1beta1
 kind: VMUser
 metadata:
@@ -40,8 +42,11 @@ spec:
         url: http://vmauth-victoria-logs.o11y.svc.cluster.local:8427
       paths:
         - /client/harbor-mobile/insert/jsonline
-        - /client/harbor-mobile/insert/opentelemetry/.*
+        - /client/harbor-mobile/insert/opentelemetry/v1/logs
       drop_src_path_prefix_parts: 2
+      headers:
+        - "AccountID: 0"
+        - "ProjectID: 0"
       query_args:
         - name: extra_fields
           values:
