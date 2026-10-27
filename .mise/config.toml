@@ -7,7 +7,7 @@ config_roots = ["deployment", "deployment/modules/*/*"]
 actionlint = "1.7.12"
 lefthook = "2.2.2"
 opentofu = "1.13.2"
-terragrunt = "1.1.6"
+terragrunt = "1.2.0"
 pipx = "1.18.4"
 "pipx:python-openstackclient" = { version = "10.5.0", uvx = false }
 kubectl = "1.37.1"
