@@ -255,18 +255,16 @@ resource "talos_machine_configuration_apply" "controlplane" {
         - subnet: ${var.private_network_cidr}
     EOT
     ,
-    # Spegel peer-to-peer registry. Peers fetch image blobs from each other on
-    # the registry host port (29999); 30021 is the node-port fallback mirror
-    # target. Intra-cluster only — the libp2p router (5001) and metrics ride the
-    # pod network. Without this the default-deny firewall silently kills sharing.
+    # Spegel peer-to-peer registry. containerd mirrors through the registry
+    # NodePort (30020, the chart default) on its own node IP. Intra-cluster
+    # only — the libp2p router (5001) and metrics ride the pod network.
     <<-EOT
       apiVersion: v1alpha1
       kind: NetworkRuleConfig
       name: spegel-registry
       portSelector:
         ports:
-          - 29999
-          - 30021
+          - 30020
         protocol: tcp
       ingress:
         - subnet: ${var.private_network_cidr}

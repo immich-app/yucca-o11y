@@ -44,7 +44,7 @@ Default-deny ingress on every node; anything not listed is dropped at the host. 
 | etcd (CPs)                 | 2379–2380/tcp          | vRack                                 |
 | kubelet                    | 10250/tcp              | vRack + pod CIDR `10.244.0.0/16`      |
 | flannel VXLAN              | 4789/udp               | vRack                                 |
-| Spegel registry (workers)  | 29999/tcp, 30021/tcp   | vRack                                 |
+| Spegel registry (workers)  | 30020/tcp              | vRack                                 |
 | Envoy ingress (workers)    | 30443/tcp              | `10.108.0.0/14` (IPLB NAT range only) |
 | CP component metrics (CPs) | 10257, 10259, 2381/tcp | vRack + pod CIDR                      |
 | Node metrics (all nodes)   | 10249, 9100/tcp        | vRack + pod CIDR                      |
