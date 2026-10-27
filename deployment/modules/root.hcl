@@ -12,7 +12,11 @@ download_dir = "${get_terragrunt_dir()}/.terragrunt-cache/${local.env}${local.st
 generate "backend" {
   path      = "backend.tf"
   if_exists = "overwrite_terragrunt"
-  contents  = <<EOF
+  # The contents carry the state bucket keys. A mutable file is written in
+  # place instead of being stored in Terragrunt's persistent CAS and
+  # hard-linked here, so no copy outlives download_dir.
+  mutable  = true
+  contents = <<EOF
 terraform {
   backend "s3" {
     bucket = "${get_env("TF_VAR_tf_state_s3_bucket")}"
