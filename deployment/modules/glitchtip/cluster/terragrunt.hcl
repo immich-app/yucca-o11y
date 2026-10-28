@@ -16,3 +16,10 @@ terraform {
     }
   }
 }
+
+# storage.tf finds the env's project with a data source rather than reading
+# ovh/account's outputs, so this edge is what orders `run --all`: after
+# ovh/account on apply, before it on destroy.
+dependencies {
+  paths = ["../../ovh/account"]
+}

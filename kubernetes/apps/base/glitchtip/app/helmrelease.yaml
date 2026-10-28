@@ -14,6 +14,22 @@ spec:
     kind: OCIRepository
     name: glitchtip
   interval: 1h
+  # GlitchTip reads its S3 keys and DATABASE_URL from env, so a changed secret
+  # needs a restart. The chart can only annotate the pod template, which
+  # Reloader ignores; it reads the Deployment's own annotations.
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: Deployment
+              name: glitchtip-web
+            patch: |
+              apiVersion: apps/v1
+              kind: Deployment
+              metadata:
+                name: glitchtip-web
+                annotations:
+                  reloader.stakater.com/auto: "true"
   values:
     fullnameOverride: glitchtip
 
