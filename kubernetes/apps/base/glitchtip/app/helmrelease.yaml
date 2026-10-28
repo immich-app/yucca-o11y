@@ -1,0 +1,68 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+#
+# The chart's bundled Valkey and Postgres stay off: the database is the CNPG
+# cluster in base/glitchtip-postgres and the cache and queue the Dragonfly in
+# dragonfly.yaml. Zitadel sign-in is a social app GlitchTip keeps in its
+# database (Django admin over the mesh route), not configuration.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: glitchtip
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: glitchtip
+  interval: 1h
+  values:
+    fullnameOverride: glitchtip
+
+    glitchtip:
+      domain: https://glitchtip.${CLUSTER_APP_DOMAIN}
+      existingSecret: glitchtip-secret-key
+      database:
+        existingSecret: glitchtip-postgres-credentials
+        existingSecretKey: uri
+      valkey:
+        existingSecret: glitchtip-dragonfly
+        existingSecretKey: REDIS_URL
+
+    valkey:
+      enabled: false
+
+    extraEnvVars:
+      # Accounts come only from Zitadel, which decides who may sign in (project
+      # role check); the first Zitadel login creates the GlitchTip user. These
+      # flags still allow a signup while no user exists and leave password and
+      # passkey login on, so httproute.yaml closes those paths publicly.
+      - name: ENABLE_USER_REGISTRATION
+        value: "false"
+      - name: ENABLE_SOCIAL_APPS_USER_REGISTRATION
+        value: "true"
+      # Uploads (sourcemaps, debug files) go to S3 so every replica sees them;
+      # setting the endpoint switches GlitchTip's file storage to S3.
+      - name: AWS_S3_ENDPOINT_URL
+        value: https://s3.gra.io.cloud.ovh.net
+      - name: AWS_DEFAULT_REGION
+        value: gra
+      - name: AWS_STORAGE_BUCKET_NAME
+        value: ${CLUSTER_GLITCHTIP_S3_BUCKET}
+      - name: AWS_ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            name: glitchtip-s3
+            key: AWS_ACCESS_KEY_ID
+      - name: AWS_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: glitchtip-s3
+            key: AWS_SECRET_ACCESS_KEY
+
+    # Symbolicating large sourcemaps builds a lookup cache of up to 40% of the
+    # memory limit, so this sits above the chart's 512Mi.
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 1Gi

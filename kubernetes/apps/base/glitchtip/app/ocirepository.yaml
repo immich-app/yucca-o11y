@@ -1,0 +1,18 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/source.toolkit.fluxcd.io/ocirepository_v1.json
+#
+# GlitchTip publishes its chart only to GitLab's Helm registry; this is the
+# home-operations OCI mirror of it.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: glitchtip
+spec:
+  interval: 15m
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
+  ref:
+    tag: 9.1.1
+    digest: sha256:a11e71b9e3dafa91a80a08b13550e8d5b40d938f3f1582d957aad4bc790988f9
+  url: oci://ghcr.io/home-operations/charts-mirror/glitchtip

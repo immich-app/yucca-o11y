@@ -23,6 +23,7 @@ data:
   # Whole number with a binary suffix (Gi/Ti): the VTClusters append B to it
   # for VictoriaTraces' disk-usage retention.
   CLUSTER_VTRACES_SIZE: 50Gi
+  CLUSTER_GLITCHTIP_S3_BUCKET: futo-o11y-staging-glitchtip
   CLUSTER_VMETRICS_RETENTION: 30d
   CLUSTER_VMETRICS_ACCOUNT_ID: "1"
   CLUSTER_VMETRICS_PROJECT_ID: "1"
