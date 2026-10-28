@@ -18,6 +18,11 @@ data:
   CLUSTER_VMLOGS_RETENTION: 30d
   CLUSTER_VMLOGS_STORAGE_CLASS: openebs-spare-disk
   CLUSTER_VMLOGS_SIZE: 200Gi
+  CLUSTER_VTRACES_RETENTION: 14d
+  CLUSTER_VTRACES_STORAGE_CLASS: openebs-spare-disk
+  # Whole number with a binary suffix (Gi/Ti): the VTClusters append B to it
+  # for VictoriaTraces' disk-usage retention.
+  CLUSTER_VTRACES_SIZE: 50Gi
   CLUSTER_VMETRICS_RETENTION: 30d
   CLUSTER_VMETRICS_ACCOUNT_ID: "1"
   CLUSTER_VMETRICS_PROJECT_ID: "1"

@@ -1,0 +1,150 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/operator.victoriametrics.com/vtcluster_v1.json
+#
+# One zone of the two-zone layout VLDistributed gives logs, built by hand
+# because the operator has no VTDistributed. VictoriaTraces does not replicate
+# between vtstorage nodes, so each zone holds a full copy fed by the VTAgents.
+# The hostname spread keeps the two zones' storage on different workers: the
+# PVCs are node-local, so zones sharing a worker would fail together. Select and
+# insert are pinned to their own zone's storage worker so a worker loss takes
+# out at most one zone; left free, a select sharing a worker with the other
+# zone's storage would take both read paths down with it. OpenEBS
+# local-hostpath does not enforce the PVC size and the disk is shared with
+# metrics and logs, so vtstorage drops its oldest days once it passes that size;
+# it always keeps the last two, so a burst can still exceed it. VictoriaTraces
+# wants a B suffix (50GiB), hence the appended B, which is why
+# CLUSTER_VTRACES_SIZE must be a whole number with a binary suffix. The
+# select.disable/insert.disable flags are upstream's guard against a misrouted
+# proxy reaching the wrong role.
+apiVersion: operator.victoriametrics.com/v1
+kind: VTCluster
+metadata:
+  name: victoria-traces-a
+spec:
+  storage:
+    replicaCount: 1
+    retentionPeriod: ${CLUSTER_VTRACES_RETENTION}
+    retentionMaxDiskSpaceUsageBytes: ${CLUSTER_VTRACES_SIZE}B
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: ${CLUSTER_VTRACES_STORAGE_CLASS}
+          resources:
+            requests:
+              storage: ${CLUSTER_VTRACES_SIZE}
+    resources:
+      requests:
+        cpu: 200m
+        memory: 1Gi
+      limits:
+        memory: 8Gi
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: vtstorage
+  select:
+    replicaCount: 1
+    extraArgs:
+      insert.disable: "true"
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 2Gi
+    affinity:
+      podAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: vtstorage
+                app.kubernetes.io/instance: victoria-traces-a
+  insert:
+    replicaCount: 1
+    extraArgs:
+      select.disable: "true"
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 2Gi
+    affinity:
+      podAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: vtstorage
+                app.kubernetes.io/instance: victoria-traces-a
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/operator.victoriametrics.com/vtcluster_v1.json
+apiVersion: operator.victoriametrics.com/v1
+kind: VTCluster
+metadata:
+  name: victoria-traces-b
+spec:
+  storage:
+    replicaCount: 1
+    retentionPeriod: ${CLUSTER_VTRACES_RETENTION}
+    retentionMaxDiskSpaceUsageBytes: ${CLUSTER_VTRACES_SIZE}B
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: ${CLUSTER_VTRACES_STORAGE_CLASS}
+          resources:
+            requests:
+              storage: ${CLUSTER_VTRACES_SIZE}
+    resources:
+      requests:
+        cpu: 200m
+        memory: 1Gi
+      limits:
+        memory: 8Gi
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: vtstorage
+  select:
+    replicaCount: 1
+    extraArgs:
+      insert.disable: "true"
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 2Gi
+    affinity:
+      podAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: vtstorage
+                app.kubernetes.io/instance: victoria-traces-b
+  insert:
+    replicaCount: 1
+    extraArgs:
+      select.disable: "true"
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 2Gi
+    affinity:
+      podAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: vtstorage
+                app.kubernetes.io/instance: victoria-traces-b

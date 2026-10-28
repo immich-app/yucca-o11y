@@ -1,0 +1,39 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/operator.victoriametrics.com/vmauth_v1beta1.json
+#
+# The single read/write endpoint for traces, routed like the vmauth VLDistributed
+# generates for logs: selects fail over between the zones, inserts spread across
+# the zone agents. The two gateways, the mesh route and Grafana all point here.
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMAuth
+metadata:
+  name: victoria-traces
+spec:
+  port: "8427"
+  replicaCount: 2
+  podDisruptionBudget:
+    minAvailable: 1
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app.kubernetes.io/name: vmauth
+          app.kubernetes.io/instance: victoria-traces
+  unauthorizedUserAccessSpec:
+    url_map:
+      - src_paths:
+          - /select/.+
+        url_prefix:
+          - http://vtselect-victoria-traces-a.o11y.svc:10471
+          - http://vtselect-victoria-traces-b.o11y.svc:10471
+        load_balancing_policy: first_available
+        retry_status_codes: [500, 502, 503]
+      - src_paths:
+          - /insert/.+
+        url_prefix:
+          - http://vtagent-victoria-traces-a.o11y.svc:10429
+          - http://vtagent-victoria-traces-b.o11y.svc:10429
+        load_balancing_policy: least_loaded
+        retry_status_codes: [500, 502, 503]
