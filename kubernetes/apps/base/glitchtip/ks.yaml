@@ -1,0 +1,38 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: glitchtip
+  namespace: flux-system
+spec:
+  # The chart's migration Job runs as a post-install hook with no wait for the
+  # database, so the CNPG cluster has to be healthy before the release installs.
+  dependsOn:
+    - name: glitchtip-postgres
+    - name: dragonfly-operator
+    - name: external-secrets
+  # GlitchTip's /_health/ answers without touching Dragonfly, so the release can
+  # be Ready while its queue is down; check the Dragonfly itself.
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: glitchtip
+      namespace: o11y
+    - apiVersion: dragonflydb.io/v1alpha1
+      kind: Dragonfly
+      name: glitchtip-dragonfly
+      namespace: o11y
+  healthCheckExprs:
+    - apiVersion: dragonflydb.io/v1alpha1
+      kind: Dragonfly
+      current: status.phase == 'Ready'
+      inProgress: status.phase in ['ResourcesCreated', 'Configuring', 'RollingUpdate', 'NotReady']
+  interval: 1h
+  path: ./kubernetes/apps/base/glitchtip/app
+  patches: []
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system

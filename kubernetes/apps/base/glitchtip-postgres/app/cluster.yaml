@@ -1,0 +1,52 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/postgresql.cnpg.io/cluster_v1.json
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: glitchtip-postgres
+  labels:
+    app.kubernetes.io/name: glitchtip-postgres
+spec:
+  # renovate: datasource=docker depName=ghcr.io/cloudnative-pg/postgresql
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.4@sha256:8ff3abd13383e619797f974b4fcdda6de0c2cfdad90eb47e1cd95d41fe26bf80
+  instances: 3
+  primaryUpdateStrategy: unsupervised
+  primaryUpdateMethod: switchover
+
+  storage:
+    size: 20Gi
+    storageClass: openebs-system-disk
+
+  # One instance per worker (3 workers, 3 instances).
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+    podAntiAffinityType: required
+
+  # initdb needs an owner to create the database with; from then on the
+  # Database and DatabaseRole resources beside this manage both.
+  bootstrap:
+    initdb:
+      database: glitchtip
+      owner: glitchtip
+      secret:
+        name: glitchtip-postgres-credentials
+
+  postgresql:
+    parameters:
+      max_connections: "200"
+      shared_buffers: 256MB
+    # Same durability trade as grafana-postgres: synchronous to one standby,
+    # degrading to async rather than freezing writes when none is available.
+    synchronous:
+      method: any
+      number: 1
+      dataDurability: preferred
+      failoverQuorum: true
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 1Gi

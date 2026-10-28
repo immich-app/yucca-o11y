@@ -16,6 +16,8 @@ resources:
   - ../../base/victoria-logs-collector
   - ../../base/victoria-logs-mcp
   - ../../base/victoria-traces
+  - ../../base/glitchtip-postgres
+  - ../../base/glitchtip
   - ../../base/gatus-sidecar
   - ./namespace.yaml
 components:
@@ -24,6 +26,8 @@ patches:
   - path: patches/prometheus-operator-crds.yaml
   - path: patches/grafana-operator.yaml
   - path: patches/grafana-postgres.yaml
+  - path: patches/glitchtip-postgres.yaml
+  - path: patches/glitchtip.yaml
   - path: patches/victoria-metrics.yaml
   - path: patches/victoria-logs.yaml
   - path: patches/victoria-logs-collector.yaml

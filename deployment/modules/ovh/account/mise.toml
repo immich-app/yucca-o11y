@@ -11,6 +11,7 @@ wait_for = ["//deployment/modules/rootly/cluster:apply"]
 [tasks.destroy]
 extends = "tg:destroy"
 wait_for = [
+  "//deployment/modules/glitchtip/cluster:destroy",
   "//deployment/modules/netbird/cluster:destroy",
   "//deployment/modules/netbox/cluster:destroy",
   "//deployment/modules/talos/cluster:destroy",

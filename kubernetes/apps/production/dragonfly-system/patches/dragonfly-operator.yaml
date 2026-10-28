@@ -1,0 +1,21 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: dragonfly-operator
+  namespace: flux-system
+spec:
+  patches:
+    - patch: |-
+        apiVersion: source.toolkit.fluxcd.io/v1
+        kind: OCIRepository
+        metadata:
+          name: dragonfly-operator
+        spec:
+          ref:
+            # renovate: datasource=docker depName=ghcr.io/dragonflydb/dragonfly-operator/helm/dragonfly-operator
+            tag: v1.7.1
+            digest: sha256:334cdd6cd58e08e77289b87ec8756b9f65fd085929ac8bb31e8b847981023376
+      target:
+        kind: OCIRepository
+        name: dragonfly-operator

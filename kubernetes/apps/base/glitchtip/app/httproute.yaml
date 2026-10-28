@@ -1,0 +1,100 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.networking.k8s.io/httproute_v1.json
+#
+# Public, because browser and mobile SDKs post events straight to it. Sign-in
+# here is Zitadel only: GlitchTip has no switch for that, so the local-account
+# endpoints of its allauth API (password signup, login, change and reset, and
+# passkey or code login), the per-organization SSO API and the Django admin are
+# answered 404 at the gateway. Otherwise anyone could claim the first account
+# before a superuser exists, a user dropped from Zitadel could keep signing in
+# with a password or passkey, and an organization manager could add an identity
+# provider whose users join without Zitadel's role check. The regex match ranks
+# above the catch-all: Envoy Gateway orders Exact, then RegularExpression, then
+# PathPrefix.
+# GlitchTip's /metrics stays off (ENABLE_OBSERVABILITY_API) since it would be
+# unauthenticated here.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: glitchtip
+  annotations:
+    gatus.home-operations.com/endpoint: |-
+      path: /_health/
+spec:
+  parentRefs:
+    - name: envoy
+      namespace: envoy-system
+  hostnames:
+    - glitchtip.${CLUSTER_APP_DOMAIN}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /admin
+        - path:
+            type: Exact
+            value: /_allauth/browser/v1/auth/login
+        - path:
+            type: Exact
+            value: /_allauth/browser/v1/auth/signup
+        - path:
+            type: PathPrefix
+            value: /_allauth/browser/v1/auth/password
+        - path:
+            type: PathPrefix
+            value: /_allauth/browser/v1/auth/webauthn
+        - path:
+            type: PathPrefix
+            value: /_allauth/browser/v1/auth/code
+        - path:
+            type: PathPrefix
+            value: /_allauth/browser/v1/account/password
+        - path:
+            type: PathPrefix
+            value: /_allauth/browser/v1/account/authenticators
+        - path:
+            type: RegularExpression
+            value: /api/0/organizations/[^/]+/social-apps(/.*)?
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: gateway.envoyproxy.io
+            kind: HTTPRouteFilter
+            name: glitchtip-not-found
+    - backendRefs:
+        - name: glitchtip-web
+          port: 80
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.envoyproxy.io/httproutefilter_v1alpha1.json
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: HTTPRouteFilter
+metadata:
+  name: glitchtip-not-found
+spec:
+  directResponse:
+    statusCode: 404
+    contentType: text/plain
+    body:
+      type: Inline
+      inline: Not Found
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.networking.k8s.io/httproute_v1.json
+#
+# The whole app over the mesh, including what the public route closes: the
+# Django admin (superuser, Zitadel social app) and password login for the
+# superuser. GlitchTip takes the scheme from X-Forwarded-Proto, so CSRF checks
+# pass on this hostname too.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: glitchtip-mesh
+spec:
+  parentRefs:
+    - name: mesh
+      namespace: envoy-system
+  hostnames:
+    - glitchtip.${BOOTSTRAP_MESH_DOMAIN}
+  rules:
+    - backendRefs:
+        - name: glitchtip-web
+          port: 80

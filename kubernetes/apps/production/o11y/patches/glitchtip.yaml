@@ -1,0 +1,21 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: glitchtip
+  namespace: flux-system
+spec:
+  patches:
+    - patch: |-
+        apiVersion: source.toolkit.fluxcd.io/v1
+        kind: OCIRepository
+        metadata:
+          name: glitchtip
+        spec:
+          ref:
+            # renovate: datasource=docker depName=ghcr.io/home-operations/charts-mirror/glitchtip
+            tag: 9.1.1
+            digest: sha256:a11e71b9e3dafa91a80a08b13550e8d5b40d938f3f1582d957aad4bc790988f9
+      target:
+        kind: OCIRepository
+        name: glitchtip

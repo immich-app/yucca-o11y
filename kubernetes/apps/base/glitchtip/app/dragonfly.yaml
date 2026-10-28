@@ -1,0 +1,101 @@
+---
+# GlitchTip's cache, sessions and task queue (django-vtasks), in place of the
+# chart's Valkey. The cache and sessions are disposable, but ingest accepts an
+# event once it is queued here, before it reaches Postgres: losing both replicas
+# loses whatever was queued since the last 15-minute snapshot. A replica plus
+# the snapshot keep that window small. Nothing GlitchTip sends needs more than
+# Dragonfly offers: its Lua scripts declare their keys and it speaks RESP3.
+apiVersion: dragonflydb.io/v1alpha1
+kind: Dragonfly
+metadata:
+  name: glitchtip-dragonfly
+spec:
+  replicas: 2
+  # Dragonfly sizes proactor threads from the visible CPU count, not the cgroup
+  # quota, and refuses to start unless maxmemory covers 256MiB per thread. One
+  # thread is plenty for a queue and a cache.
+  args:
+    - --maxmemory=384mb
+    - --proactor_threads=1
+    # The default dump-{timestamp} keeps every snapshot and nothing prunes
+    # them; one file, overwritten each run.
+    - --dbfilename=dump
+  authentication:
+    passwordFromSecret:
+      name: glitchtip-dragonfly
+      key: password
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: DoNotSchedule
+      labelSelector:
+        matchLabels:
+          app: glitchtip-dragonfly
+  pdb:
+    minAvailable: 1
+  snapshot:
+    cron: "*/15 * * * *"
+    persistentVolumeClaimSpec:
+      accessModes:
+        - ReadWriteOnce
+      storageClassName: openebs-system-disk
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: Password
+metadata:
+  name: glitchtip-dragonfly
+spec:
+  length: 48
+  digits: 8
+  symbols: 0
+  noUpper: false
+  allowRepeat: true
+---
+# Generated in-cluster once. Dragonfly reads password; the chart takes the
+# whole connection string as REDIS_URL (glitchtip.valkey.existingSecret).
+# No symbols, so the password needs no escaping inside the URL.
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: glitchtip-dragonfly
+spec:
+  refreshInterval: "0"
+  target:
+    name: glitchtip-dragonfly
+    template:
+      data:
+        password: "{{ .password }}"
+        REDIS_URL: "redis://:{{ .password }}@glitchtip-dragonfly.o11y.svc.cluster.local:6379/0"
+  dataFrom:
+    - sourceRef:
+        generatorRef:
+          apiVersion: generators.external-secrets.io/v1alpha1
+          kind: Password
+          name: glitchtip-dragonfly
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/podmonitor_v1.json
+#
+# Metrics are served on the admin port; the operator turns HTTP off on the
+# redis port.
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: glitchtip-dragonfly
+spec:
+  jobLabel: app
+  selector:
+    matchLabels:
+      app: glitchtip-dragonfly
+      app.kubernetes.io/name: dragonfly
+  podMetricsEndpoints:
+    - port: admin
+      path: /metrics

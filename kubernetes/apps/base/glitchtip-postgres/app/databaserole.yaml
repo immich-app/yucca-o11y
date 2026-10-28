@@ -1,0 +1,17 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/postgresql.cnpg.io/databaserole_v1.json
+#
+# Adopts the owner initdb creates, so its password tracks the secret. GlitchTip
+# runs migrations and partition maintenance as the role it serves with, and
+# neither CRD can grant table privileges, so there is no separate app role.
+apiVersion: postgresql.cnpg.io/v1
+kind: DatabaseRole
+metadata:
+  name: glitchtip
+spec:
+  cluster:
+    name: glitchtip-postgres
+  name: glitchtip
+  login: true
+  passwordSecret:
+    name: glitchtip-postgres-credentials
