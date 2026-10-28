@@ -321,6 +321,10 @@ spec:
           enabled: false
         etcd:
           enabled: false
+        # The chart gates its VictoriaTraces board on its own vtcluster/vtsingle,
+        # which base/victoria-traces replaces with two hand-built zones.
+        victoriatraces-cluster:
+          enabled: true
       grafanaOperator:
         enabled: true
         spec:
@@ -329,6 +333,14 @@ spec:
             matchLabels:
               dashboards: grafana
           allowCrossNamespaceImport: true
+
+    # Same vtcluster/vtsingle gate as the victoriatraces-cluster board above.
+    defaultRules:
+      sources:
+        victoriatraces:
+          enabled: true
+        vthealth:
+          enabled: true
 
     # Chart datasources replaced by hand-written ones in base/grafana/app:
     # the default VictoriaMetrics datasource routes through vmauth-self-select

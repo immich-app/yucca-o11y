@@ -274,11 +274,21 @@ curl -fsS 'https://vlogs.<mesh-domain>/select/logsql/query' --data-urlencode 'qu
 
 A second client-side shipper gets its own `VMUser`, token item and `/client/<name>/` prefix on the same route; nothing else changes.
 
+## Traces, on the same gateways
+
+Traces ride the same `vmauth` hostnames under a `/traces/` prefix, which the gateway strips before the request reaches VictoriaTraces. Point an OTLP/HTTP exporter at `https://vmauth.<host>/traces/insert/opentelemetry/v1/traces` and read back under `/traces/select/...` (the Jaeger query API is `/traces/select/jaeger/api/...`). The prefix exists because OTLP logs and traces share `/insert/opentelemetry/`, which both gateways send to VictoriaLogs. OTLP over gRPC is not routed. Auth is the same as for metrics and logs.
+
+Stamp the five identity labels as resource attributes (for example with the OpenTelemetry Collector's `resource` processor). VictoriaTraces keys streams on `service.name` and the span name and keeps every other resource and span attribute as a queryable field. To check spans are arriving, list the services that have reported over the mesh:
+
+```sh
+curl -fsS 'https://vtraces.<mesh-domain>/select/jaeger/api/services'
+```
+
 ## What backs this centrally
 
 For maintainers, the ingestion config lives in `kubernetes/apps/base/victoria-metrics-users/app/`:
 
-- `vmuser-remote-clusters.yaml` - the `VMUser` behind the public gateway. It holds the shared token (via ExternalSecret) and the allowed path set: metrics and logs insert **and** select (remote clusters can read back, not only write).
+- `vmuser-remote-clusters.yaml` - the `VMUser` behind the public gateway. It holds the shared token (via ExternalSecret) and the allowed path set: metrics, logs and traces insert **and** select (remote clusters can read back, not only write).
 - `vmauth-mesh-unauth.yaml` - the unauthenticated `mesh-unauth` `VMAuth` on the mesh gateway, with the same path set exposed through `unauthorizedUserAccessSpec`.
 
 The public gateway itself is the `vmauth` defined in the VictoriaMetrics release (`kubernetes/apps/base/victoria-metrics/app/helmrelease.yaml`), reached at `vmauth.<CLUSTER_APP_DOMAIN>`.

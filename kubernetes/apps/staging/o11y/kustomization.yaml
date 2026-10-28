@@ -14,6 +14,7 @@ resources:
   - ../../base/victoria-logs
   - ../../base/victoria-logs-collector
   - ../../base/victoria-logs-mcp
+  - ../../base/victoria-traces
   - ../../base/gatus-sidecar
   - ./namespace.yaml
 components:

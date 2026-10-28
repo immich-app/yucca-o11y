@@ -1,0 +1,46 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: victoria-traces
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: victoria-metrics
+  healthChecks:
+    - apiVersion: operator.victoriametrics.com/v1
+      kind: VTCluster
+      name: victoria-traces-a
+      namespace: o11y
+    - apiVersion: operator.victoriametrics.com/v1
+      kind: VTCluster
+      name: victoria-traces-b
+      namespace: o11y
+    - apiVersion: operator.victoriametrics.com/v1
+      kind: VTAgent
+      name: victoria-traces-a
+      namespace: o11y
+    - apiVersion: operator.victoriametrics.com/v1
+      kind: VTAgent
+      name: victoria-traces-b
+      namespace: o11y
+  healthCheckExprs:
+    - apiVersion: operator.victoriametrics.com/v1
+      kind: VTCluster
+      current: status.updateStatus == 'operational'
+      inProgress: status.updateStatus == 'expanding'
+      failed: status.updateStatus == 'failed'
+    - apiVersion: operator.victoriametrics.com/v1
+      kind: VTAgent
+      current: status.updateStatus == 'operational'
+      inProgress: status.updateStatus == 'expanding'
+      failed: status.updateStatus == 'failed'
+  interval: 1h
+  path: ./kubernetes/apps/base/victoria-traces/app
+  patches: []
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system

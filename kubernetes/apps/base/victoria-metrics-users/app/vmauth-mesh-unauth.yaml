@@ -44,6 +44,13 @@ spec:
           - /insert/elasticsearch/.*
           - /insert/loki/.*
           - /insert/opentelemetry/.*
+      # Traces sit under their own /traces/ prefix because OTLP traces and logs
+      # share /insert/opentelemetry/, which the route above sends to logs.
+      - static:
+          url: http://vmauth-victoria-traces.o11y.svc.cluster.local:8427
+        paths:
+          - /traces/insert/opentelemetry/.*
+        drop_src_path_prefix_parts: 1
       - static:
           url: http://vmselect-victoria-metrics.o11y.svc.cluster.local:8481/select/multitenant
         paths:
@@ -53,3 +60,8 @@ spec:
           url: http://vmauth-victoria-logs.o11y.svc.cluster.local:8427
         paths:
           - /select/logsql/.*
+      - static:
+          url: http://vmauth-victoria-traces.o11y.svc.cluster.local:8427
+        paths:
+          - /traces/select/.*
+        drop_src_path_prefix_parts: 1

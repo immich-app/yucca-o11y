@@ -1,0 +1,69 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/operator.victoriametrics.com/vtagent_v1.json
+#
+# Every remoteWrite target gets a full copy of each span, so an agent per zone
+# writing to both zones' vtinsert is the vlagent fan-out VLDistributed sets up
+# for logs. The operator splits the queue PVC evenly across the targets; without
+# it a down zone's backlog sits in an emptyDir and is lost on restart. Agents
+# share the storage's hostname spread because their queues are node-local too
+# and the vmauth sends every insert to them.
+apiVersion: operator.victoriametrics.com/v1
+kind: VTAgent
+metadata:
+  name: victoria-traces-a
+spec:
+  replicaCount: 1
+  remoteWrite:
+    - url: http://vtinsert-victoria-traces-a.o11y.svc:10481/insert/native
+    - url: http://vtinsert-victoria-traces-b.o11y.svc:10481/insert/native
+  storage:
+    volumeClaimTemplate:
+      spec:
+        storageClassName: ${CLUSTER_VTRACES_STORAGE_CLASS}
+        resources:
+          requests:
+            storage: 20Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 2Gi
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: DoNotSchedule
+      labelSelector:
+        matchLabels:
+          app.kubernetes.io/name: vtagent
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/operator.victoriametrics.com/vtagent_v1.json
+apiVersion: operator.victoriametrics.com/v1
+kind: VTAgent
+metadata:
+  name: victoria-traces-b
+spec:
+  replicaCount: 1
+  remoteWrite:
+    - url: http://vtinsert-victoria-traces-a.o11y.svc:10481/insert/native
+    - url: http://vtinsert-victoria-traces-b.o11y.svc:10481/insert/native
+  storage:
+    volumeClaimTemplate:
+      spec:
+        storageClassName: ${CLUSTER_VTRACES_STORAGE_CLASS}
+        resources:
+          requests:
+            storage: 20Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 2Gi
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: DoNotSchedule
+      labelSelector:
+        matchLabels:
+          app.kubernetes.io/name: vtagent
