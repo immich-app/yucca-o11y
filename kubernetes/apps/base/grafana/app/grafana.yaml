@@ -40,6 +40,9 @@ spec:
       news_feed_enabled: "false"
     plugins:
       plugin_admin_enabled: "false"
+      # Drilldown apps that only query Loki, Tempo or Pyroscope; with none of
+      # those datasources here they can only error.
+      disable_plugins: grafana-lokiexplore-app,grafana-exploretraces-app,grafana-pyroscope-app
     security:
       angular_support_enabled: "true"
     server:
@@ -124,4 +127,24 @@ spec:
       parentRefs:
         - name: envoy
           namespace: envoy-system
+      # Grafana updates its preinstalled plugins whenever it starts, so replicas
+      # can serve different plugin versions, and a plugin's chunks fetched from
+      # another replica 404 (ChunkLoadError). The cookie keeps each browser on
+      # one replica, so a page only mixes versions when its replica restarts or
+      # is replaced underneath it, and a reload recovers. The operator replaces
+      # rules wholesale, so its default rule (grafana-service, prefix /) is
+      # restated here.
+      rules:
+        - backendRefs:
+            - name: grafana-service
+              port: 3000
+          matches:
+            - path:
+                type: PathPrefix
+                value: /
+          sessionPersistence:
+            sessionName: grafana-replica
+            type: Cookie
+            cookieConfig:
+              lifetimeType: Session
   disableDefaultSecurityContext: All
