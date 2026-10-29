@@ -35,19 +35,30 @@ glob = ["*.md"]
 run = "oxfmt --no-error-on-unmatched-pattern {staged_files}"
 stage_fixed = true
 
-[pre-commit.commands.format-yaml]
+# oxfmt rewrites staged workflows in place, and a linter that reads one
+# mid-rewrite sees a truncated file, so the linters run after it.
+[[pre-commit.jobs]]
+name = "yaml"
+
+[pre-commit.jobs.group]
+piped = true
+
+[[pre-commit.jobs.group.jobs]]
+name = "format-yaml"
 glob = ["*.yaml", "*.yml"]
 exclude = [".mise/locks/**"]
 run = "oxfmt --no-error-on-unmatched-pattern {staged_files}"
 stage_fixed = true
 
-[pre-commit.commands.actionlint]
+[[pre-commit.jobs.group.jobs]]
+name = "actionlint"
 glob = [".github/workflows/*.yaml", ".github/workflows/*.yml"]
 run = "actionlint -shellcheck= {staged_files}"
 
 # Low findings are not blocking: CI tolerates them, and the open one
 # (self-repository) wants the `$/` uses syntax that actionlint 1.7.12 rejects.
-[pre-commit.commands.zizmor]
+[[pre-commit.jobs.group.jobs]]
+name = "zizmor"
 glob = [".github/workflows/*.yaml", ".github/workflows/*.yml", ".github/actions/**/action.yaml", ".github/actions/**/action.yml"]
 # The org-*.yml workflows are synced from core-infra-tf and pass CI only with
 # the org zizmor config, which this repo does not carry.
