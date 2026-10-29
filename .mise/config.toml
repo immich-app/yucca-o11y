@@ -1,3 +1,6 @@
+# Lockfile format 3 with checksum_source fields; older releases drop those
+# fields when the lock-mise hook relocks.
+min_version = "2026.10.19"
 monorepo_root = true
 
 [monorepo]
