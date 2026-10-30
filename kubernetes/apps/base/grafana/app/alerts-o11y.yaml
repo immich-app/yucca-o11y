@@ -565,6 +565,10 @@ spec:
                 reducer:
                   type: last
                   params: []
+    # An Alertmanager config reload cancels the two heartbeat pings the first
+    # HA peer has in flight and counts them as failed. A broken receiver fails
+    # once on each of the three replicas, so one undelivered notification
+    # still clears this threshold.
     - uid: o11y-grafana-notif-failing
       title: o11y Grafana notification delivery failing
       condition: B
@@ -573,7 +577,7 @@ spec:
         project: o11y
         severity: critical
       annotations:
-        summary: Grafana in {{ $labels.cluster }} failed to deliver more than one alert notification in the last 15m; check the contact points and webhooks.
+        summary: Grafana in {{ $labels.cluster }} failed to deliver more than two alert notifications in the last 15m; check the contact points and webhooks.
       execErrState: Error
       noDataState: OK
       data:
@@ -588,7 +592,7 @@ spec:
             datasource:
               type: prometheus
               uid: VictoriaMetrics
-            expr: sum by (cluster) (increase(grafana_alerting_notifications_failed_total{cluster="${CLUSTER_NAME}"}[15m])) > 1
+            expr: sum by (cluster) (increase(grafana_alerting_notifications_failed_total{cluster="${CLUSTER_NAME}"}[15m])) > 2
             instant: true
             range: false
             intervalMs: 1000

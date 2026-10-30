@@ -5,7 +5,10 @@ kind: GrafanaContactPoint
 metadata:
   name: rootly-heartbeat
 spec:
-  resyncPeriod: 1h
+  # Every resync re-PUTs the bearer token, which changes the stored
+  # Alertmanager config and reloads it on all replicas. Edits to this CR or
+  # its Secret still reconcile right away.
+  resyncPeriod: 24h
   instanceSelector:
     matchLabels:
       dashboards: grafana
@@ -36,7 +39,8 @@ kind: GrafanaContactPoint
 metadata:
   name: rootly-heartbeat-remote
 spec:
-  resyncPeriod: 1h
+  # Same reload cost as rootly-heartbeat.
+  resyncPeriod: 24h
   instanceSelector:
     matchLabels:
       dashboards: grafana
